@@ -33,7 +33,8 @@ namespace ns3 {
 class Application;
 class Packet;
 class Address;
-
+class Clock;
+class Time;
 
 /**
  * \ingroup network
@@ -70,10 +71,21 @@ public:
   virtual ~Node();
 
   /**
+   * \returns
+   */
+  Time GetWallTime(void) const;
+
+  /**
+   * \returns
+   */
+  Time GetTrueTime(void) const;
+
+
+  /**
    * \returns the unique id of this node.
-   * 
+   *
    * This unique id happens to be also the index of the Node into
-   * the NodeList. 
+   * the NodeList.
    */
   uint32_t GetId (void) const;
 
@@ -137,7 +149,7 @@ public:
    * \param receiver the address of the receiver; Note: this value is
    *                 only valid for promiscuous mode protocol
    *                 handlers.  Note:  If the L2 protocol does not use L2
-   *                 addresses, the address reported here is the value of 
+   *                 addresses, the address reported here is the value of
    *                 device->GetAddress().
    * \param packetType type of packet received
    *                   (broadcast/multicast/unicast/otherhost); Note:
@@ -148,7 +160,7 @@ public:
                    const Address &, NetDevice::PacketType> ProtocolHandler;
   /**
    * \param handler the handler to register
-   * \param protocolType the type of protocol this handler is 
+   * \param protocolType the type of protocol this handler is
    *        interested in. This protocol type is a so-called
    *        EtherType, as registered here:
    *        http://standards.ieee.org/regauth/ethertype/eth.txt
@@ -159,7 +171,7 @@ public:
    *        devices on this node.
    * \param promiscuous whether to register a promiscuous mode handler
    */
-  void RegisterProtocolHandler (ProtocolHandler handler, 
+  void RegisterProtocolHandler (ProtocolHandler handler,
                                 uint16_t protocolType,
                                 Ptr<NetDevice> device,
                                 bool promiscuous=false);
@@ -186,7 +198,7 @@ public:
   /**
    * \param listener the listener to remove
    *
-   * Remove an existing listener from the list of listeners for the 
+   * Remove an existing listener from the list of listeners for the
    * device-added event.
    */
   void UnregisterDeviceAdditionListener (DeviceAdditionListener listener);
@@ -277,6 +289,8 @@ private:
   std::vector<Ptr<Application> > m_applications; //!< Applications associated to this node
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
+
+  Ptr<Clock> m_clock;
 };
 
 } // namespace ns3
