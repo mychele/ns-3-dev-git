@@ -61,7 +61,7 @@ public:
   void Start (void);
   /**
    * \brief Stop measuring the time since Start() was called.
-   * \returns the measured elapsed wall clock time (in milliseconds) since 
+   * \returns the measured elapsed wall clock time (in milliseconds) since
    *          Start() was invoked.
    *
    * It is possible to start a new measurement with Start() after
@@ -72,7 +72,7 @@ public:
   int64_t End (void);
 
   /**
-   * \returns the measured elapsed wall clock time (in milliseconds) since 
+   * \returns the measured elapsed wall clock time (in milliseconds) since
    *          Start() was invoked.
    *
    * Returns \c int64_t to avoid dependency on \c clock_t in ns-3 code.
