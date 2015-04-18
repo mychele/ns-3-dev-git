@@ -20,19 +20,13 @@
 #include "ns3/clock-perfect.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
-#include "ns3/random-variable-stream.h"
-#include "ns3/double.h"
 
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("ClockPerfect");
 
-ClockPerfect::ClockPerfect () :
-    m_maxRandomOffset(0)
+ClockPerfect::ClockPerfect ()
 {
-    m_gen = CreateObject<UniformRandomVariable> ();
-    m_gen->SetAttribute ("Min", DoubleValue(0));
-    m_gen->SetAttribute ("Max", DoubleValue(0));
 }
 
 ClockPerfect::~ClockPerfect ()
@@ -44,26 +38,13 @@ Time
 ClockPerfect::GetTime()
 {
     NS_LOG_FUNCTION(this);
-
-    // TODO display both separately
-    Time res = Simulator::Now() + Time(m_gen->GetValue());
-    NS_LOG_UNCOND("Current zozo=" << res);
-    return res;
+    return Simulator::Now();
 }
 
 void
 ClockPerfect::SetTime(Time)
 {
 	//! Noop, do nothing
-	NS_LOG_WARN("SetTime has no meaning for the perfect clock");
 }
-
-void
-ClockPerfect::SetMaxRandomOffset(double max)
-{
-    NS_LOG_FUNCTION(this << max);
-    m_gen->SetAttribute ("Max", DoubleValue (max));
-}
-
 
 }

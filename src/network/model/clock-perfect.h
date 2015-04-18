@@ -22,18 +22,41 @@
 
 
 #include "ns3/clock.h"
+//#include "ns3/time.h"
 
 
 namespace ns3 {
 
 class Time;
+class RandomVariableStream;
 
+/**
+* \see ClockMonoticIncreasing
+* No drift
+*/
 class ClockPerfect : public Clock
 {
 
 public:
+    ClockPerfect ();
+    virtual ~ClockPerfect ();
+
     virtual Time GetTime() ;
     virtual void SetTime(Time);
+
+    /**
+     * Maximum offset we can add to absolute time
+     *
+     * Ideally we should be able to pass a distribution/random generator
+     */
+    virtual void SetMaxRandomOffset(double);
+
+//    virtual void SetPrecision(Time);
+//    virtual Time GetPrecision(Time);
+protected:
+    double m_maxRandomOffset;
+//    UniformRandomVariable
+    Ptr<RandomVariableStream> m_gen;
 };
 
 }

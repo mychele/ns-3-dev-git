@@ -81,6 +81,9 @@ public:
   Time GetTrueTime(void) const;
 
 
+//  Clock GetClock() const;
+  void SetClock(Ptr<Clock> clock);
+
   /**
    * \returns the unique id of this node.
    *

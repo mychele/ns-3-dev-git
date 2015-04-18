@@ -130,6 +130,17 @@ Node::GetTrueTime(void) const
   return Simulator::Now();
 }
 
+void
+Node::SetClock(Ptr<Clock> clock)
+{
+  //!
+  NS_LOG_FUNCTION (this << clock);
+  NS_ASSERT(clock);
+
+  m_clock = clock;
+}
+
+
 uint32_t
 Node::GetSystemId (void) const
 {

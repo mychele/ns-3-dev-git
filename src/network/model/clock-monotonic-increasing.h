@@ -17,36 +17,39 @@
  *
  * Authors: Matthieu.coudron <matthieu.coudron@lip6.fr>
  */
-#ifndef CLOCK_H
-#define CLOCK_H
 
-#include <vector>
-
-#include "ns3/object.h"
-#include "ns3/callback.h"
-#include "ns3/ptr.h"
+#include "ns3/clock.h"
 
 
 namespace ns3 {
 
-class Time;
-
-class Clock : public Object
+class ClockMonoticIncreasing : public Clock
 {
 public:
-    /**
-     *
-     */
-    virtual Time GetTime() = 0;
+    ClockMonoticIncreasing();
 
-    /**
-     *
-     */
+
+    virtual Time GetTime() = 0;
     virtual void SetTime(Time) = 0;
 
-//    virtual void SetResolution(Time::Unit );
+    /**
+     *
+     */
+//    virtual void SetOffset();
+    virt
+    // or setDrift ?
+    /**
+     * Drift compared to perfect clock
+     * expressed in PPS ?
+     */
+    virtual void SetDrift(float drift);
+
+
+protected:
+    std::pair<Time,Time> m_lastAccess;   //!< last get/set <absTime,wallclock>
+
+    double m_drift;
+
 };
 
 }
-
-#endif
