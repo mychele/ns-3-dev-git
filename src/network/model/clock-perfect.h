@@ -29,6 +29,7 @@ namespace ns3 {
 
 class Time;
 class RandomVariableStream;
+class UniformRandomVariable;
 
 /**
 * \see ClockMonoticIncreasing
@@ -55,8 +56,8 @@ public:
 //    virtual Time GetPrecision(Time);
 protected:
     double m_maxRandomOffset;
-//    UniformRandomVariable
-    Ptr<RandomVariableStream> m_gen;
+//    Ptr<RandomVariableStream> m_gen;
+    Ptr<UniformRandomVariable> m_gen;
 };
 
 }
