@@ -252,7 +252,7 @@ def _check_compilation_flag(conf, flag, mode='cxx', linkflags=None):
         env.append_value("LINKFLAGS", linkflags)
 
     try:
-        retval = conf.run_c_code(code='#include <stdio.h>\nint main() { return 0; }\n',
+        retval = conf.run_build(code='#include <stdio.h>\nint main() { return 0; }\n',
                                  env=env, compile_filename=fname,
                                  features=[mode, mode+'program'], execute=False)
     except Errors.ConfigurationError:
@@ -298,6 +298,7 @@ def configure(conf):
     conf.load('cflags', tooldir=['waf-tools'])
     conf.load('command', tooldir=['waf-tools'])
     conf.load('gnu_dirs')
+    conf.load('clang_compilation_database')
 
     env = conf.env
 
