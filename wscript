@@ -238,27 +238,24 @@ def _check_compilation_flag(conf, flag, mode='cxx', linkflags=None):
     conf.start_msg('Checking for compilation %s support' % (flag_str,))
     env = conf.env.derive()
 
+    retval = False
     if mode == 'cc':
         mode = 'c'
 
     if mode == 'cxx':
-        fname = 'test.cc'
         env.append_value('CXXFLAGS', flag)
     else:
-        fname = 'test.c'
         env.append_value('CFLAGS', flag)
 
     if linkflags is not None:
         env.append_value("LINKFLAGS", linkflags)
 
     try:
-        retval = conf.run_build(code='#include <stdio.h>\nint main() { return 0; }\n',
-                                 env=env, compile_filename=fname,
-                                 features=[mode, mode+'program'], execute=False)
+        retval = conf.check(compiler=mode, fragment='int main() { return 0; }', features='c')
     except Errors.ConfigurationError:
         ok = False
     else:
-        ok = (retval == 0)
+        ok = (retval == True)
     conf.end_msg(ok)
     return ok
 
