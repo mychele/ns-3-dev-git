@@ -259,15 +259,17 @@ def _check_compilation_flag(conf, flag, mode='cxx', linkflags=None):
     conf.end_msg(ok)
     return ok
 
-    
+
 def report_optional_feature(conf, name, caption, was_enabled, reason_not_enabled):
     conf.env.append_value('NS3_OPTIONAL_FEATURES', [(name, caption, was_enabled, reason_not_enabled)])
+
 
 def check_optional_feature(conf, name):
     for (name1, caption, was_enabled, reason_not_enabled) in conf.env.NS3_OPTIONAL_FEATURES:
         if name1 == name:
             return was_enabled
     raise KeyError("Feature %r not declared yet" % (name,))
+
 
 # starting with waf 1.6, conf.check() becomes fatal by default if the
 # test fails, this alternative method makes the test non-fatal, as it
@@ -277,6 +279,7 @@ def _check_nonfatal(conf, *args, **kwargs):
         return conf.check(*args, **kwargs)
     except conf.errors.ConfigurationError:
         return None
+
 
 def configure(conf):
     conf.load('relocation', tooldir=['waf-tools'])
@@ -289,7 +292,7 @@ def configure(conf):
     conf.env['NS3_OPTIONAL_FEATURES'] = []
 
     conf.load('compiler_c')
-    cc_string='.'.join(conf.env['CC_VERSION'])
+    cc_string = '.'.join(conf.env['CC_VERSION'])
     conf.msg('Checking for cc version',cc_string,'GREEN')
     conf.load('compiler_cxx')
     conf.load('cflags', tooldir=['waf-tools'])
