@@ -206,7 +206,6 @@ def build(bld):
         'model/ipv6-pmtu-cache.cc',
         'model/ripng.cc',
         'model/ripng-header.cc',
-        'model/sll-header.cc',
         'helper/ripng-helper.cc',
         ]
 
@@ -341,7 +340,6 @@ def build(bld):
         'model/ripng.h',
         'model/ripng-header.h',
         'helper/ripng-helper.h',
-        'model/sll-header.h',
        ]
 
     if bld.env['NSC_ENABLED']:

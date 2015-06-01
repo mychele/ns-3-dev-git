@@ -26,7 +26,22 @@ namespace ns3
 
 NS_LOG_COMPONENT_DEFINE ("SllHeader");
 
+NS_OBJECT_ENSURE_REGISTERED (SllHeader);
 
+SllHeader::SllHeader() :
+    m_packetType(0),
+    m_arphdType(0),
+    m_addressLength(0),
+    m_address(0),
+    m_protocolType(0)
+{
+    NS_LOG_FUNCTION(this);
+}
+
+SllHeader::~SllHeader()
+{
+    NS_LOG_FUNCTION(this);
+}
 
 
 TypeId
@@ -47,20 +62,6 @@ SllHeader::GetInstanceTypeId (void) const
 }
 
 
-SllHeader::SllHeader() :
-    m_packetType(0),
-    m_arphdType(0),
-    m_addressLength(0),
-    m_address(0),
-    m_protocolType(0)
-{
-    NS_LOG_FUNCTION(this);
-}
-
-SllHeader::~SllHeader()
-{
-    NS_LOG_FUNCTION(this);
-}
 
 
 uint16_t

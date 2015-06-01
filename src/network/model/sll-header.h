@@ -84,7 +84,7 @@ public:
   virtual void Print (std::ostream &os) const;
 
 
-protected:
+//protected:
 
 
 /*
@@ -116,5 +116,5 @@ std::ostream & operator << (std::ostream &os, const SllHeader &header);
 
 } // namespace ns3
 
-#endif /* HEADER_H */
+#endif /* SLL_HEADER_H */
 
