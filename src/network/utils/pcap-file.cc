@@ -414,6 +414,8 @@ void
 PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Ptr<const Packet> p)
 {
   NS_LOG_FUNCTION (this << tsSec << tsUsec << p);
+  uint32_t inclLen = 0;
+  Ptr<Packet> p2 = p->Copy();
 
   // TODO addition matt
   if(GetDataLinkType() == PcapHelper::DLT_NETLINK)
@@ -421,13 +423,20 @@ PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Ptr<const Packet> p)
     //!
     NS_LOG_INFO("Prepend a SSL header");
 //    Ptr<SllHeader> sll = Create<SllHeader>();
+
     SllHeader sll = SllHeader ();
     sll.m_arphdType = 824; // #define ARPHRD_NETLINK 824
     sll.m_packetType = 0;
+    p2->AddHeader(sll);
+    // + sll.GetSerializedSize()
+    inclLen = WritePacketHeader (tsSec, tsUsec, p2->GetSize ());
+//    m_file.write( , sll.GetSerializedSize());
   }
-
-  uint32_t inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
-  p->CopyData (&m_file, inclLen);
+  else {
+    // TODO maybe the totalLen should be updated when we prepend a SLL header
+    inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
+  }
+  p2->CopyData (&m_file, inclLen);
 }
 
 void
