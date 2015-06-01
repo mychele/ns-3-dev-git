@@ -66,7 +66,7 @@ def configure(conf):
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
                                      "NSC not found (see option --with-nsc)")
 	return
-    
+
     if Options.platform in ['linux', 'freebsd']:
         arch = os.uname()[4]
     else:
@@ -78,7 +78,7 @@ def configure(conf):
         conf.check_nonfatal(mandatory=True, lib='dl', define_name='HAVE_DL', uselib_store='DL')
         ok = True
     conf.msg('Checking for NSC supported architecture ' + (arch or ''), ok)
-    
+
     if not ok:
         conf.env['NSC_ENABLED'] = False
         conf.report_optional_feature("nsc", "Network Simulation Cradle", False,
@@ -206,6 +206,7 @@ def build(bld):
         'model/ipv6-pmtu-cache.cc',
         'model/ripng.cc',
         'model/ripng-header.cc',
+        'model/sll-header.cc',
         'helper/ripng-helper.cc',
         ]
 
@@ -325,7 +326,7 @@ def build(bld):
         'helper/ipv6-interface-container.h',
         'helper/ipv6-routing-helper.h',
         'model/ipv6-address-generator.h',
-        'model/tcp-rfc793.h',        
+        'model/tcp-rfc793.h',
         'model/tcp-tahoe.h',
         'model/tcp-reno.h',
         'model/tcp-newreno.h',
@@ -340,6 +341,7 @@ def build(bld):
         'model/ripng.h',
         'model/ripng-header.h',
         'helper/ripng-helper.h',
+        'model/sll-header.h',
        ]
 
     if bld.env['NSC_ENABLED']:
