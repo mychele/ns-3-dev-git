@@ -102,6 +102,7 @@ Node::Construct (void)
   m_id = NodeList::Add (this);
 
   m_clock = CreateObject<ClockPerfect>();
+//  AggregateObject()
 }
 
 Node::~Node ()

@@ -293,7 +293,7 @@ private:
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
 
-  Ptr<Clock> m_clock;
+  Ptr<Clock> m_clock; //!< TODO removed, we want to aggregate it
 };
 
 } // namespace ns3

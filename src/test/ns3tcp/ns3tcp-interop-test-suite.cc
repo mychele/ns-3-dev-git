@@ -44,11 +44,11 @@ const uint32_t PCAP_SNAPLEN   = 64;         // Don't bother to save much data
 
 
 // ===========================================================================
-// This is a simple test to demonstrate how a known good model (a reference 
+// This is a simple test to demonstrate how a known good model (a reference
 // implementation) may be used to test another model in a relatively simple
 // way.
 //
-// Node zero contains the model under test, in this case the ns-3 TCP 
+// Node zero contains the model under test, in this case the ns-3 TCP
 // implementation.  Node one contains the reference implementation that we
 // assume will generate good test vectors for us.  In this case, a Linux
 // TCP implementation is used to stimulate the ns-3 TCP model with what we
@@ -105,14 +105,14 @@ Ns3TcpInteroperabilityTestCase::~Ns3TcpInteroperabilityTestCase ()
 {
 }
 
-void 
+void
 Ns3TcpInteroperabilityTestCase::DoSetup (void)
 {
   //
   // We expect there to be a file called tcp-interop-response-vectors.pcap in
   // response-vectors/ of this directory
   //
-  m_pcapFilename = static_cast<std::string> (NS_TEST_SOURCEDIR) + 
+  m_pcapFilename = static_cast<std::string> (NS_TEST_SOURCEDIR) +
     static_cast<std::string> ("/response-vectors/ns3tcp-interop-response-vectors.pcap");
 
   if (m_writeVectors)
@@ -127,7 +127,7 @@ Ns3TcpInteroperabilityTestCase::DoSetup (void)
     }
 }
 
-void 
+void
 Ns3TcpInteroperabilityTestCase::DoTeardown (void)
 {
   m_pcapFile.Close ();
@@ -157,15 +157,10 @@ Ns3TcpInteroperabilityTestCase::Ipv4L3Tx (std::string context, Ptr<const Packet>
       Time tNow = Simulator::Now ();
       int64_t tMicroSeconds = tNow.GetMicroSeconds ();
 
-      uint32_t size = p->GetSize ();
-      uint8_t *buf = new uint8_t[size];
-      p->CopyData (buf, size);
-
-      m_pcapFile.Write (uint32_t (tMicroSeconds / 1000000), 
-                        uint32_t (tMicroSeconds % 1000000), 
-                        buf, 
-                        size);
-      delete [] buf;
+      m_pcapFile.Write (uint32_t (tMicroSeconds / 1000000),
+                        uint32_t (tMicroSeconds % 1000000),
+                        p
+                        );
     }
   else
     {
@@ -222,7 +217,7 @@ Ns3TcpInteroperabilityTestCase::DoRun (void)
   devices = pointToPoint.Install (nodes);
 
   //
-  // Install two variants of the internet stack.  The first, on node zero 
+  // Install two variants of the internet stack.  The first, on node zero
   // uses the TCP under test, which is the default ns-3 TCP implementation.
   //
   InternetStackHelper stack;
@@ -255,7 +250,7 @@ Ns3TcpInteroperabilityTestCase::DoRun (void)
   sinkApps.Start (Seconds (0.));
 
   //
-  // We need something to shove data down the pipe, so we create an on-off 
+  // We need something to shove data down the pipe, so we create an on-off
   // application on the soure node with the reference TCP implementation.
   // The default behavior is to send for one second, then go quiet for one
   // second, and repeat.
@@ -270,12 +265,12 @@ Ns3TcpInteroperabilityTestCase::DoRun (void)
   // There are currently a limited number of trace hooks in the ns-3 TCP code.
   // Rather than editing TCP to insert a bunch of trace hooks, we can just
   // intercept the packets at the IPv4 layer.  See internet-stack-helper.cc
-  // for complete description of the trace hooks.  We're interested in the 
+  // for complete description of the trace hooks.  We're interested in the
   // responses of the TCP under test, which implies we need to hook the node
   // zero Ipv4 layer three transmit trace source.  We'll then get all of the
   // responses we need
   //
-  Config::Connect ("/NodeList/0/$ns3::Ipv4L3Protocol/Tx", 
+  Config::Connect ("/NodeList/0/$ns3::Ipv4L3Protocol/Tx",
                    MakeCallback (&Ns3TcpInteroperabilityTestCase::Ipv4L3Tx, this));
 
   //
@@ -284,11 +279,11 @@ Ns3TcpInteroperabilityTestCase::DoRun (void)
   // simulation and determine that all of the responses are correct.  We expect
   // that this means generating a pcap trace file from the point-to-point link
   // and examining the packets closely using tcpdump, wireshark or some such
-  // program.  So we provide the ability to generate a pcap trace of the 
+  // program.  So we provide the ability to generate a pcap trace of the
   // test execution for your perusal.
   //
   // Once the validation test is determined to be running exactly as exptected,
-  // we allow you to generate a file that contains the response vectors that 
+  // we allow you to generate a file that contains the response vectors that
   // will be checked during the actual execution of the test.
   //
 

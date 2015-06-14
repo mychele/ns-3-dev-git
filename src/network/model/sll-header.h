@@ -26,13 +26,25 @@
 
 namespace ns3 {
 
-/**
- * \ingroup packet
- *
- * \brief Protocol header serialization and deserialization.
- *
-http://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html
 
+/* Definitions taken from Linux "linux/if_arp.h" header file, and from
+http://www.iana.org/assignments/arp-parameters
+ARP protocol HARDWARE identifiers.
+*/
+#define ARPHRD_NETLINK 824
+
+
+/**
+\ingroup packet
+
+\brief Protocol header serialization and deserialization.
+
+Libpcap sometimes add an additional header to provide information that would be
+lost otherwise due to the link-layer/capture mechanism, for instance when capturing from
+"nlmon" device on linux
+
+\see http://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html
+\verbatim
 
 +---------------------------+
 |         Packet type       |
@@ -55,10 +67,20 @@ http://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html
 .                           .
 .                           .
 
+\endverbatim
  */
 class SllHeader : public Header
 {
 public:
+
+  enum PacketType {
+    UNICAST_FROM_PEER_TO_ME = 0, /**< the packet was specifically sent to us by somebody else */
+    BROADCAST_BY_PEER = 1, /**< packet was broadcast by somebody else */
+    MULTICAST_BY_PEER = 2, /**< packet was multicast, but not broadcast, by somebody else */
+    INTERCEPTED_PACKET = 3, /**< packet was sent to somebody else by somebody else **/
+    SENT_BY_US  /**< the packet was sent by us */
+  };
+
   /**
    * \brief Get the type ID.
    * \return the object TypeId
@@ -76,6 +98,21 @@ public:
    */
   uint16_t GetArpType() const;
 
+  /**
+   \return Packet type
+   */
+  PacketType GetPacketType() const;
+
+  /**
+   \param arphw ARP protocol hardware identifier
+   */
+  void SetArpType(uint16_t arphdType);
+
+  /**
+   \param type Depends on source and address of the packet
+   */
+  void SetPacketType(PacketType type);
+
   //! Inherited
   virtual uint32_t GetSerializedSize (void) const;
   virtual void Serialize (Buffer::Iterator start) const;
@@ -84,30 +121,19 @@ public:
   virtual void Print (std::ostream &os) const;
 
 
-//protected:
+protected:
 
 
-/*
-The packet type field is in network byte order (big-endian);
-it contains a value that is one of:
 
-    0, if the packet was specifically sent to us by somebody else;
-    1, if the packet was broadcast by somebody else;
-    2, if the packet was multicast, but not broadcast, by somebody else;
-    3, if the packet was sent to somebody else by somebody else;
-    4, if the packet was sent by us.
-*/
 
     // declared in packet order
-    uint16_t m_packetType;
-    uint16_t m_arphdType;
+    PacketType m_packetType;
+    uint16_t m_arphdType;   /**< ARP protocol hardware identifier */
     uint16_t m_addressLength;
     uint64_t m_address;
     uint16_t m_protocolType;
 
 
-
-private:
 };
 
 
