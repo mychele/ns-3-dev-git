@@ -80,8 +80,8 @@ private:
 
   void Ipv4L3Tx (std::string context, Ptr<const Packet> packet, Ptr<Ipv4> ipv4, uint32_t interface);
   void WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSpace);
-  void StartFlow (Ptr<Socket> localSocket, 
-                  Ipv4Address servAddress, 
+  void StartFlow (Ptr<Socket> localSocket,
+                  Ipv4Address servAddress,
                   uint16_t servPort);
 
 };
@@ -170,15 +170,9 @@ Ns3TcpStateTestCase::Ipv4L3Tx (std::string context, Ptr<const Packet> packet, Pt
       Time tNow = Simulator::Now ();
       int64_t tMicroSeconds = tNow.GetMicroSeconds ();
 
-      uint32_t size = p->GetSize ();
-      uint8_t *buf = new uint8_t[size];
-      p->CopyData (buf, size);
-
-      m_pcapFile.Write (uint32_t (tMicroSeconds / 1000000), 
-                        uint32_t (tMicroSeconds % 1000000), 
-                        buf, 
-                        size);
-      delete [] buf;
+      m_pcapFile.Write (uint32_t (tMicroSeconds / 1000000),
+                        uint32_t (tMicroSeconds % 1000000),
+                        p);
     }
   else
     {
@@ -209,7 +203,7 @@ Ns3TcpStateTestCase::Ipv4L3Tx (std::string context, Ptr<const Packet> packet, Pt
 
 ////////////////////////////////////////////////////////////////////
 // Implementing an "application" to send bytes over a TCP connection
-void 
+void
 Ns3TcpStateTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSpace)
 {
   while (m_currentTxBytes < m_totalTxBytes)
@@ -226,7 +220,7 @@ Ns3TcpStateTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txS
         };
       if (m_writeLogging)
         {
-          std::clog << "Submitting " 
+          std::clog << "Submitting "
                     << toWrite << " bytes to TCP socket" << std::endl;
         }
       int amountSent = localSocket->Send (0, toWrite, 0);
@@ -237,7 +231,7 @@ Ns3TcpStateTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txS
     {
       if (m_writeLogging)
         {
-          std::clog << "Close socket at " 
+          std::clog << "Close socket at "
                     <<  Simulator::Now ().GetSeconds ()
                     << std::endl;
         }
@@ -246,14 +240,14 @@ Ns3TcpStateTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txS
     }
 }
 
-void 
+void
 Ns3TcpStateTestCase::StartFlow (Ptr<Socket> localSocket,
                                 Ipv4Address servAddress,
                                 uint16_t servPort)
 {
   if (m_writeLogging)
     {
-      std::clog << "Starting flow at time " 
+      std::clog << "Starting flow at time "
                 <<  Simulator::Now ().GetSeconds ()
                 << std::endl;
     }
@@ -345,7 +339,7 @@ Ns3TcpStateTestCase::DoRun (void)
   Ptr<Socket> localSocket = Socket::CreateSocket (n0n1.Get (0),
                                                   TcpSocketFactory::GetTypeId ());
   localSocket->Bind ();
-  Simulator::ScheduleNow (&Ns3TcpStateTestCase::StartFlow, this, 
+  Simulator::ScheduleNow (&Ns3TcpStateTestCase::StartFlow, this,
                           localSocket, ipInterfs.GetAddress (1), servPort);
 
   Config::Connect ("/NodeList/0/$ns3::Ipv4L3Protocol/Tx",

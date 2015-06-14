@@ -81,8 +81,8 @@ private:
   void Ipv4L3Tx (std::string context, Ptr<const Packet> packet, Ptr<Ipv4> ipv4, uint32_t interface);
   void CwndTracer (uint32_t oldval, uint32_t newval);
   void WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSpace);
-  void StartFlow (Ptr<Socket> localSocket, 
-                  Ipv4Address servAddress, 
+  void StartFlow (Ptr<Socket> localSocket,
+                  Ipv4Address servAddress,
                   uint16_t servPort);
 
 };
@@ -166,15 +166,11 @@ Ns3TcpLossTestCase::Ipv4L3Tx (std::string context, Ptr<const Packet> packet, Ptr
       Time tNow = Simulator::Now ();
       int64_t tMicroSeconds = tNow.GetMicroSeconds ();
 
-      uint32_t size = p->GetSize ();
-      uint8_t *buf = new uint8_t[size];
-      p->CopyData (buf, size);
 
-      m_pcapFile.Write (uint32_t (tMicroSeconds / 1000000), 
-                        uint32_t (tMicroSeconds % 1000000), 
-                        buf, 
-                        size);
-      delete [] buf;
+      m_pcapFile.Write (uint32_t (tMicroSeconds / 1000000),
+                        uint32_t (tMicroSeconds % 1000000),
+                        p
+                        );
     }
   else
     {
@@ -210,7 +206,7 @@ Ns3TcpLossTestCase::CwndTracer (uint32_t oldval, uint32_t newval)
 {
   if (m_writeLogging)
     {
-      *(m_osw->GetStream ()) << "Moving cwnd from " << oldval << " to " << newval 
+      *(m_osw->GetStream ()) << "Moving cwnd from " << oldval << " to " << newval
                              << " at time " << Simulator::Now ().GetSeconds ()
                              << " seconds" << std::endl;
     }
@@ -218,7 +214,7 @@ Ns3TcpLossTestCase::CwndTracer (uint32_t oldval, uint32_t newval)
 
 ////////////////////////////////////////////////////////////////////
 // Implementing an "application" to send bytes over a TCP connection
-void 
+void
 Ns3TcpLossTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSpace)
 {
   while (m_currentTxBytes < m_totalTxBytes)
@@ -235,7 +231,7 @@ Ns3TcpLossTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSp
         };
       if (m_writeLogging)
         {
-          std::clog << "Submitting " << toWrite 
+          std::clog << "Submitting " << toWrite
                     << " bytes to TCP socket" << std::endl;
         }
       int amountSent = localSocket->Send (0, toWrite, 0);
@@ -246,7 +242,7 @@ Ns3TcpLossTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSp
     {
       if (m_writeLogging)
         {
-          std::clog << "Close socket at " 
+          std::clog << "Close socket at "
                     <<  Simulator::Now ().GetSeconds () << std::endl;
         }
       localSocket->Close ();
@@ -254,14 +250,14 @@ Ns3TcpLossTestCase::WriteUntilBufferFull (Ptr<Socket> localSocket, uint32_t txSp
     }
 }
 
-void 
+void
 Ns3TcpLossTestCase::StartFlow (Ptr<Socket> localSocket,
                                Ipv4Address servAddress,
                                uint16_t servPort)
 {
   if (m_writeLogging)
     {
-      std::clog << "Starting flow at time " 
+      std::clog << "Starting flow at time "
                 <<  Simulator::Now ().GetSeconds () << std::endl;
     }
   localSocket->Connect (InetSocketAddress (servAddress, servPort)); // connect
@@ -283,7 +279,7 @@ Ns3TcpLossTestCase::DoRun (void)
   //       s1-----------------r1-----------------k1
   //
   // Example corresponding to simulations in the paper "Simulation-based
-  // Comparisons of Tahoe, Reno, and SACK TCP 
+  // Comparisons of Tahoe, Reno, and SACK TCP
 
   std::ostringstream tcpModel;
   tcpModel << "ns3::Tcp" << m_tcpModel;
@@ -368,10 +364,10 @@ Ns3TcpLossTestCase::DoRun (void)
   // registering callbacks in function StarFlow().
   Ptr<Socket> localSocket = Socket::CreateSocket (s1r1.Get (0), TcpSocketFactory::GetTypeId ());
   localSocket->Bind ();
-  Simulator::ScheduleNow (&Ns3TcpLossTestCase::StartFlow, 
-                          this, 
-                          localSocket, 
-                          ipInterfs.GetAddress (1), 
+  Simulator::ScheduleNow (&Ns3TcpLossTestCase::StartFlow,
+                          this,
+                          localSocket,
+                          ipInterfs.GetAddress (1),
                           servPort);
 
   Config::Connect ("/NodeList/0/$ns3::Ipv4L3Protocol/Tx",
