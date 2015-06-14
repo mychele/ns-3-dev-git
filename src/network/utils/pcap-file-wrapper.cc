@@ -120,16 +120,16 @@ PcapFileWrapper::Write (Time t, Ptr<const Packet> p)
   m_file.Write (s, us, p);
 }
 
-//void
-//PcapFileWrapper::Write (Time t, Header &header, Ptr<const Packet> p)
-//{
-//  NS_LOG_FUNCTION (this << t << &header << p);
-//  uint64_t current = t.GetMicroSeconds ();
-//  uint64_t s = current / 1000000;
-//  uint64_t us = current % 1000000;
-//
-//  m_file.Write (s, us, header, p);
-//}
+void
+PcapFileWrapper::Write (Time t, Header &header, Ptr<const Packet> p)
+{
+  NS_LOG_FUNCTION (this << t << &header << p);
+  uint64_t current = t.GetMicroSeconds ();
+  uint64_t s = current / 1000000;
+  uint64_t us = current % 1000000;
+
+  m_file.Write (s, us, header, p);
+}
 
 //void
 //PcapFileWrapper::Write (Time t, uint8_t const *buffer, uint32_t length)

@@ -416,45 +416,26 @@ PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Ptr<const Packet> p)
 {
   NS_LOG_FUNCTION (this << tsSec << tsUsec << p);
   uint32_t inclLen = 0;
-  Ptr<Packet> p2 = p->Copy();
-
-  // TODO addition matt
-  if(GetDataLinkType() == PcapHelper::DLT_NETLINK)
-  {
-
-    NS_LOG_INFO("Prepend a SSL header");
-
-    SllHeader sll = SllHeader ();
-    sll.SetArpType(ARPHRD_NETLINK);
-    sll.SetPacketType(SllHeader::UNICAST_FROM_PEER_TO_ME);
-    p2->AddHeader(sll);
-    // + sll.GetSerializedSize()
-    inclLen = WritePacketHeader (tsSec, tsUsec, p2->GetSize ());
-//    m_file.write( , sll.GetSerializedSize());
-  }
-  else {
-    // TODO maybe the totalLen should be updated when we prepend a SLL header
-    inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
-  }
-  p2->CopyData (&m_file, inclLen);
+  inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
+  p->CopyData (&m_file, inclLen);
 }
-//
-//void
-//PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Header &header, Ptr<const Packet> p)
-//{
-//  NS_LOG_FUNCTION (this << tsSec << tsUsec << &header << p);
-//  uint32_t headerSize = header.GetSerializedSize ();
-//  uint32_t totalSize = headerSize + p->GetSize ();
-//  uint32_t inclLen = WritePacketHeader (tsSec, tsUsec, totalSize);
-//
-//  Buffer headerBuffer;
-//  headerBuffer.AddAtStart (headerSize);
-//  header.Serialize (headerBuffer.Begin ());
-//  uint32_t toCopy = std::min (headerSize, inclLen);
-//  headerBuffer.CopyData (&m_file, toCopy);
-//  inclLen -= toCopy;
-//  p->CopyData (&m_file, inclLen);
-//}
+
+void
+PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Header &header, Ptr<const Packet> p)
+{
+  NS_LOG_FUNCTION (this << tsSec << tsUsec << &header << p);
+  uint32_t headerSize = header.GetSerializedSize ();
+  uint32_t totalSize = headerSize + p->GetSize ();
+  uint32_t inclLen = WritePacketHeader (tsSec, tsUsec, totalSize);
+
+  Buffer headerBuffer;
+  headerBuffer.AddAtStart (headerSize);
+  header.Serialize (headerBuffer.Begin ());
+  uint32_t toCopy = std::min (headerSize, inclLen);
+  headerBuffer.CopyData (&m_file, toCopy);
+  inclLen -= toCopy;
+  p->CopyData (&m_file, inclLen);
+}
 
 void
 PcapFile::Read (
