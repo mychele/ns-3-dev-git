@@ -53,6 +53,17 @@
  * \internal
  * Logging implementation macro; should not be called directly.
  */
+#define NS_LOG_APPEND_NODE_TIME_PREFIX                               \
+  if (g_log.IsEnabled (ns3::LOG_PREFIX_NODE))                   \
+    {                                                           \
+          std::clog << " ";                                     \
+    }
+/**
+ * \ingroup logging
+ * Append the simulation node id to a log message.
+ * \internal
+ * Logging implementation macro; should not be called directly.
+ */
 #define NS_LOG_APPEND_NODE_PREFIX                               \
   if (g_log.IsEnabled (ns3::LOG_PREFIX_NODE))                   \
     {                                                           \
@@ -156,6 +167,7 @@
       if (g_log.IsEnabled (level))                              \
         {                                                       \
           NS_LOG_APPEND_TIME_PREFIX;                            \
+          NS_LOG_APPEND_NODE_TIME_PREFIX;                       \
           NS_LOG_APPEND_NODE_PREFIX;                            \
           NS_LOG_APPEND_CONTEXT;                                \
           NS_LOG_APPEND_FUNC_PREFIX;                            \

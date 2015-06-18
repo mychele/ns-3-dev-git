@@ -31,6 +31,7 @@ NS_LOG_COMPONENT_DEFINE ("ClockPerfect");
 ClockPerfect::ClockPerfect () :
     m_maxRandomOffset(0)
 {
+	NS_LOG_FUNCTION(this);
     m_gen = CreateObject<UniformRandomVariable> ();
     m_gen->SetAttribute ("Min", DoubleValue(0));
 //    m_gen->SetAttributeFailSafe ("Max", DoubleValue(0));
@@ -38,6 +39,7 @@ ClockPerfect::ClockPerfect () :
 
 ClockPerfect::~ClockPerfect ()
 {
+	NS_LOG_FUNCTION(this);
 }
 
 

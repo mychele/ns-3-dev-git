@@ -90,9 +90,22 @@ TimePrinter (std::ostream &os)
 /**
  * \ingroup logging
  * Default node id printer implementation.
- * 
+ *
  * \param [in] os The output stream to print the node id on.
  */
+static void
+NodePrinter (std::ostream &os)
+{
+  if (Simulator::GetContext () == 0xffffffff)
+    {
+      os << "-1";
+    }
+  else
+    {
+      os << Simulator::GetContext ();
+    }
+}
+
 static void
 NodePrinter (std::ostream &os)
 {
@@ -149,9 +162,9 @@ static SimulatorImpl * GetImpl (void)
 
 //
 // Note: we call LogSetTimePrinter _after_ creating the implementation
-// object because the act of creation can trigger calls to the logging 
-// framework which would call the TimePrinter function which would call 
-// Simulator::Now which would call Simulator::GetImpl, and, thus, get us 
+// object because the act of creation can trigger calls to the logging
+// framework which would call the TimePrinter function which would call
+// Simulator::Now which would call Simulator::GetImpl, and, thus, get us
 // in an infinite recursion until the stack explodes.
 //
       LogSetTimePrinter (&TimePrinter);
@@ -165,13 +178,13 @@ Simulator::Destroy (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
 
-  SimulatorImpl **pimpl = PeekImpl (); 
+  SimulatorImpl **pimpl = PeekImpl ();
   if (*pimpl == 0)
     {
       return;
     }
   /* Note: we have to call LogSetTimePrinter (0) below because if we do not do
-   * this, and restart a simulation after this call to Destroy, (which is 
+   * this, and restart a simulation after this call to Destroy, (which is
    * legal), Simulator::GetImpl will trigger again an infinite recursion until
    * the stack explodes.
    */
@@ -189,14 +202,14 @@ Simulator::SetScheduler (ObjectFactory schedulerFactory)
   GetImpl ()->SetScheduler (schedulerFactory);
 }
 
-bool 
+bool
 Simulator::IsFinished (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
   return GetImpl ()->IsFinished ();
 }
 
-void 
+void
 Simulator::Run (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -204,7 +217,7 @@ Simulator::Run (void)
   GetImpl ()->Run ();
 }
 
-void 
+void
 Simulator::Stop (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -212,7 +225,7 @@ Simulator::Stop (void)
   GetImpl ()->Stop ();
 }
 
-void 
+void
 Simulator::Stop (Time const &time)
 {
   NS_LOG_FUNCTION (time);
@@ -256,17 +269,17 @@ Simulator::ScheduleDestroy (const Ptr<EventImpl> &ev)
 {
   return DoScheduleDestroy (GetPointer (ev));
 }
-EventId 
+EventId
 Simulator::DoSchedule (Time const &time, EventImpl *impl)
 {
   return GetImpl ()->Schedule (time, impl);
 }
-EventId 
+EventId
 Simulator::DoScheduleNow (EventImpl *impl)
 {
   return GetImpl ()->ScheduleNow (impl);
 }
-EventId 
+EventId
 Simulator::DoScheduleDestroy (EventImpl *impl)
 {
   return GetImpl ()->ScheduleDestroy (impl);
@@ -317,7 +330,7 @@ Simulator::Cancel (const EventId &id)
   return GetImpl ()->Cancel (id);
 }
 
-bool 
+bool
 Simulator::IsExpired (const EventId &id)
 {
   if (*PeekImpl () == 0)
@@ -332,7 +345,7 @@ Time Now (void)
   return Time (Simulator::Now ());
 }
 
-Time 
+Time
 Simulator::GetMaximumSimulationTime (void)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -377,9 +390,9 @@ Simulator::SetImplementation (Ptr<SimulatorImpl> impl)
   impl->SetScheduler (factory);
 //
 // Note: we call LogSetTimePrinter _after_ creating the implementation
-// object because the act of creation can trigger calls to the logging 
-// framework which would call the TimePrinter function which would call 
-// Simulator::Now which would call Simulator::GetImpl, and, thus, get us 
+// object because the act of creation can trigger calls to the logging
+// framework which would call the TimePrinter function which would call
+// Simulator::Now which would call Simulator::GetImpl, and, thus, get us
 // in an infinite recursion until the stack explodes.
 //
   LogSetTimePrinter (&TimePrinter);

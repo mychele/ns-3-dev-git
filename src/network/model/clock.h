@@ -34,6 +34,8 @@ class Time;
 class Clock : public Object
 {
 public:
+
+		virtual ~Clock() {};
     /**
      *
      */
