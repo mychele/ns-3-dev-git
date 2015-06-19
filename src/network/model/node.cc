@@ -80,8 +80,8 @@ Node::GetTypeId (void)
 
 Node::Node()
   : m_id (0),
-    m_sid (0),
-    m_clock(0)
+    m_sid (0)
+//  ,  m_clock(0)
 {
   NS_LOG_FUNCTION (this);
   Construct ();
@@ -101,8 +101,8 @@ Node::Construct (void)
   NS_LOG_FUNCTION (this);
   m_id = NodeList::Add (this);
 
-  m_clock = CreateObject<ClockPerfect>();
-//  AggregateObject()
+  Ptr<Clock> clock = CreateObject<ClockPerfect>();
+  AggregateObject(clock);
 }
 
 Node::~Node ()
@@ -121,25 +121,30 @@ Time
 Node::GetWallTime(void) const
 {
   NS_LOG_FUNCTION (this);
-  return m_clock->GetTime();
-}
-
-Time
-Node::GetTrueTime(void) const
-{
-  NS_LOG_FUNCTION (this);
+  Ptr<Clock> clock = GetObject<Clock>();
+  if(clock) {
+    return clock->GetTime();
+  }
   return Simulator::Now();
+//  return m_clock;
 }
 
-void
-Node::SetClock(Ptr<Clock> clock)
-{
-  //!
-  NS_LOG_FUNCTION (this << clock);
-  NS_ASSERT(clock);
+//Time
+//Node::GetTrueTime(void) const
+//{
+//  NS_LOG_FUNCTION (this);
+//
+//}
 
-  m_clock = clock;
-}
+//void
+//Node::SetClock(Ptr<Clock> clock)
+//{
+//  //!
+//  NS_LOG_FUNCTION (this << clock);
+//  NS_ASSERT(clock);
+//
+//  m_clock = clock;
+//}
 
 
 uint32_t

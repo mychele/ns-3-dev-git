@@ -10,6 +10,7 @@ def build(bld):
         'model/channel.cc',
         'model/channel-list.cc',
         'model/chunk.cc',
+        'model/clock.cc',
         'model/clock-perfect.cc',
         'model/header.cc',
         'model/nix-vector.cc',

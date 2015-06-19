@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2006 Georgia Tech Research Corporation, INRIA
+ * Copyright (c) 2015 Université Pierre et Marie Curie, UPMC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -31,11 +31,17 @@ namespace ns3 {
 
 class Time;
 
+/**
+TODO rename into VirtualClock ?
+**/
 class Clock : public Object
 {
 public:
+		static TypeId GetTypeId (void);
+		virtual TypeId
+		GetInstanceTypeId (void) const;
 
-		virtual ~Clock() {};
+    virtual ~Clock() {};
     /**
      *
      */
@@ -45,6 +51,11 @@ public:
      *
      */
     virtual void SetTime(Time) = 0;
+
+    /**
+    Permit to send time relatively to the absolute time
+     */
+//    virtual void SetOffsetFromAbsoluteTime(Time) = 0;
 
 //    virtual void SetResolution(Time::Unit );
 };

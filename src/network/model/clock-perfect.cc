@@ -28,6 +28,30 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("ClockPerfect");
 
+
+TypeId
+ClockPerfect::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::ClockPerfect")
+    .SetParent<Clock> ()
+    .AddConstructor<ClockPerfect> ()
+//    .AddTraceSource ("Resolution",
+//                     "Drop UDP packet due to receive buffer overflow",
+//                     MakeTraceSourceAccessor (&UdpSocketImpl::m_dropTrace),
+//                     "ns3::Packet::TracedCallback")
+//    .AddAttribute ("IcmpCallback", "Callback invoked whenever an icmp error is received on this socket.",
+//                   CallbackValue (),
+//                   MakeCallbackAccessor (&UdpSocketImpl::m_icmpCallback),
+//                   MakeCallbackChecker ())
+//    .AddAttribute ("IcmpCallback6", "Callback invoked whenever an icmpv6 error is received on this socket.",
+//                   CallbackValue (),
+//                   MakeCallbackAccessor (&UdpSocketImpl::m_icmpCallback6),
+//                   MakeCallbackChecker ())
+  ;
+  return tid;
+}
+
+
 ClockPerfect::ClockPerfect () :
     m_maxRandomOffset(0)
 {
@@ -50,7 +74,7 @@ ClockPerfect::GetTime()
 
     // TODO display both separately
     Time res = Simulator::Now();
-    NS_LOG_UNCOND("Simulator time=" << res);
+    NS_LOG_DEBUG("PerfectTime=" << TimePrettyPrint(res));
 //    res += Time(m_gen->GetValue());
 //    NS_LOG_UNCOND("Time after random (" << m_gen->GetMin() << ", " << m_gen->GetMax() << " offset =" << res);
     return res;

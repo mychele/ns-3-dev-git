@@ -389,7 +389,7 @@ Time::As (const enum Unit unit) const
 {
   return TimeWithUnit (*this, unit);
 }
- 
+
 
 std::ostream &
 operator << (std::ostream & os, const Time & time)
@@ -417,6 +417,11 @@ operator << (std::ostream & os, const TimeWithUnit & timeU)
     case Time::PS:   unit = "ps";   break;
     case Time::FS:   unit = "fs";   break;
 
+
+//    case Time::PRETTY_FR :
+//      Time t = timeU.m_time;
+//      os << t.As(Y) << t.As(D) << unit;
+
     case Time::LAST:
     default:
       NS_ABORT_MSG ("can't be reached");
@@ -426,10 +431,18 @@ operator << (std::ostream & os, const TimeWithUnit & timeU)
 
   int64x64_t v = timeU.m_time.To (timeU.m_unit);
   os << v << unit;
-  
+
   return os;
 }
 
+
+
+//operator << (
+void TimePrettyPrint(std::ostream & os, Time t)
+{
+  //<< t.As(Y) << t.As(D)
+  os  << t.As(D) << unit;
+}
 
 std::istream &
 operator >> (std::istream & is, Time & time)

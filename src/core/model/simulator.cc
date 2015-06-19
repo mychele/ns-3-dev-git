@@ -106,18 +106,18 @@ NodePrinter (std::ostream &os)
     }
 }
 
-static void
-NodePrinter (std::ostream &os)
-{
-  if (Simulator::GetContext () == 0xffffffff)
-    {
-      os << "-1";
-    }
-  else
-    {
-      os << Simulator::GetContext ();
-    }
-}
+//static void
+//NodePrinter (std::ostream &os)
+//{
+//  if (Simulator::GetContext () == 0xffffffff)
+//    {
+//      os << "-1";
+//    }
+//  else
+//    {
+//      os << Simulator::GetContext ();
+//    }
+//}
 
 /**
  * \ingroup simulator

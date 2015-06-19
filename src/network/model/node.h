@@ -78,11 +78,11 @@ public:
   /**
    * \returns
    */
-  Time GetTrueTime(void) const;
+//  Time GetTrueTime(void) const;
 
 
 //  Clock GetClock() const;
-  void SetClock(Ptr<Clock> clock);
+//  void SetClock(Ptr<Clock> clock);
 
   /**
    * \returns the unique id of this node.
@@ -293,7 +293,7 @@ private:
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
 
-  Ptr<Clock> m_clock; //!< TODO removed, we want to aggregate it
+//  Ptr<Clock> m_clock; //!< TODO removed, we want to aggregate it
 };
 
 } // namespace ns3

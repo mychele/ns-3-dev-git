@@ -41,7 +41,7 @@
 namespace ns3 {
 
 class TimeWithUnit;
-  
+
 /**
  * \ingroup core
  * \defgroup time Virtual Time
@@ -117,14 +117,18 @@ public:
     NS  = 7,   //!< nanosecond
     PS  = 8,   //!< picosecond
     FS  = 9,   //!< femtosecond
-    LAST = 10
+
+    // HACK. \see gmtime
+    PRETTY_FR,   //!< example: "10/11
+//    PRETTY_US,   //!< example: "10
+    LAST
   };
 
   /**
    *  Assignment operator
    * \param [in] o Time to assign.
    * \return the Time.
-   */      
+   */
   inline Time & operator = (const Time & o)
   {
     m_data = o.m_data;
@@ -143,7 +147,7 @@ public:
    *  Copy constructor
    *
    * \param [in] o Time to copy
-   */      
+   */
   inline Time(const Time & o)
     : m_data (o.m_data)
   {
@@ -229,7 +233,7 @@ public:
   }
   /**@}*/
   /**@}*/
-  
+
   /**
    * \brief Construct Time object from common time expressions like "1ms"
    *
@@ -389,7 +393,7 @@ public:
    */
   static enum Unit GetResolution (void);
 
-  
+
   /**
    *  Create a Time in the current unit.
    *
@@ -443,7 +447,7 @@ public:
   }
   /**@}*/
 
-  
+
   /**
    *  Get the Time value expressed in a particular unit.
    *
@@ -485,14 +489,14 @@ public:
   }
   /**@}*/
 
-  
+
   /** Cast to int64x64_t */
   inline operator int64x64_t () const
   {
     return int64x64_t (m_data);
   }
 
-  
+
   /**
    * Attach a unit to a Time, to facilitate output in a specific unit.
    *
@@ -516,7 +520,7 @@ public:
    */
   typedef void (* TracedValueCallback)(const Time oldValue,
                                        const Time newValue);
-  
+
 private:
   /** How to convert between other units and the current unit. */
   struct Information
@@ -664,7 +668,7 @@ private:
   friend Time & operator += (Time & lhs, const Time & rhs);
   friend Time & operator -= (Time & lhs, const Time & rhs);
   /**@}*/
-  
+
   /**
    *  Absolute value function for Time
    *  \param time the input value
@@ -770,7 +774,7 @@ inline Time & operator -= (Time & lhs, const Time & rhs)
   return lhs;
 }
 
-  
+
 inline Time Abs (const Time & time)
 {
   return Time ((time.m_data < 0) ? -time.m_data : time.m_data);
@@ -787,7 +791,7 @@ inline Time Min (const Time & ta, const Time & tb)
 /**
  * \ingroup time
  * \brief Time output streamer.
- * 
+ *
  * Generates output such as "3.96ns".  Times are printed with the
  * following format flags (independent of the stream flags):
  *   - `showpos`
@@ -912,7 +916,7 @@ inline Time FemtoSeconds (int64x64_t value)
   return Time::From (value, Time::FS);
 }
 /**@}*/
-  
+
 
 /**
  *  \ingroup time
@@ -995,6 +999,9 @@ private:
   friend std::ostream & operator << (std::ostream & os, const TimeWithUnit & timeU);
 
 };  // class TimeWithUnit
+
+// hack Matt
+std::string TimePrettyPrint(Time t);
 
 } // namespace ns3
 
