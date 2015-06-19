@@ -53,7 +53,6 @@ public:
 
   MpTcpCryptoTest(crypto_materials_t t) : TestCase("MPTCP crypto test with values ..."),m_c(t)
   {
-    //!
     NS_LOG_FUNCTION(this);
   }
 

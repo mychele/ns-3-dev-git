@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2007 Georgia Tech Research Corporation
+ * Copyright (c) 2015 Université Pierre et Marie Curie
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -17,9 +17,6 @@
  *
  * Author: Matthieu Coudron <matthieu.coudron@lip6.fr>
  */
-
-
-//#include "ns3/tcp-option-mptcp.h"
 #include <stdint.h>
 #include "ns3/mptcp-crypto.h"
 #include "ns3/log.h"
@@ -66,10 +63,6 @@ GenerateTokenForKey( mptcp_crypto_alg_t alg, uint64_t key, uint32_t& token, uint
   Buffer::Iterator it = keyBuff.Begin();
   it.WriteHtonU64(key);
 
-
-
-
-
   switch(alg)
   {
     case HMAC_SHA1:
@@ -79,8 +72,8 @@ GenerateTokenForKey( mptcp_crypto_alg_t alg, uint64_t key, uint32_t& token, uint
             unsigned char digest[ hash_length ];
 
 
-              Buffer digestBuf; /* to store the generated hash */
-              digestBuf.AddAtStart(hash_length);
+            Buffer digestBuf; /* to store the generated hash */
+            digestBuf.AddAtStart(hash_length);
 
             /*
             gcry_md_hash_buffer (int algo, void *digest, const void *buffer, size_t length);
