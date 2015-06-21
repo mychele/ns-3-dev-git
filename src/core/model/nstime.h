@@ -119,7 +119,7 @@ public:
     FS  = 9,   //!< femtosecond
 
     // HACK. \see gmtime
-    PRETTY_FR,   //!< example: "10/11
+//    PRETTY_FR,   //!< example: "10/11
 //    PRETTY_US,   //!< example: "10
     LAST
   };
@@ -1001,7 +1001,7 @@ private:
 };  // class TimeWithUnit
 
 // hack Matt
-std::string TimePrettyPrint(Time t);
+//std::string TimePrettyPrint(Time t);
 
 } // namespace ns3
 

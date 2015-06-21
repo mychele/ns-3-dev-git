@@ -74,7 +74,7 @@ ClockPerfect::GetTime()
 
     // TODO display both separately
     Time res = Simulator::Now();
-    NS_LOG_DEBUG("PerfectTime=" << TimePrettyPrint(res));
+    NS_LOG_DEBUG("PerfectTime=" << res);
 //    res += Time(m_gen->GetValue());
 //    NS_LOG_UNCOND("Time after random (" << m_gen->GetMin() << ", " << m_gen->GetMax() << " offset =" << res);
     return res;

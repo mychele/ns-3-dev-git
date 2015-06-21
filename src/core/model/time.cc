@@ -438,11 +438,11 @@ operator << (std::ostream & os, const TimeWithUnit & timeU)
 
 
 //operator << (
-void TimePrettyPrint(std::ostream & os, Time t)
-{
-  //<< t.As(Y) << t.As(D)
-  os  << t.As(D) << unit;
-}
+//void TimePrettyPrint(std::ostream & os, Time t)
+//{
+//  //<< t.As(Y) << t.As(D)
+//  os  << t.As(D) << unit;
+//}
 
 std::istream &
 operator >> (std::istream & is, Time & time)
