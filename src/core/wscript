@@ -6,8 +6,8 @@ import wutils
 
 int64x64 = {
     # implementation name: [define, env, highprec]
-    'default': ['INT64X64_USE_128',    'INT64X64_USE_128',    '128-bit integer'], 
-    'int128':  ['INT64X64_USE_128',    'INT64X64_USE_128',    '128-bit integer'], 
+    'default': ['INT64X64_USE_128',    'INT64X64_USE_128',    '128-bit integer'],
+    'int128':  ['INT64X64_USE_128',    'INT64X64_USE_128',    '128-bit integer'],
     'cairo':   ['INT64X64_USE_CAIRO',  'INT64X64_USE_CAIRO',  'cairo 128-bit integer'],
     'double':  ['INT64X64_USE_DOUBLE', 'INT64X64_USE_DOUBLE', 'long double'],
     }
@@ -35,7 +35,7 @@ def options(opt):
                          % ", ".join([repr(p) for p in int64x64.keys()])),
                    choices=int64x64.keys(),
                    dest='int64x64_impl')
-                   
+
     opt.add_option('--disable-pthread',
                    help=('Whether to enable the use of POSIX threads'),
                    action="store_true", default=False,
@@ -54,7 +54,7 @@ def configure(conf):
             int64x64_impl = 'int128'
         else:
             int64x64_impl = 'cairo'
-        
+
     def_flag, env_flag, highprec = int64x64[int64x64_impl]
     # Add a tag confirming default choice
     if Options.options.int64x64_impl == 'default':
@@ -134,6 +134,8 @@ def build(bld):
 
     core = bld.create_ns3_module('core')
     core.source = [
+        'model/clock.cc',
+        'model/clock-perfect.cc',
         'model/time.cc',
         'model/event-id.cc',
         'model/scheduler.cc',
@@ -217,6 +219,8 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'core'
     headers.source = [
+        'model/clock.h',
+        'model/clock-perfect.h',
         'model/nstime.h',
         'model/event-id.h',
         'model/event-impl.h',

@@ -33,6 +33,7 @@ class Time;
 
 /**
 TODO rename into VirtualClock ?
+Inspired by clknetsim
 **/
 class Clock : public Object
 {
@@ -42,6 +43,7 @@ public:
 		GetInstanceTypeId (void) const;
 
     virtual ~Clock() {};
+
     /**
      *
      */
@@ -53,11 +55,16 @@ public:
     virtual void SetTime(Time) = 0;
 
     /**
+     *
+     */
+//    Adjtime()
+    /**
     Permit to send time relatively to the absolute time
      */
 //    virtual void SetOffsetFromAbsoluteTime(Time) = 0;
 
 //    virtual void SetResolution(Time::Unit );
+// Ptr<OffsetGenerator> m_offsetGenerator;	//!<
 };
 
 }

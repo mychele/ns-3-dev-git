@@ -26,6 +26,8 @@
 
 using namespace ns3;
 
+NS_LOG_COMPONENT_DEFINE ("PointToPointChannelTest");
+
 /**
  * \brief Test class for PointToPoint model
  *
@@ -37,8 +39,10 @@ class PointToPointTest : public TestCase
 public:
   /**
    * \brief Create the test
+   * \param Forward propagation time
+   * \param Backward propagation time
    */
-  PointToPointTest ();
+  PointToPointTest (Time forwardOwd, Time backwardOwd);
 
   /**
    * \brief Run the test
@@ -52,10 +56,17 @@ private:
    * \param device NetDevice to send to
    */
   void SendOnePacket (Ptr<PointToPointNetDevice> device);
+
+	bool UponPacketReception(Ptr<NetDevice>, Ptr<const Packet>, uint16_t, const Address & );
+
+  Time m_forwardOwd;		//!<
+  Time m_backwardOwd;		//!<
 };
 
-PointToPointTest::PointToPointTest ()
-  : TestCase ("PointToPoint")
+PointToPointTest::PointToPointTest (Time forwardOwd, Time backwardOwd)
+  : TestCase ("PointToPoint"),
+  m_forwardOwd(forwardOwd),
+  m_backwardOwd(backwardOwd)
 {
 }
 
@@ -67,6 +78,16 @@ PointToPointTest::SendOnePacket (Ptr<PointToPointNetDevice> device)
 }
 
 
+//typedef Callback< bool, Ptr<NetDevice>, Ptr<const Packet>, uint16_t, const Address & > ns3::NetDevice::ReceiveCallback
+bool
+PointToPointTest::UponPacketReception(Ptr<NetDevice>, Ptr<const Packet>, uint16_t, const Address & )
+{
+	//! check that it took at least the propagation time
+//  Ptr<Packet> p = Create<Packet> ();
+//  device->Send (p, device->GetBroadcast (), 0x800);
+}
+
+
 void
 PointToPointTest::DoRun (void)
 {
@@ -75,17 +96,22 @@ PointToPointTest::DoRun (void)
   Ptr<PointToPointNetDevice> devA = CreateObject<PointToPointNetDevice> ();
   Ptr<PointToPointNetDevice> devB = CreateObject<PointToPointNetDevice> ();
   Ptr<PointToPointChannel> channel = CreateObject<PointToPointChannel> ();
+	channel->SetAttribute("ForwardDelay", TimeValue (m_forwardOwd) );
+	channel->SetAttribute("BackwardDelay", TimeValue (m_backwardOwd));
 
   devA->Attach (channel);
   devA->SetAddress (Mac48Address::Allocate ());
   devA->SetQueue (CreateObject<DropTailQueue> ());
+
   devB->Attach (channel);
   devB->SetAddress (Mac48Address::Allocate ());
   devB->SetQueue (CreateObject<DropTailQueue> ());
+  devB->SetReceiveCallback( MakeBoundCallback(&));
 
   a->AddDevice (devA);
   b->AddDevice (devB);
 
+  // Send 1 packet from A to B
   Simulator::Schedule (Seconds (1.0), &PointToPointTest::SendOnePacket, this, devA);
 
   Simulator::Run ();
@@ -108,7 +134,10 @@ public:
 PointToPointTestSuite::PointToPointTestSuite ()
   : TestSuite ("devices-point-to-point", UNIT)
 {
-  AddTestCase (new PointToPointTest, TestCase::QUICK);
+  // symmetric test
+  AddTestCase (new PointToPointTest(MilliSeconds(10), MilliSeconds(10)), TestCase::QUICK);
+  // asymmetric test
+  AddTestCase (new PointToPointTest(MilliSeconds(100), MilliSeconds(50)), TestCase::QUICK);
 }
 
 static PointToPointTestSuite g_pointToPointTestSuite; //!< The testsuite
