@@ -42,6 +42,14 @@ public:
 		virtual TypeId
 		GetInstanceTypeId (void) const;
 
+
+//enum Result {
+//	 TIME_INS = 1 /* insert leap second */
+//	 TIME_DEL = 2 /* delete leap second */
+//	 TIME_OOP  3 /* leap second in progress */
+//	 TIME_WAIT 4 /* leap second has occurred */
+//	 TIME_BAD  5 /* clock not synchronized */
+//}
     virtual ~Clock() {};
 
     /**
@@ -52,12 +60,22 @@ public:
     /**
      *
      */
-    virtual void SetTime(Time) = 0;
+    virtual int SetTime(Time) = 0;
 
     /**
      *
-     */
-//    Adjtime()
+    **/
+    virtual int AdjTime(Time delta, Time *olddelta) = 0;
+
+
+    #if 0
+#define TIME_OK   0 /* clock synchronized */
+	 #define TIME_INS  1 /* insert leap second */
+	 #define TIME_DEL  2 /* delete leap second */
+	 #define TIME_OOP  3 /* leap second in progress */
+	 #define TIME_WAIT 4 /* leap second has occurred */
+	 #define TIME_BAD  5 /* clock not synchronized */
+#endif
     /**
     Permit to send time relatively to the absolute time
      */

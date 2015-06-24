@@ -23,25 +23,48 @@
 #include "ns3/random-variable-stream.h"
 //#include "ns3/random-variable-uniform.h"
 #include "ns3/double.h"
+#include "ns3/integer.h"
+#include "ns3/uinteger.h"
+#include "ns3/double.h"
 
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("ClockPerfect");
 
-
+// TODO rename into ClockImpl
 TypeId
 ClockPerfect::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::ClockPerfect")
     .SetParent<Clock> ()
     .AddConstructor<ClockPerfect> ()
-//    .AddTraceSource ("Resolution",
-//                     "Drop UDP packet due to receive buffer overflow",
-//                     MakeTraceSourceAccessor (&UdpSocketImpl::m_dropTrace),
+//    .AddTraceSource ("Slew",
+//                     "Virtual component of the frequency.",
+//                     MakeTraceSourceAccessor (&ClockPerfect::m_slew),
 //                     "ns3::Packet::TracedCallback")
-//    .AddAttribute ("IcmpCallback", "Callback invoked whenever an icmp error is received on this socket.",
+
+	// TODO define MinFreq/MaxFreq ?
+
+
+//0.5ms per second
+    .AddAttribute ("MaxSlewRate",
+								"Max slew rate",
+										UintegerValue(500),
+                   MakeUintegerAccessor (&ClockPerfect::m_maxSlewRate),
+                   MakeUintegerChecker<uint16_t> ())
+    .AddAttribute ("MaxFrequency",
+									 "Max frequency",
+										DoubleValue(500),
+                   MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
+                   MakeDoubleChecker())
+		.AddAttribute ("MinFrequency",
+									 "Min frequency",
+										DoubleValue(500),
+                   MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
+                   MakeDoubleChecker())
+
 //                   CallbackValue (),
-//                   MakeCallbackAccessor (&UdpSocketImpl::m_icmpCallback),
+//                   MakeCallbackAccessor (&ClockPerfect::m_icmpCallback),
 //                   MakeCallbackChecker ())
 //    .AddAttribute ("IcmpCallback6", "Callback invoked whenever an icmpv6 error is received on this socket.",
 //                   CallbackValue (),
@@ -66,6 +89,13 @@ ClockPerfect::~ClockPerfect ()
 	NS_LOG_FUNCTION(this);
 }
 
+void Clock::SetFrequency(double freq) {
+	this->freq = freq + 1.0;
+	if (!(this->freq > m_minFrequency && this->freq < m_maxFrequency)) {
+		fprintf(stderr, "frequency %e outside allowed range (%.2f, %.2f)\n", this->freq - 1.0, MIN_FREQ - 1.0, MAX_FREQ - 1.0);
+		exit(1);
+	}
+}
 
 Time
 ClockPerfect::GetTime()
@@ -80,19 +110,28 @@ ClockPerfect::GetTime()
     return res;
 }
 
-void
+int
 ClockPerfect::SetTime(Time)
 {
 	//! Noop, do nothing
 	NS_LOG_WARN("SetTime has no meaning for the perfect clock");
+	return -1;
 }
 
-void
-ClockPerfect::SetMaxRandomOffset(double max)
+
+int
+ClockPerfect::AdjTime(Time delta, Time *olddelta)
 {
-    NS_LOG_FUNCTION(this << max);
-    m_gen->SetAttributeFailSafe ("Max", DoubleValue (max));
+	NS_LOG_INFO("Adjtime called");
+	return -5; //TIME_BAD
 }
+
+//void
+//ClockPerfect::SetMaxRandomOffset(double max)
+//{
+//    NS_LOG_FUNCTION(this << max);
+//    m_gen->SetAttributeFailSafe ("Max", DoubleValue (max));
+//}
 
 
 }

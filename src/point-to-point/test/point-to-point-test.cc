@@ -23,6 +23,7 @@
 #include "ns3/simulator.h"
 #include "ns3/point-to-point-net-device.h"
 #include "ns3/point-to-point-channel.h"
+#include "ns3/log.h"
 
 using namespace ns3;
 
@@ -61,6 +62,7 @@ private:
 
   Time m_forwardOwd;		//!<
   Time m_backwardOwd;		//!<
+  Time m_packetSendingTime;		//!<
 };
 
 PointToPointTest::PointToPointTest (Time forwardOwd, Time backwardOwd)
@@ -74,6 +76,7 @@ void
 PointToPointTest::SendOnePacket (Ptr<PointToPointNetDevice> device)
 {
   Ptr<Packet> p = Create<Packet> ();
+  m_packetSendingTime = Simulator::Now();
   device->Send (p, device->GetBroadcast (), 0x800);
 }
 
@@ -85,6 +88,11 @@ PointToPointTest::UponPacketReception(Ptr<NetDevice>, Ptr<const Packet>, uint16_
 	//! check that it took at least the propagation time
 //  Ptr<Packet> p = Create<Packet> ();
 //  device->Send (p, device->GetBroadcast (), 0x800);
+  NS_LOG_INFO ("propagation time" << (Simulator::Now() - m_packetSendingTime) );
+  NS_ASSERT( Simulator::Now() - m_packetSendingTime > m_forwardOwd );
+
+  // Now we echo back the packet to A
+  return true;
 }
 
 
@@ -106,13 +114,15 @@ PointToPointTest::DoRun (void)
   devB->Attach (channel);
   devB->SetAddress (Mac48Address::Allocate ());
   devB->SetQueue (CreateObject<DropTailQueue> ());
-  devB->SetReceiveCallback( MakeBoundCallback(&));
+//  devB->SetReceiveCallback( MakeBoundCallback(&PointToPointTest::UponPacketReception));
+  devB->SetReceiveCallback( MakeCallback(&PointToPointTest::UponPacketReception, this));
 
   a->AddDevice (devA);
   b->AddDevice (devB);
 
   // Send 1 packet from A to B
   Simulator::Schedule (Seconds (1.0), &PointToPointTest::SendOnePacket, this, devA);
+  Simulator::Schedule (Seconds (4.0  + m_forwardOwd), &PointToPointTest::SendOnePacket, this, devB);
 
   Simulator::Run ();
 

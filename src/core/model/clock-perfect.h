@@ -34,6 +34,7 @@ class UniformRandomVariable;
 /**
 * \see ClockMonoticIncreasing
 * No drift
+ TODO maybe rename into ClockImpl
 */
 class ClockPerfect : public Clock
 {
@@ -46,18 +47,39 @@ public:
     virtual ~ClockPerfect ();
 
     virtual Time GetTime() ;
-    virtual void SetTime(Time);
+    virtual int SetTime(Time);
+
+		virtual int AdjTime(Time delta, Time *olddelta);
+
+		// Maybe the simulator should define a rawFrequency too
+		virtual double GetRawFrequency();
+
+		// Adjusted
+		virtual double GetCorrectedFrequency();
+
+		void Clock::SetFrequency(double freq);
+
+//    GetMaxFrequency()
+//    SetMaxFrequency()
 
     /**
      * Maximum offset we can add to absolute time
      *
      * Ideally we should be able to pass a distribution/random generator
      */
-    virtual void SetMaxRandomOffset(double);
+//    virtual void SetMaxRandomOffset(double);
 
 //    virtual void SetPrecision(Time);
 //    virtual Time GetPrecision(Time);
 protected:
+	double m_frequency;
+	double m_maxFrequency;
+	double m_minFrequency;
+
+	int m_maxSlewRate;	//!< cap frequency change
+
+	m_precision;
+
     double m_maxRandomOffset;
 //    Ptr<RandomVariableStream> m_gen;
     Ptr<UniformRandomVariable> m_gen;
