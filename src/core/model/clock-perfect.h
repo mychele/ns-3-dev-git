@@ -61,6 +61,7 @@ public:
 
 //    GetMaxFrequency()
 //    SetMaxFrequency()
+//    SetFrequencyGenerator
 
     /**
      * Maximum offset we can add to absolute time

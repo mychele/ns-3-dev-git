@@ -63,6 +63,7 @@ ClockPerfect::GetTypeId (void)
                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
                    MakeDoubleChecker())
 
+//    .AddAttribute("FrequencyGenerator")
 //                   CallbackValue (),
 //                   MakeCallbackAccessor (&ClockPerfect::m_icmpCallback),
 //                   MakeCallbackChecker ())
@@ -89,12 +90,18 @@ ClockPerfect::~ClockPerfect ()
 	NS_LOG_FUNCTION(this);
 }
 
-void Clock::SetFrequency(double freq) {
+bool
+Clock::SetFrequency(double freq) {
+
+    // TODO update after checking
 	this->freq = freq + 1.0;
 	if (!(this->freq > m_minFrequency && this->freq < m_maxFrequency)) {
-		fprintf(stderr, "frequency %e outside allowed range (%.2f, %.2f)\n", this->freq - 1.0, MIN_FREQ - 1.0, MAX_FREQ - 1.0);
-		exit(1);
+		NS_LOG_ERROR("frequency outside allowed range ")
+//               , this->freq - 1.0, MIN_FREQ - 1.0, MAX_FREQ - 1.0);
+//		exit(1);
+        return false;
 	}
+	return true;
 }
 
 Time
@@ -119,10 +126,22 @@ ClockPerfect::SetTime(Time)
 }
 
 
+// eglibc-2.19/sysdeps/unix/sysv/linux/adjtime.c
 int
 ClockPerfect::AdjTime(Time delta, Time *olddelta)
 {
 	NS_LOG_INFO("Adjtime called");
+
+	if (olddelta) {
+		olddelta->tv_sec = ss_offset / 1000000;
+		olddelta->tv_usec = ss_offset % 1000000;
+	}
+//2145 and -2145 according to man adjtime (glibc parameters)
+
+	if (delta) {
+		ss_offset = delta->tv_sec * 1000000 + delta->tv_usec;
+    }
+
 	return -5; //TIME_BAD
 }
 
