@@ -75,9 +75,7 @@ public:
     virtual Time GetTime() ;
     virtual int SetTime(Time);
 
-    Time AbsTimeFromOffset();
-
-    virtual int AdjTime(Time delta, Time *olddelta);
+		virtual int AdjTime(Time delta, Time *olddelta);
 
     // Maybe the simulator should define a rawFrequency too
     virtual double GetRawFrequency();
@@ -138,7 +136,12 @@ protected:
 
 //	double m_frequency;
 //	double m_ss_maxSlew;
-//	double m_maxSlew;
+
+	void UpdateTime();
+
+	TracedValue<Time> m_time;
+	TracedValue<Time> m_timeOfLastUpdate;	//!<
+	double m_frequency;
 	double m_maxFrequency;
 	double m_minFrequency;
 

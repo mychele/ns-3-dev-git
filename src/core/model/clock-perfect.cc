@@ -133,6 +133,12 @@ ClockPerfect::SetFrequency(double freq) {
 	return true;
 }
 
+void
+ClockPerfect::UpdateTime()
+{
+	// For now support only adjtime
+}
+
 Time
 ClockPerfect::GetTime()
 {
