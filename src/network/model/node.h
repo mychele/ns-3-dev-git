@@ -27,6 +27,7 @@
 #include "ns3/callback.h"
 #include "ns3/ptr.h"
 #include "ns3/net-device.h"
+#include "ns3/simulator.h"
 
 namespace ns3 {
 
@@ -206,7 +207,22 @@ public:
    */
   void UnregisterDeviceAdditionListener (DeviceAdditionListener listener);
 
+  // Matt C++11 hack
+  template<typename ... Types>
+  EventId Schedule(Types... rest) {
+    return Simulator::Schedule(rest...);
+  }
 
+
+    template<typename ... Types>
+    EventId ScheduleNow(Types... rest){
+
+        EventId event = Simulator::Schedule(rest...);
+        //    m_events[m_currentActiveEventsArray].push_back(event);
+        return event;
+    }
+
+  void RefreshEvents();
 
   /**
    * \returns true if checksums are enabled, false otherwise.
@@ -293,6 +309,8 @@ private:
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
 
+//  std::list<EventId> m_events[2];   //!< Store this node's events in order to update them
+//  int m_currentActiveEventsArray;   //!< Valid index of previous array
 //  Ptr<Clock> m_clock; //!< TODO removed, we want to aggregate it
 };
 

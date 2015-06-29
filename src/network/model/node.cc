@@ -82,6 +82,7 @@ Node::Node()
   : m_id (0),
     m_sid (0)
 //  ,  m_clock(0)
+//    m_currentActiveEventsArray(0)
 {
   NS_LOG_FUNCTION (this);
   Construct ();
@@ -128,6 +129,32 @@ Node::GetWallTime(void) const
   return Simulator::Now();
 //  return m_clock;
 }
+
+
+void
+Node::RefreshEvents(Time ) {
+
+    int nextArray = (m_currentActiveEventsArray  + 1) %2;
+
+
+    // Look for all events belonging to this node
+    // And add a matching offset
+    for(std::list<EventId>::iterator i = m_events[ m_currentActiveEventsArray ].begin();
+        i != m_events[ m_currentActiveEventsArray ].end();
+        ++i
+    )
+    {
+        //! TODO en fait on ne le détruit pas mais on le cancel !
+//        Simulator::Cancel(*i);
+        i->Cancel();
+//        Time absTimeElapsed = i->GetTs() - Simulator::Now();
+
+
+        Simulator::Schedule()
+        m_events[ nextArray ].push_back(event);
+    }
+}
+
 
 //Time
 //Node::GetTrueTime(void) const

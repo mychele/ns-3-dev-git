@@ -44,7 +44,7 @@ class EventImpl;
  * with Simulator::Cancel() or Simulator::Remove().
  *
  * The important thing to remember about this class is that
- * every variable of this type is _always_ in a valid state, 
+ * every variable of this type is _always_ in a valid state,
  * even when it has not been assigned an EventId coming from a
  * Simulator::Schedule() method:  calling Simulator::Cancel(), IsRunning(),
  * IsExpired() or passing around instances of this object
@@ -76,7 +76,7 @@ public:
   bool IsExpired (void) const;
   /**
    * This method is syntactic sugar for !IsExpired().
-   * 
+   *
    * \returns \c true if the event has not expired, \c false otherwise.
    */
   bool IsRunning (void) const;
@@ -96,7 +96,7 @@ public:
   /** \return The unique id. */
   uint32_t GetUid (void) const;
   /**@}*/
-  
+
 private:
   /**
    * Test if two EventId's are equal.
@@ -112,11 +112,11 @@ private:
    * \return \c true if the \p a and \p b are not the same event.
    */
   friend bool operator != (const EventId &a, const EventId &b);
-  
+
   Ptr<EventImpl> m_eventImpl;  /**< The underlying event implementation. */
   uint64_t m_ts;               /**< The virtual time stamp. */
   uint32_t m_context;          /**< The context. */
-  uint32_t m_uid;              /**< The unique id. */
+  uint32_t m_uid;              /**< The unique id. "2" for destroy events */
 };
 
 bool operator == (const EventId &a, const EventId &b);
