@@ -197,6 +197,29 @@ ClockPerfect::AbsTimeLimitOfSSOffsetCompensation(Time& t)
 //}
 
 Time
+ClockPerfect::AbsTimeToLocalTime()
+{
+    //!
+}
+
+
+
+bool
+ClockPerfect::LocalTimeToAbsTime(Time localTime, Time &absTime)
+{
+    //!
+    if(localTime < m_lastUpdateLocalTime) {
+        NS_LOG_WARN("Requested time in the past " << localTime << " < " << m_lastUpdateLocalTime);
+        return false;
+    }
+
+//    NS_ASSERT()
+
+    return true;
+}
+
+
+Time
 ClockPerfect::LocalDurationToAbsDuration(Time duration, bool)
 {
     /**

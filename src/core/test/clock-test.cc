@@ -101,6 +101,7 @@ ClockRawFrequencyTestCase::DoRun (void)
             //!
 //            i->first // local time
 //            i->second // abs time
+            NS_ASSERT( m_clock-> GetAbsTime)
         }
 
 }
@@ -139,12 +140,17 @@ public:
 //    ObjectFactory factory;
 //    factory.SetTypeId (ListScheduler::GetTypeId ());
     ClockRawFrequencyTestCase::LocalToAbsTimeList checks;
-    checks.insert(std::make_pair( Time(1), Time(1) ));
-    checks.insert(std::make_pair( Time(2), Time(2) ));
+    checks.insert(std::make_pair( Time(1), Time(2) ));
+    checks.insert(std::make_pair( Time(2), Time(4) ));
 
-    AddTestCase (new ClockRawFrequencyTestCase (1.0, checks), TestCase::QUICK);
+    // Node's time goes twice faster than simulation time
+    AddTestCase (new ClockRawFrequencyTestCase (2.0, checks), TestCase::QUICK);
 
     checks.clear();
+    checks.insert(std::make_pair( Time(2), Time(1) ));
+    checks.insert(std::make_pair( Time(4), Time(2) ));
+    // Node's time grows at half simulation time speed
+//    AddTestCase (new ClockRawFrequencyTestCase (2.0, checks), TestCase::QUICK);
 
 //    AddTestCase (new ClockRawFrequencyTestCase (1.0, checks), TestCase::QUICK);
 //    AddTestCase (new ClockWithAdjTimeTestCase (factory), TestCase::QUICK);

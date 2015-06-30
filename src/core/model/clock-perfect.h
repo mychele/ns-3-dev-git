@@ -118,6 +118,13 @@ protected:
     bool
     AbsTimeLimitOfSSOffsetCompensation(Time& t);
 
+
+    /**
+     LocalTime must be >
+    */
+    bool
+    LocalTimeToAbsTime(Time localTime, Time &absTime);
+
     /**
      * \param duration convert duration from abs duration to local duration
      * \param oldParameters use old frequency etc...

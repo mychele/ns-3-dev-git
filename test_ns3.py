@@ -8,6 +8,8 @@ available_suites = [
     #"mptcp-tcp",
     "tcp-option-mptcp",
     "mptcp-crypto",
+    "clock",
+    "node-clock-interactions",
     "mptcp-mapping"
 ]
 
@@ -127,10 +129,10 @@ if args.graph:
     os.system("mptcpexporter pcap2sql source.pcapng")
     os.system("mptcpgraph ")
 
-
-for i in ['server', 'source']:
-    print("Content of folder '%s':" % (i,))
-    os.system("ls -l %s" % (i,))
+# for mptcp tests only
+#for i in ['server', 'source']:
+    #print("Content of folder '%s':" % (i,))
+    #os.system("ls -l %s" % (i,))
 
 # print("Content of folder 'server':")
 # os.system("./draw_plots.sh")

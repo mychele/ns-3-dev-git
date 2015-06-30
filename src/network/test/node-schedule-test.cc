@@ -40,7 +40,7 @@ Idea of this test is :
 -change the clock at some point in time
 -check that the previous event is correctly re-scheduled when the clock frequency changed
 */
-
+#if 0
 
 struct ClockTestParameters {
 double frequency;
@@ -61,7 +61,7 @@ public:
 };
 
 
-#if 0
+
 ClockTestCase::ClockTestCase()
 {
     m_clock = CreateObject<ClockPerfect>();
@@ -76,17 +76,19 @@ ClockTestCase::DoRun (void)
     Simulator::
 }
 
-class ClockTestSuite : public TestSuite
+#endif
+
+class NodeClockTestSuite : public TestSuite
 {
 public:
-  ClockTestSuite ()
-    : TestSuite ("clock")
+  NodeClockTestSuite ()
+    : TestSuite ("node-clock-interactions")
   {
-    ObjectFactory factory;
+//    ObjectFactory factory;
 //    factory.SetTypeId (ListScheduler::GetTypeId ());
 
-    AddTestCase (new SimulatorEventsTestCase (factory), TestCase::QUICK);
+//    AddTestCase (new SimulatorEventsTestCase (factory), TestCase::QUICK);
 
   }
-} g_clockTestSuite;
-#endif
+} g_nodeClockTestSuite;
+
