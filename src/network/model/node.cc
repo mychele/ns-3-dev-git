@@ -132,9 +132,13 @@ Node::GetWallTime(void) const
 
 
 void
-Node::RefreshEvents(Time ) {
+Node::RefreshEvents() {
 
+//    Loop through all events whose context is this node ID
+#if 0
     int nextArray = (m_currentActiveEventsArray  + 1) %2;
+
+
 
 
     // Look for all events belonging to this node
@@ -153,6 +157,7 @@ Node::RefreshEvents(Time ) {
         Simulator::Schedule()
         m_events[ nextArray ].push_back(event);
     }
+#endif
 }
 
 

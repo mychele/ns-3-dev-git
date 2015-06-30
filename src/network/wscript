@@ -80,6 +80,7 @@ def build(bld):
         'test/red-queue-test-suite.cc',
         'test/sequence-number-test-suite.cc',
         'test/packet-socket-apps-test-suite.cc',
+        'test/node-schedule-test.cc',
         ]
 
     headers = bld(features='ns3header')

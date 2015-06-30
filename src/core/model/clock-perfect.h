@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2006 Georgia Tech Research Corporation, INRIA
+ * Copyright (c) 2015 Université Pierre et Marie Curie (UPMC)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -24,7 +24,8 @@
 #include "ns3/clock.h"
 #include "ns3/nstime.h"
 #include "ns3/event-id.h"
-
+//#include "ns3/trace-source-accessor.h"
+#include "ns3/traced-value.h"
 
 namespace ns3 {
 
@@ -81,12 +82,16 @@ public:
     virtual double GetRawFrequency();
 
     /**
-        Adds ss_slew
-        \warn
+    Adds ss_slew
+    \warn
      */
-    virtual double GetTotalFrequency();
+//    virtual double GetTotalFrequency();
 
-    bool SetFrequency(double freq);
+    /**
+     * Ideally we would pass a frequency generator that adds some noise
+     * but for now we stick to simple
+     */
+    bool SetRawFrequency(double freq);
 
 //    GetMaxFrequency()
 //    SetMaxFrequency()
@@ -129,7 +134,7 @@ protected:
     Time m_lastUpdateLocalTime; //!<
     Time m_lastUpdateAbsTime;   //!<
 
-//    m_ss_slew;  //!< SingleShot slew
+    double m_ss_slew;  //!< SingleShot slew
     Time m_ss_offset;  //!< SingleShot offset
 
     ClockParameters parameters[2];  //!< old and new parameters (use std::swap)

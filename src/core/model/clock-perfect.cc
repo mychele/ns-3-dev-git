@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2006 Georgia Tech Research Corporation, INRIA
+ * Copyright (c) 2015 Université Pierre et Marie Curie
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -62,18 +62,18 @@ ClockPerfect::GetTypeId (void)
     .AddAttribute ("MaxSlewRate",
                     "Max slew rate",
                     UintegerValue(500),
-                   MakeUintegerAccessor (&ClockPerfect::m_maxSlewRate),
-                   MakeUintegerChecker<uint16_t> ())
+                    MakeUintegerAccessor (&ClockPerfect::m_maxSlewRate),
+                    MakeUintegerChecker<uint16_t> ())
     .AddAttribute ("MaxFrequency",
-									 "Max frequency",
-										DoubleValue(500),
-                   MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
-                   MakeDoubleChecker<double>())
+                    "Max frequency",
+                    DoubleValue(500),
+                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
+                    MakeDoubleChecker<double>())
 		.AddAttribute ("MinFrequency",
-									 "Min frequency",
-										DoubleValue(500),
-                   MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
-                   MakeDoubleChecker<double>())
+                    "Min frequency",
+                    DoubleValue(500),
+                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
+                    MakeDoubleChecker<double>())
 
 //    .AddAttribute("FrequencyGenerator")
 //                   CallbackValue (),
@@ -120,16 +120,18 @@ int RefreshEvents();
 
 
 bool
-ClockPerfect::SetFrequency(double freq) {
+ClockPerfect::SetRawFrequency(double freq) {
 
     // TODO update after checking
-	this->freq = freq + 1.0;
-	if (!(this->freq > m_minFrequency && this->freq < m_maxFrequency)) {
-		NS_LOG_ERROR("frequency outside allowed range ")
-//               , this->freq - 1.0, MIN_FREQ - 1.0, MAX_FREQ - 1.0);
-//		exit(1);
-        return false;
-	}
+//	m_frequency
+//	if (!(m_frequency > m_minFrequency && this->freq < m_maxFrequency)) {
+//		NS_LOG_ERROR("frequency outside allowed range ")
+////               , this->freq - 1.0, MIN_FREQ - 1.0, MAX_FREQ - 1.0);
+////		exit(1);
+//        return false;
+//	}
+    NS_LOG_INFO("New frequency=" << freq);
+	m_frequency = freq;
 	return true;
 }
 
@@ -171,8 +173,8 @@ ClockPerfect::ResetSingleShotParameters()
 {
     //!
     m_ss_slew = 0;
-    m_ss_offset = 0;
-    m_ssOffsetCompletion.
+    m_ss_offset = Time(0);
+    m_ssOffsetCompletion.Cancel();
 }
 
 bool
@@ -183,16 +185,16 @@ ClockPerfect::AbsTimeLimitOfSSOffsetCompensation(Time& t)
         return false;
     }
 
-    t = m_ssOffsetCompletion.GetTs();
+    t = Time(m_ssOffsetCompletion.GetTs());
     return true;
 }
 
 
-Time
-ClockPerfect::LocalDurationToAbsTime(Time duration)
-{
-    LocalDurationToAbsDuration
-}
+//Time
+//ClockPerfect::LocalDurationToAbsTime(Time duration)
+//{
+//    LocalDurationToAbsDuration
+//}
 
 Time
 ClockPerfect::LocalDurationToAbsDuration(Time duration, bool)
@@ -202,12 +204,13 @@ ClockPerfect::LocalDurationToAbsDuration(Time duration, bool)
      1/ in the first phase we may have a singleshot additionnal frequency
      2/ in the 2nd phase we haven't
     */
-    Time ssTimeLimit = 0;
-    Time absDuration = 0;
+    Time ssTimeLimit(0);
+    Time absDuration(0);
+    Time localDurationWithSSCorrection (0);
     if(AbsTimeLimitOfSSOffsetCompensation(ssTimeLimit))
     {
         // local frequency * AbsDurationOf the
-        Time localDurationWithSSCorrection =  (ssTimeLimit - Simulator::Now()) / (GetRawFrequency() + m_ss_slew);
+        localDurationWithSSCorrection = (ssTimeLimit - Simulator::Now()) / (GetRawFrequency() + m_ss_slew);
 
         // if the first phase englobes "duration"
         if(localDurationWithSSCorrection > duration) {
@@ -233,7 +236,7 @@ int
 ClockPerfect::AdjTime(Time delta, Time *olddelta)
 {
 	NS_LOG_INFO("Adjtime called");
-    frequency
+//    frequency
 //	if (olddelta) {
 //		olddelta->tv_sec = ss_offset / 1000000;
 //		olddelta->tv_usec = ss_offset % 1000000;
