@@ -35,6 +35,9 @@
 #include "ns3/clock-perfect.h"
 #include "ns3/nstime.h"
 #include "ns3/callback.h"
+#include "ns3/scheduler.h"
+#include "ns3/object-factory.h"
+#include "ns3/map-scheduler.h"
 
 namespace ns3 {
 
@@ -49,6 +52,7 @@ static GlobalValue g_checksumEnabled  = GlobalValue ("ChecksumEnabled",
                                                      "A global switch to enable all checksums for all protocols",
                                                      BooleanValue (false),
                                                      MakeBooleanChecker ());
+
 
 TypeId
 Node::GetTypeId (void)
@@ -75,7 +79,13 @@ Node::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&Node::m_sid),
                    MakeUintegerChecker<uint32_t> ())
-  ;
+//    .AddAttribute("SchedulerType",
+//                  "The object class to use as the scheduler implementation",
+//                  TypeIdValue (MapScheduler::GetTypeId ()),
+//                  MakeTypeIdAccessor()
+//                  MakeTypeIdChecker ());
+//                  )
+;
   return tid;
 }
 
@@ -103,13 +113,45 @@ Node::Construct (void)
   NS_LOG_FUNCTION (this);
   m_id = NodeList::Add (this);
 
+  {
+    ObjectFactory factory;
+//    StringValue s;
+//    GetAttribute( s);
+//    factory.SetTypeId ();
+    factory.SetTypeId (MapScheduler::GetTypeId ());
+    this->SetScheduler (factory);
+  }
+
+
   Ptr<Clock> clock = CreateObject<ClockPerfect>();
   AggregateObject(clock);
+//  clock->m_last
+
 //  TimeStepCallback
   // TODO do it evertyime a clock is aggregated
   clock->SetFrequencyChangeCallback(MakeCallback(&Node::RefreshEvents, Ptr<Node> (this)));
 //  clock->SetTimeStepCallback( MakeBoundCallback(Node::RefreshEvents, this) );
+
+
 }
+
+void
+Node::SetScheduler (ObjectFactory schedulerFactory)
+{
+  NS_LOG_FUNCTION (this << schedulerFactory);
+  Ptr<Scheduler> scheduler = schedulerFactory.Create<Scheduler> ();
+
+  if (m_events != 0)
+    {
+      while (!m_events->IsEmpty ())
+        {
+          Scheduler::Event next = m_events->RemoveNext ();
+          scheduler->Insert (next);
+        }
+    }
+  m_events = scheduler;
+}
+
 
 Node::~Node ()
 {
@@ -133,6 +175,22 @@ Node::GetWallTime(void) const
   }
   return Simulator::Now();
 //  return m_clock;
+}
+
+EventId
+Node::ScheduleNow (EventImpl *event)
+{
+  NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleNow Thread-unsafe invocation!");
+
+  Scheduler::Event ev;
+  ev.impl = event;
+  ev.key.m_ts = m_currentTs;
+  ev.key.m_context = GetContext ();
+  ev.key.m_uid = m_uid;
+//  m_uid++;
+//  m_unscheduledEvents++;
+  m_events->Insert (ev);
+  return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
 }
 
 

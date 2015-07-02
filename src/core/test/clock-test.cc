@@ -30,7 +30,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("ClockTestSuite");
+NS_LOG_COMPONENT_DEFINE ("ClockTest");
 
 //struct ClockTestParameters {
 //double frequency;
@@ -93,6 +93,7 @@ ClockRawFrequencyTestCase::DoRun (void)
     // TODO create a node
 //    Simulator::
 //    NS_ASSERT_MSG()
+    NS_LOG_INFO("eeez");
     for(LocalToAbsTimeList::const_iterator i(m_checks.begin());
         i != m_checks.end();
         ++i
@@ -103,12 +104,13 @@ ClockRawFrequencyTestCase::DoRun (void)
 //            i->first // local time
 //            i->second // abs time
             Time result;
-            NS_TEST_EXPECT_MSG_EQ(m_clock->LocalTimeToAbsTime(i->first, result), true, "Time found");
+            NS_LOG_INFO("Checking Local -> Absolute");
+            NS_TEST_EXPECT_MSG_EQ(m_clock->LocalTimeToAbsTime(i->first, result), true, "Could not compute");
             NS_TEST_EXPECT_MSG_EQ(result, i->second, "Computed ");
 
-
-            NS_TEST_EXPECT_MSG_EQ(m_clock->AbsTimeToLocalTime(i->second, result) );
-            NS_ASSERT(result == i->first);
+            NS_LOG_INFO("Checking Absolute -> Local");
+            NS_TEST_EXPECT_MSG_EQ(m_clock->AbsTimeToLocalTime(i->second, result), true, "Could not compute" );
+            NS_TEST_EXPECT_MSG_EQ(result, i->first, "test");
         }
 
 }
@@ -158,7 +160,7 @@ public:
     checks.insert(std::make_pair( Time(2), Time(1) ));
     checks.insert(std::make_pair( Time(4), Time(2) ));
     // Node's time grows at half simulation time speed
-//    AddTestCase (new ClockRawFrequencyTestCase (2.0, checks), TestCase::QUICK);
+    AddTestCase (new ClockRawFrequencyTestCase (.5, checks), TestCase::QUICK);
 
 //    AddTestCase (new ClockRawFrequencyTestCase (1.0, checks), TestCase::QUICK);
 //    AddTestCase (new ClockWithAdjTimeTestCase (factory), TestCase::QUICK);

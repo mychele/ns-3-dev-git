@@ -32,6 +32,130 @@ using namespace ns3;
 
 
 
+class NodeEventsTestCase : public TestCase
+{
+public:
+  SimulatorEventsTestCase (ObjectFactory schedulerFactory);
+  virtual void DoRun (void);
+  void EventA (int a);
+  void EventB (int b);
+  void EventC (int c);
+  void EventD (int d);
+  void Eventfoo0 (void);
+  uint64_t NowUs (void);
+  void destroy (void);
+  bool m_b;
+  bool m_a;
+  bool m_c;
+  bool m_d;
+  EventId m_idC;
+  bool m_destroy;
+  EventId m_destroyId;
+  ObjectFactory m_schedulerFactory;
+};
+
+
+
+void
+SimulatorEventsTestCase::DoRun (void)
+{
+  m_a = true;
+  m_b = false;
+  m_c = true;
+  m_d = false;
+
+  Simulator::SetScheduler (m_schedulerFactory);
+
+  EventId a = Simulator::Schedule (MicroSeconds (10), &SimulatorEventsTestCase::EventA, this, 1);
+  Simulator::Schedule (MicroSeconds (11), &SimulatorEventsTestCase::EventB, this, 2);
+  m_idC = Simulator::Schedule (MicroSeconds (12), &SimulatorEventsTestCase::EventC, this, 3);
+
+  NS_TEST_EXPECT_MSG_EQ (!m_idC.IsExpired (), true, "");
+  NS_TEST_EXPECT_MSG_EQ (!a.IsExpired (), true, "");
+  Simulator::Cancel (a);
+  NS_TEST_EXPECT_MSG_EQ (a.IsExpired (), true, "");
+  Simulator::Run ();
+  NS_TEST_EXPECT_MSG_EQ (m_a, true, "Event A did not run ?");
+  NS_TEST_EXPECT_MSG_EQ (m_b, true, "Event B did not run ?");
+  NS_TEST_EXPECT_MSG_EQ (m_c, true, "Event C did not run ?");
+  NS_TEST_EXPECT_MSG_EQ (m_d, true, "Event D did not run ?");
+
+  EventId anId = Simulator::ScheduleNow (&SimulatorEventsTestCase::Eventfoo0, this);
+  EventId anotherId = anId;
+  NS_TEST_EXPECT_MSG_EQ (!(anId.IsExpired () || anotherId.IsExpired ()), true, "Event should not have expired yet.");
+
+  Simulator::Remove (anId);
+  NS_TEST_EXPECT_MSG_EQ (anId.IsExpired (), true, "Event was removed: it is now expired");
+  NS_TEST_EXPECT_MSG_EQ (anotherId.IsExpired (), true, "Event was removed: it is now expired");
+
+  m_destroy = false;
+  m_destroyId = Simulator::ScheduleDestroy (&SimulatorEventsTestCase::destroy, this);
+  NS_TEST_EXPECT_MSG_EQ (!m_destroyId.IsExpired (), true, "Event should not have expired yet");
+  m_destroyId.Cancel ();
+  NS_TEST_EXPECT_MSG_EQ (m_destroyId.IsExpired (), true, "Event was canceled: should have expired now");
+
+  m_destroyId = Simulator::ScheduleDestroy (&SimulatorEventsTestCase::destroy, this);
+  NS_TEST_EXPECT_MSG_EQ (!m_destroyId.IsExpired (), true, "Event should not have expired yet");
+  Simulator::Remove (m_destroyId);
+  NS_TEST_EXPECT_MSG_EQ (m_destroyId.IsExpired (), true, "Event was canceled: should have expired now");
+
+  m_destroyId = Simulator::ScheduleDestroy (&SimulatorEventsTestCase::destroy, this);
+  NS_TEST_EXPECT_MSG_EQ (!m_destroyId.IsExpired (), true, "Event should not have expired yet");
+
+  Simulator::Run ();
+  NS_TEST_EXPECT_MSG_EQ (!m_destroyId.IsExpired (), true, "Event should not have expired yet");
+  NS_TEST_EXPECT_MSG_EQ (!m_destroy, true, "Event should not have run");
+
+  Simulator::Destroy ();
+  NS_TEST_EXPECT_MSG_EQ (m_destroyId.IsExpired (), true, "Event should have expired now");
+  NS_TEST_EXPECT_MSG_EQ (m_destroy, true, "Event should have run");
+}
+
+void
+SimulatorEventsTestCase::EventA (int a)
+{
+  m_a = false;
+}
+
+void
+SimulatorEventsTestCase::EventB (int b)
+{
+  if (b != 2 || NowUs () != 11)
+    {
+      m_b = false;
+    }
+  else
+    {
+      m_b = true;
+    }
+  Simulator::Remove (m_idC);
+  Simulator::Schedule (MicroSeconds (10), &SimulatorEventsTestCase::EventD, this, 4);
+}
+
+void
+SimulatorEventsTestCase::EventC (int c)
+{
+  m_c = false;
+}
+
+void
+SimulatorEventsTestCase::EventD (int d)
+{
+  if (d != 4 || NowUs () != (11+10))
+    {
+      m_d = false;
+    }
+  else
+    {
+      m_d = true;
+    }
+}
+
+void
+SimulatorEventsTestCase::Eventfoo0 (void)
+{}
+
+
 
 /*
 Idea of this test is :

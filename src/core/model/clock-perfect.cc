@@ -98,6 +98,10 @@ ClockPerfect::ClockPerfect ()
         m_ss_offset(0)
 {
 	NS_LOG_FUNCTION(this);
+	m_lastUpdateLocalTime= Simulator::Now();
+	m_lastUpdateAbsTime= Simulator::Now();
+	NS_LOG_UNCOND("Creating node at abs time" << m_lastUpdateAbsTime << m_lastUpdateAbsTime.GetInteger() );
+
 //    m_gen = CreateObject<UniformRandomVariable> ();
 //    m_gen->SetAttribute ("Min", DoubleValue(0));
 //    m_gen->SetAttributeFailSafe ("Max", DoubleValue(0));
@@ -246,7 +250,7 @@ bool
 //ClockPerfect::LocalDurationToAbsDuration(Time duration, Time& absDuration)
 ClockPerfect::LocalToAbsDuration(Time localDuration, Time& absDuration)
 {
-//    NS_LOG_FUNCTION(localStart,  localDuration);
+    NS_LOG_FUNCTION(localDuration);
 //
 //    NS_ASSERT_MSG(localStart > m_lastUpdateLocalTime, "We can't remember the frequency back then");
 

@@ -25,6 +25,7 @@
 #include "attribute-helper.h"
 #include "int64x64.h"
 #include "unused.h"
+#include "ns3/log.h"
 #include <stdint.h>
 #include <limits>
 #include <cmath>
@@ -759,6 +760,7 @@ operator / (const Time & lhs, const Time & rhs)
 inline Time
 operator / (const Time & lhs, const int64_t & rhs)
 {
+  NS_LOG_UNCOND("Trying to divide " << lhs.m_data << " by " << rhs);
   Time res = lhs;
   res.m_data /= rhs;
   return res;

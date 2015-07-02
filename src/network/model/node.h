@@ -36,6 +36,8 @@ class Packet;
 class Address;
 class Clock;
 class Time;
+class Scheduler;
+class ObjectFactory;
 
 /**
  * \ingroup network
@@ -209,19 +211,23 @@ public:
 
   // Matt C++11 hack
   template<typename ... Types>
-  EventId Schedule(Types... rest) {
-    return Simulator::Schedule(rest...);
+  EventId Schedule(Time const &time, Types... rest)
+  {
+      DoSchedule( MakeEvent(rest...));
+//    return Simulator::Schedule(rest...);
   }
 
+  void ScheduleNow (EventImpl *event);
 
     template<typename ... Types>
-    EventId ScheduleNow(Types... rest){
+    EventId ScheduleNow(Types... rest)
+    {
 
         EventId event = Simulator::Schedule(rest...);
         //    m_events[m_currentActiveEventsArray].push_back(event);
         return event;
     }
-
+  void SetScheduler (ObjectFactory schedulerFactory);
   void RefreshEvents(double oldFreq, double newFreq);
 
   /**
@@ -309,6 +315,9 @@ private:
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
 
+
+  Ptr<Scheduler> m_events;
+  EventId m_nextEvent;
 //  std::list<EventId> m_events[2];   //!< Store this node's events in order to update them
 //  int m_currentActiveEventsArray;   //!< Valid index of previous array
 //  Ptr<Clock> m_clock; //!< TODO removed, we want to aggregate it
