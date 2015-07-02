@@ -72,7 +72,7 @@ ClockRawFrequencyTestCase::ClockRawFrequencyTestCase(
 //        m_absDuration(absDuration),
 //        m_localDuration(localDuration),
 {
-
+    NS_LOG_FUNCTION(this);
 }
 
 
@@ -98,10 +98,17 @@ ClockRawFrequencyTestCase::DoRun (void)
         ++i
         )
         {
+            NS_LOG_UNCOND("hello world");
             //!
 //            i->first // local time
 //            i->second // abs time
-            NS_ASSERT( m_clock-> GetAbsTime)
+            Time result;
+            NS_TEST_EXPECT_MSG_EQ(m_clock->LocalTimeToAbsTime(i->first, result), true, "Time found");
+            NS_TEST_EXPECT_MSG_EQ(result, i->second, "Computed ");
+
+
+            NS_TEST_EXPECT_MSG_EQ(m_clock->AbsTimeToLocalTime(i->second, result) );
+            NS_ASSERT(result == i->first);
         }
 
 }
@@ -142,6 +149,7 @@ public:
     ClockRawFrequencyTestCase::LocalToAbsTimeList checks;
     checks.insert(std::make_pair( Time(1), Time(2) ));
     checks.insert(std::make_pair( Time(2), Time(4) ));
+
 
     // Node's time goes twice faster than simulation time
     AddTestCase (new ClockRawFrequencyTestCase (2.0, checks), TestCase::QUICK);

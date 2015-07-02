@@ -222,7 +222,7 @@ public:
         return event;
     }
 
-  void RefreshEvents();
+  void RefreshEvents(double oldFreq, double newFreq);
 
   /**
    * \returns true if checksums are enabled, false otherwise.

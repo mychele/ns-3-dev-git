@@ -18,9 +18,13 @@
  * Authors: Matthieu.coudron <matthieu.coudron@lip6.fr>
  */
 #include "clock.h"
+#include "ns3/log.h"
 
 
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("Clock");
+
 
 TypeId
 Clock::GetTypeId (void)
@@ -28,6 +32,7 @@ Clock::GetTypeId (void)
  // TODO add accuracy/freq/offset ?
   static TypeId tid = TypeId ("ns3::Clock")
     .SetParent<Object> ()
+    // TimeValue(InitialOffset)
 //    .AddConstructor<Clock> ()
 //    .AddTraceSource ("Resolution",
 //                     "Drop UDP packet due to receive buffer overflow",
@@ -45,6 +50,7 @@ Clock::GetTypeId (void)
   return tid;
 }
 
+
 TypeId
 Clock::GetInstanceTypeId (void) const
 {
@@ -52,4 +58,34 @@ Clock::GetInstanceTypeId (void) const
 	return GetTypeId();
 }
 
+
+void
+Clock::SettimeStepCallback( TimeStepCallback )
+{
+
+    NS_FATAL_ERROR("NOT implemented");
+}
+
+void
+Clock::SetFrequencyChangeCallback(FrequencyCallback frequencyCb)
+{
+    NS_LOG_FUNCTION (this << &frequencyCb);
+    m_onNewFrequency = frequencyCb;
+}
+
+void
+Clock::NotifyNewFrequency (double oldFreq, double newFreq)
+{
+  NS_LOG_FUNCTION (this);
+  if (!m_onNewFrequency.IsNull ())
+    {
+      m_onNewFrequency (oldFreq, newFreq);
+    }
+}
+
+void
+Clock::DoDispose()
+{
+    m_onNewFrequency = MakeNullCallback<void, double, double > ();
+}
 }

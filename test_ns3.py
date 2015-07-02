@@ -50,6 +50,8 @@ NS_LOG = ""
 # """
 NS_LOG += "*=error|warn|prefix_node|prefix_func"
 # NS_LOG += ":PointToPointNetDevice"
+NS_LOG += ":ClockTestSuite"
+
 # NS_LOG += ":PointToPointChannel"
 # NS_LOG += ":DropTailQueue"
 #NS_LOG += ":MpTcpMultiSuite"

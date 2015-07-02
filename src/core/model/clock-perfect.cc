@@ -30,16 +30,17 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("ClockPerfect");
 
+// TODO move to static
 inline Time
-LocalToAbs(Time t, double frequency)
+LocalToAbs(Time duration, double frequency)
 {
-    return t*frequency;
+    return duration*frequency;
 }
 
 inline Time
-AbsToLocal(Time t, double frequency)
+AbsToLocal(Time duration, double frequency)
 {
-    return t/frequency;
+    return duration/frequency;
 }
 
 
@@ -123,15 +124,15 @@ bool
 ClockPerfect::SetRawFrequency(double freq) {
 
     // TODO update after checking
-//	m_frequency
-//	if (!(m_frequency > m_minFrequency && this->freq < m_maxFrequency)) {
+//	m_rawFrequency
+//	if (!(m_rawFrequency > m_minFrequency && this->freq < m_maxFrequency)) {
 //		NS_LOG_ERROR("frequency outside allowed range ")
 ////               , this->freq - 1.0, MIN_FREQ - 1.0, MAX_FREQ - 1.0);
 ////		exit(1);
 //        return false;
 //	}
     NS_LOG_INFO("New frequency=" << freq);
-	m_frequency = freq;
+	m_rawFrequency = freq;
 	return true;
 }
 
@@ -163,8 +164,9 @@ ClockPerfect::SetTime(Time)
 }
 
 double
-ClockPerfect::GetRawFrequency() {
-
+ClockPerfect::GetRawFrequency() const
+{
+    return m_rawFrequency;
 }
 
 
@@ -175,8 +177,13 @@ ClockPerfect::ResetSingleShotParameters()
     m_ss_slew = 0;
     m_ss_offset = Time(0);
     m_ssOffsetCompletion.Cancel();
+
+//    double oldFrequency =
+    NotifyNewFrequency(GetTotalFrequency(), GetRawFrequency());
 }
 
+
+//
 bool
 ClockPerfect::AbsTimeLimitOfSSOffsetCompensation(Time& t)
 {
@@ -196,18 +203,31 @@ ClockPerfect::AbsTimeLimitOfSSOffsetCompensation(Time& t)
 //    LocalDurationToAbsDuration
 //}
 
-Time
-ClockPerfect::AbsTimeToLocalTime()
+bool
+ClockPerfect::AbsTimeToLocalTime(Time absTime, Time& localTime)
 {
     //!
+    NS_LOG_FUNCTION(absTime);
+
+    if(absTime < m_lastUpdateAbsTime)
+    {
+        NS_LOG_WARN("Requested time in the past " << absTime << " < " << m_lastUpdateAbsTime);
+        return false;
+    }
+
+    AbsDurationToLocalDuration( absTime - m_lastUpdateAbsTime, localTime );
+    localTime += m_lastUpdateLocalTime ;
+    return true;
 }
 
 
 
+// OK
 bool
 ClockPerfect::LocalTimeToAbsTime(Time localTime, Time &absTime)
 {
-    //!
+    NS_LOG_FUNCTION(localTime);
+
     if(localTime < m_lastUpdateLocalTime) {
         NS_LOG_WARN("Requested time in the past " << localTime << " < " << m_lastUpdateLocalTime);
         return false;
@@ -215,12 +235,47 @@ ClockPerfect::LocalTimeToAbsTime(Time localTime, Time &absTime)
 
 //    NS_ASSERT()
 
+    // Returns
+    LocalToAbsDuration(localTime - m_lastUpdateLocalTime, absTime);
+    absTime += m_lastUpdateAbsTime;
+    return true;
+}
+
+// Ok
+bool
+//ClockPerfect::LocalDurationToAbsDuration(Time duration, Time& absDuration)
+ClockPerfect::LocalToAbsDuration(Time localDuration, Time& absDuration)
+{
+//    NS_LOG_FUNCTION(localStart,  localDuration);
+//
+//    NS_ASSERT_MSG(localStart > m_lastUpdateLocalTime, "We can't remember the frequency back then");
+
+    absDuration = localDuration * GetTotalFrequency();
     return true;
 }
 
 
-Time
-ClockPerfect::LocalDurationToAbsDuration(Time duration, bool)
+double
+ClockPerfect::GetTotalFrequency() const
+{
+    //!
+    return m_ss_slew + m_rawFrequency;
+}
+
+bool
+ClockPerfect::AbsDurationToLocalDuration(Time absDuration, Time& localDuration)
+{
+
+    localDuration = absDuration / GetTotalFrequency();
+    return true;
+}
+
+#if 0
+// intervertir bool et Time dans le proto
+// Ca depend de quand ca commence
+bool
+//ClockPerfect::LocalDurationToAbsDuration(Time duration, Time& absDuration)
+ClockPerfect::LocalToAbsDuration(Time localStart, Time localDuration, Time& absDuration)
 {
     /**
      We need to distinguish bounds for phases between several phases depending :
@@ -249,7 +304,7 @@ ClockPerfect::LocalDurationToAbsDuration(Time duration, bool)
 
     return absDuration;
 }
-
+#endif
 
 // eglibc-2.19/sysdeps/unix/sysv/linux/adjtime.c
 /*

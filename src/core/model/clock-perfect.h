@@ -79,13 +79,13 @@ public:
 		virtual int AdjTime(Time delta, Time *olddelta);
 
     // Maybe the simulator should define a rawFrequency too
-    virtual double GetRawFrequency();
+    virtual double GetRawFrequency() const;
 
     /**
     Adds ss_slew
     \warn
      */
-//    virtual double GetTotalFrequency();
+    virtual double GetTotalFrequency() const;
 
     /**
      * Ideally we would pass a frequency generator that adds some noise
@@ -107,7 +107,7 @@ public:
 
 //    virtual void SetPrecision(Time);
 //    virtual Time GetPrecision(Time);
-protected:
+
     // Will call Node
     int RefreshEvents();
 
@@ -121,6 +121,8 @@ protected:
 
     /**
      LocalTime must be >
+
+     May be merged with the next one
     */
     bool
     LocalTimeToAbsTime(Time localTime, Time &absTime);
@@ -130,14 +132,19 @@ protected:
      * \param oldParameters use old frequency etc...
      *  \return original offset
     */
-    Time AbsToLocal(Time , bool oldParameters = false);
+//    Time AbsToLocal(Time , bool oldParameters = false);
+    bool
+    AbsTimeToLocalTime(Time absTime, Time& localTime);
 
     /**
      * Conversion is composed of 2 phases; one with SS frequency,
      * one whithout
      */
-    Time LocalDurationToAbsDuration(Time duration, bool);
+    bool LocalToAbsDuration(Time localDuration, Time& absDuration);
+    bool AbsDurationToLocalDuration(Time absDuration, Time& localDuration);
+//    bool LocalToAbsDuration(Time localDuration, Time& absDuration);
 
+protected:
     Time m_lastUpdateLocalTime; //!<
     Time m_lastUpdateAbsTime;   //!<
 
@@ -146,20 +153,26 @@ protected:
 
     ClockParameters parameters[2];  //!< old and new parameters (use std::swap)
 
-//	double m_frequency;
+//	double m_rawFrequency;
 //	double m_ss_maxSlew;
 
 	void UpdateTime();
 
 	TracedValue<Time> m_time;
 	TracedValue<Time> m_timeOfLastUpdate;	//!<
-	double m_frequency;
+	double m_rawFrequency;
 	double m_maxFrequency;
 	double m_minFrequency;
 
 	int m_maxSlewRate;	//!< cap frequency change
 
 	EventId m_ssOffsetCompletion;   //!< Timer that says when to reset ss_slew and ss_offset
+
+	/* */
+//	Callback<> OnNewFrequency(oldFrequency, newFrequency);
+//
+//	//!
+//	Callback<> OnTimeStep(oldFrequency, newFrequency);
 
 //	m_precision;
 

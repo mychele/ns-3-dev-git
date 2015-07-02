@@ -38,11 +38,14 @@ Inspired by clknetsim
 class Clock : public Object
 {
 public:
-		static TypeId GetTypeId (void);
-		virtual TypeId
-		GetInstanceTypeId (void) const;
+    typedef Callback<void, double, double> FrequencyCallback;
 
 
+    typedef Callback<void, double, double> TimeStepCallback;
+
+    static TypeId GetTypeId (void);
+    virtual TypeId
+    GetInstanceTypeId (void) const;
 //enum Result {
 //	 TIME_INS = 1 /* insert leap second */
 //	 TIME_DEL = 2 /* delete leap second */
@@ -67,15 +70,26 @@ public:
     **/
     virtual int AdjTime(Time delta, Time *olddelta) = 0;
 
+    virtual void SetFrequencyChangeCallback(FrequencyCallback);
 
-    #if 0
-#define TIME_OK   0 /* clock synchronized */
-	 #define TIME_INS  1 /* insert leap second */
-	 #define TIME_DEL  2 /* delete leap second */
-	 #define TIME_OOP  3 /* leap second in progress */
-	 #define TIME_WAIT 4 /* leap second has occurred */
-	 #define TIME_BAD  5 /* clock not synchronized */
-#endif
+    //! TODO
+    virtual void SettimeStepCallback( TimeStepCallback );
+
+
+    void DoDispose();
+
+protected:
+    void NotifyNewFrequency (double oldFreq, double newFreq);
+
+private:
+
+    // Set total frequency as a TraceSource ?
+    // or as DeviceAdditionListenerList, ie if several classes
+    // want to get notified ?
+    TimeStepCallback m_onTimeStep;
+    FrequencyCallback m_onNewFrequency;
+
+
     /**
     Permit to send time relatively to the absolute time
      */

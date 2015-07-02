@@ -34,6 +34,7 @@
 #include "ns3/clock.h"
 #include "ns3/clock-perfect.h"
 #include "ns3/nstime.h"
+#include "ns3/callback.h"
 
 namespace ns3 {
 
@@ -104,6 +105,10 @@ Node::Construct (void)
 
   Ptr<Clock> clock = CreateObject<ClockPerfect>();
   AggregateObject(clock);
+//  TimeStepCallback
+  // TODO do it evertyime a clock is aggregated
+  clock->SetFrequencyChangeCallback(MakeCallback(&Node::RefreshEvents, Ptr<Node> (this)));
+//  clock->SetTimeStepCallback( MakeBoundCallback(Node::RefreshEvents, this) );
 }
 
 Node::~Node ()
@@ -132,8 +137,9 @@ Node::GetWallTime(void) const
 
 
 void
-Node::RefreshEvents() {
-
+Node::RefreshEvents(double oldFreq, double newFreq)
+{
+    NS_LOG_DEBUG("Should now refresh event expiration times " << oldFreq << "/" << newFreq);
 //    Loop through all events whose context is this node ID
 #if 0
     int nextArray = (m_currentActiveEventsArray  + 1) %2;
