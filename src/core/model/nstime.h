@@ -662,10 +662,17 @@ private:
   friend bool operator > (const Time & lhs, const Time & rhs);
   friend Time operator + (const Time & lhs, const Time & rhs);
   friend Time operator - (const Time & lhs, const Time & rhs);
-  friend Time operator * (const Time & lhs, const int64_t & rhs);
-  friend Time operator * (const int64_t & lhs, const Time & rhs);
+//  friend Time operator * (const Time & lhs, const int64_t & rhs);
+//  friend Time operator * (const int64_t & lhs, const Time & rhs);
+ template <typename T>
+ friend Time operator * (const Time & lhs, const T & rhs);
+ template <typename T>
+ friend Time operator * (const T & lhs, const Time & rhs);
+
+
   friend int64_t operator / (const Time & lhs, const Time & rhs);
-  friend Time operator / (const Time & lhs, const int64_t & rhs);
+  template<typename T>
+  friend Time operator / (const Time & lhs, const T & rhs);
   friend Time & operator += (Time & lhs, const Time & rhs);
   friend Time & operator -= (Time & lhs, const Time & rhs);
   /**@}*/
@@ -737,15 +744,17 @@ inline Time operator - (const Time & lhs, const Time & rhs)
 {
   return Time (lhs.m_data - rhs.m_data);
 }
+template <typename T>
 inline Time
-operator * (const Time & lhs, const int64_t & rhs)
+operator * (const Time & lhs, const T & rhs)
 {
   Time res = lhs;
   res.m_data *= rhs;
   return res;
 }
+template<typename T>
 inline Time
-operator * (const int64_t & lhs, const Time & rhs)
+operator * (const T & lhs, const Time & rhs)
 {
   Time res = rhs;
   res.m_data *= lhs;
@@ -757,14 +766,14 @@ operator / (const Time & lhs, const Time & rhs)
   int64_t res = lhs.m_data / rhs.m_data;
   return res;
 }
+template <typename T>
 inline Time
-operator / (const Time & lhs, const int64_t & rhs)
-{
-  NS_LOG_UNCOND("Trying to divide " << lhs.m_data << " by " << rhs);
-  Time res = lhs;
-  res.m_data /= rhs;
-  return res;
-}
+operator / (const Time & lhs, const T & rhs)
+ {
+   Time res = lhs;
+   res.m_data /= rhs;
+   return res;
+ }
 inline Time & operator += (Time & lhs, const Time & rhs)
 {
   lhs.m_data += rhs.m_data;

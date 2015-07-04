@@ -48,7 +48,7 @@ class Scheduler;
 class SimulatorImpl : public Object
 {
 public:
-  
+
   /**
    * Get the registered TypeId for this class.
    * \return The object TypeId.
@@ -127,11 +127,11 @@ public:
    */
   virtual EventId ScheduleDestroy (EventImpl *event) = 0;
   /**
-   * Remove an event from the event list. 
-   * 
-   * This method has the same visible effect as the 
+   * Remove an event from the event list.
+   *
+   * This method has the same visible effect as the
    * ns3::EventId::Cancel method
-   * but its algorithmic complexity is much higher: it has often 
+   * but its algorithmic complexity is much higher: it has often
    * O(log(n)) complexity, sometimes O(n), sometimes worse.
    * Note that it is not possible to remove events which were scheduled
    * for the "destroy" time. Doing so will result in a program error (crash).
@@ -143,13 +143,13 @@ public:
    * Set the cancel bit on this event: the event's associated function
    * will not be invoked when it expires.
    *
-   * This method has the same visible effect as the 
-   * ns3::Simulator::Remove method but its algorithmic complexity is 
+   * This method has the same visible effect as the
+   * ns3::Simulator::Remove method but its algorithmic complexity is
    * much lower: it has O(1) complexity.
    * This method has the exact same semantics as ns3::EventId::Cancel.
    * Note that it is not possible to cancel events which were scheduled
    * for the "destroy" time. Doing so will result in a program error (crash).
-   * 
+   *
    * \param id the event to cancel
    */
   virtual void Cancel (const EventId &id) = 0;
@@ -197,7 +197,7 @@ public:
   /**
    * Get the maximum representable simulation time.
    *
-   * \return The maximum simulation time at which an event 
+   * \return The maximum simulation time at which an event
    *          can be scheduled.
    *
    * The returned value will always be bigger than or equal to Simulator::Now.
@@ -220,13 +220,24 @@ public:
    * in a distributed simulation.  For MPI this is the MPI rank.
    * \return The system id for this simulator.
    */
-  virtual uint32_t GetSystemId () const = 0; 
+  virtual uint32_t GetSystemId () const = 0;
   /**
    * Get the current simulation context.
    *
    * \return The current simulation context
    */
   virtual uint32_t GetContext (void) const = 0;
+
+  /**
+   * Get the current simulation context.
+   *
+   * \return The current simulation context
+   */
+  virtual uint32_t GetFreeUid (void) const {
+//    NS_FATYA()
+        // Hack matt, to clean later
+        return 0;
+  };
 };
 
 } // namespace ns3

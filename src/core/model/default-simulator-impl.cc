@@ -96,7 +96,7 @@ void
 DefaultSimulatorImpl::Destroy ()
 {
   NS_LOG_FUNCTION (this);
-  while (!m_destroyEvents.empty ()) 
+  while (!m_destroyEvents.empty ())
     {
       Ptr<EventImpl> ev = m_destroyEvents.front ().PeekEventImpl ();
       m_destroyEvents.pop_front ();
@@ -126,7 +126,7 @@ DefaultSimulatorImpl::SetScheduler (ObjectFactory schedulerFactory)
 }
 
 // System ID for non-distributed simulation is always zero
-uint32_t 
+uint32_t
 DefaultSimulatorImpl::GetSystemId (void) const
 {
   return 0;
@@ -150,7 +150,7 @@ DefaultSimulatorImpl::ProcessOneEvent (void)
   ProcessEventsWithContext ();
 }
 
-bool 
+bool
 DefaultSimulatorImpl::IsFinished (void) const
 {
   return m_events->IsEmpty () || m_stop;
@@ -195,7 +195,7 @@ DefaultSimulatorImpl::Run (void)
   ProcessEventsWithContext ();
   m_stop = false;
 
-  while (!m_events->IsEmpty () && !m_stop) 
+  while (!m_events->IsEmpty () && !m_stop)
     {
       ProcessOneEvent ();
     }
@@ -205,14 +205,14 @@ DefaultSimulatorImpl::Run (void)
   NS_ASSERT (!m_events->IsEmpty () || m_unscheduledEvents == 0);
 }
 
-void 
+void
 DefaultSimulatorImpl::Stop (void)
 {
   NS_LOG_FUNCTION (this);
   m_stop = true;
 }
 
-void 
+void
 DefaultSimulatorImpl::Stop (Time const &time)
 {
   NS_LOG_FUNCTION (this << time.GetTimeStep ());
@@ -241,6 +241,11 @@ DefaultSimulatorImpl::Schedule (Time const &time, EventImpl *event)
   m_unscheduledEvents++;
   m_events->Insert (ev);
   return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+}
+
+uint32_t DefaultSimulatorImpl::GetFreeUid (void)
+{
+    return m_uid++;
 }
 
 void
@@ -279,15 +284,16 @@ DefaultSimulatorImpl::ScheduleNow (EventImpl *event)
 {
   NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::ScheduleNow Thread-unsafe invocation!");
 
-  Scheduler::Event ev;
-  ev.impl = event;
-  ev.key.m_ts = m_currentTs;
-  ev.key.m_context = GetContext ();
-  ev.key.m_uid = m_uid;
-  m_uid++;
-  m_unscheduledEvents++;
-  m_events->Insert (ev);
-  return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
+  return Schedule( Time(0), event);
+//  Scheduler::Event ev;
+//  ev.impl = event;
+//  ev.key.m_ts = m_currentTs;
+//  ev.key.m_context = GetContext ();
+//  ev.key.m_uid = m_uid;
+//  m_uid++;
+//  m_unscheduledEvents++;
+//  m_events->Insert (ev);
+//  return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
 }
 
 EventId
@@ -308,7 +314,7 @@ DefaultSimulatorImpl::Now (void) const
   return TimeStep (m_currentTs);
 }
 
-Time 
+Time
 DefaultSimulatorImpl::GetDelayLeft (const EventId &id) const
 {
   if (IsExpired (id))
@@ -387,7 +393,7 @@ DefaultSimulatorImpl::IsExpired (const EventId &id) const
       id.GetTs () < m_currentTs ||
       (id.GetTs () == m_currentTs &&
        id.GetUid () <= m_currentUid) ||
-      id.PeekEventImpl ()->IsCancelled ()) 
+      id.PeekEventImpl ()->IsCancelled ())
     {
       return true;
     }
@@ -397,7 +403,7 @@ DefaultSimulatorImpl::IsExpired (const EventId &id) const
     }
 }
 
-Time 
+Time
 DefaultSimulatorImpl::GetMaximumSimulationTime (void) const
 {
   /// \todo I am fairly certain other compilers use other non-standard

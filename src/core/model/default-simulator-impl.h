@@ -68,14 +68,15 @@ public:
   virtual Time GetDelayLeft (const EventId &id) const;
   virtual Time GetMaximumSimulationTime (void) const;
   virtual void SetScheduler (ObjectFactory schedulerFactory);
-  virtual uint32_t GetSystemId (void) const; 
+  virtual uint32_t GetSystemId (void) const;
   virtual uint32_t GetContext (void) const;
+  virtual uint32_t GetFreeUid (void);
 
 private:
   virtual void DoDispose (void);
   void ProcessOneEvent (void);
   void ProcessEventsWithContext (void);
- 
+
   struct EventWithContext {
     uint32_t context;
     uint64_t timestamp;

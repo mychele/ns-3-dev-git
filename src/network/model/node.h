@@ -28,6 +28,7 @@
 #include "ns3/ptr.h"
 #include "ns3/net-device.h"
 #include "ns3/simulator.h"
+#include "ns3/make-event.h"
 
 namespace ns3 {
 
@@ -211,22 +212,43 @@ public:
 
   // Matt C++11 hack
   template<typename ... Types>
-  EventId Schedule(Time const &time, Types... rest)
+  EventId Schedule(Time const &timeOffset, Types... rest)
   {
-      DoSchedule( MakeEvent(rest...));
+      // That's basically what does Simulator::DoSchedule
+      // Pare
+      return DoSchedule( timeOffset, MakeEvent( (rest)...));
 //    return Simulator::Schedule(rest...);
   }
 
-  void ScheduleNow (EventImpl *event);
+  EventId ScheduleNow (EventImpl *event);
 
     template<typename ... Types>
     EventId ScheduleNow(Types... rest)
     {
 
-        EventId event = Simulator::Schedule(rest...);
+        EventId event = DoSchedule(Time(0), rest...);
         //    m_events[m_currentActiveEventsArray].push_back(event);
         return event;
     }
+
+
+  EventId DoSchedule (Time const &time, EventImpl *event);
+
+  /** return local next event **/
+  EventId GetNextEvent() const;
+  EventId GetNextEventSim() const;
+  // GetTime
+//  virtual Time Now (EventImpl *event);
+
+  /**
+  EventImpl will have a time local
+  **/
+
+
+  // Does remove make sense ?
+  // virtual void Remove (const EventId &id);
+  virtual void Cancel (const EventId &id);
+
   void SetScheduler (ObjectFactory schedulerFactory);
   void RefreshEvents(double oldFreq, double newFreq);
 
@@ -244,6 +266,12 @@ protected:
    */
   virtual void DoDispose (void);
   virtual void DoInitialize (void);
+
+  virtual void SwapNextEvent(
+//                    Time eventSimTime,
+                    EventId localEvent
+//                    EventImpl* newNextEvent
+                    );
 private:
 
   /**
@@ -317,7 +345,10 @@ private:
 
 
   Ptr<Scheduler> m_events;
-  EventId m_nextEvent;
+  std::pair<EventId,EventId> m_nextEvent;   //!< mapping local / simulator events
+
+//  uint32_t    m_nextSimulatorUid;         //!< mapping of
+  uint32_t    m_localUid;         //!< Next free event uid
 //  std::list<EventId> m_events[2];   //!< Store this node's events in order to update them
 //  int m_currentActiveEventsArray;   //!< Valid index of previous array
 //  Ptr<Clock> m_clock; //!< TODO removed, we want to aggregate it

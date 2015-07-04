@@ -52,6 +52,7 @@ NS_LOG += "*=error|warn|prefix_node|prefix_func"
 # NS_LOG += ":PointToPointNetDevice"
 NS_LOG += ":ClockTest"
 NS_LOG += ":ClockPerfect"
+NS_LOG += ":TestNodeScheduling"
 
 # NS_LOG += ":PointToPointChannel"
 # NS_LOG += ":DropTailQueue"
