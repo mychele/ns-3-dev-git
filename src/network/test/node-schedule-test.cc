@@ -40,6 +40,7 @@ TODO
 -create another class
 
 rename ConstantFrequency
+TODO schedule 2 events at the same time
 **/
 
 //struct LocalToAbs
@@ -77,8 +78,12 @@ public:
   ObjectFactory m_schedulerFactory;
 
 protected:
-  void CheckTimes(int i);
+    // Rename to CommonToAllEvents
+  void GenericChecks(int i);
+  Time GetSchedule(int i);
+
 private:
+  // True
   bool m_a;
   bool m_b;
   bool m_c;
@@ -109,14 +114,30 @@ NodeEventsTestCase::DoSetup (void)
     // TODO should be able to set the clock
 //    Ptr<ClockPerfect> clock = CreateObject<ClockPerfect>();
     m_node = CreateObject<Node>();
-    NS_ASSERT(m_node->GetObject<ClockPerfect>()->SetRawFrequency(m_clockRawFrequency));
+//    Ptr<ClockPerfect> clock = m_node->GetObject<ClockPerfect>("ns3::ClockPerfect");
+    Ptr<ClockPerfect> clock = m_node->GetObject<ClockPerfect>();
+//    Ptr<ClockPerfect> clock = m_node->GetObject<ClockPerfect>();
+    NS_ASSERT(clock->SetRawFrequency(m_clockRawFrequency));
     // TODO set scheduler
+
+    // By default no event is marked as executed
+    m_a = false;
+    m_b = false;
+    m_c = false;
+    m_d = false;
+}
+
+Time
+NodeEventsTestCase::GetSchedule(int i)
+{
+    NS_ASSERT( i >= 0 && i < m_milestones.size());
+    return m_milestones[i].first;
 }
 
 void
-NodeEventsTestCase::CheckTimes(int i)
+NodeEventsTestCase::GenericChecks(int i)
 {
-    NS_ASSERT( i > 0 && i < m_milestones.size());
+    NS_ASSERT( i >= 0 && i < m_milestones.size());
     Time expectedNodeTime = m_milestones[i].first ;
     Time expectedSimTime = m_milestones[i].second ;
 
@@ -127,25 +148,30 @@ NodeEventsTestCase::CheckTimes(int i)
 void
 NodeEventsTestCase::DoRun (void)
 {
-  m_a = true;
-  m_b = false;
-  m_c = true;
-  m_d = false;
+
+  NS_TEST_EXPECT_MSG_EQ (m_a, false, "Wrong setup");
+  NS_TEST_EXPECT_MSG_EQ (m_b, false, "Wrong setup");
+  NS_TEST_EXPECT_MSG_EQ (m_c, false, "Wrong setup");
+  NS_TEST_EXPECT_MSG_EQ (m_d, false, "Wrong setup");
+
 
 //  Simulator::SetScheduler (m_schedulerFactory);
 
-  EventId a = m_node->Schedule ( NanoSeconds(10), &NodeEventsTestCase::EventA, this, 1);
+  EventId a = m_node->Schedule ( GetSchedule(0), &NodeEventsTestCase::EventA, this, 1);
 
-//  Simulator::Schedule (MicroSeconds (11), &NodeEventsTestCase::EventB, this, 2);
+  m_node->Schedule ( GetSchedule(1), &NodeEventsTestCase::EventB, this, 2);
+  m_idC = m_node->Schedule (GetSchedule(2), &NodeEventsTestCase::EventC, this, 3);
 
 //  m_idC = Simulator::Schedule (MicroSeconds (12), &NodeEventsTestCase::EventC, this, 3);
 //  NS_TEST_EXPECT_MSG_EQ (!m_idC.IsExpired (), true, "");
 
   NS_TEST_EXPECT_MSG_EQ (!a.IsExpired (), true, "");
-  Simulator::Cancel (a);
+  m_node->Cancel (a);
   NS_TEST_EXPECT_MSG_EQ (a.IsExpired (), true, "");
   Simulator::Run ();
-  NS_TEST_EXPECT_MSG_EQ (m_a, true, "Event A did not run ?");
+  NS_TEST_EXPECT_MSG_EQ (m_a, false, "Event should not run");
+
+
 //  NS_TEST_EXPECT_MSG_EQ (m_b, true, "Event B did not run ?");
 //  NS_TEST_EXPECT_MSG_EQ (m_c, true, "Event C did not run ?");
 //  NS_TEST_EXPECT_MSG_EQ (m_d, true, "Event D did not run ?");
@@ -184,14 +210,14 @@ NodeEventsTestCase::DoRun (void)
 void
 NodeEventsTestCase::EventA (int a)
 {
-  CheckTimes(0);
+  GenericChecks(0);
   m_a = false;
 }
 
 void
 NodeEventsTestCase::EventB (int b)
 {
-    CheckTimes(1);
+    GenericChecks(1);
 //  if (b != 2 || NowUs () != 11)
 //    {
 //      m_b = false;
@@ -259,11 +285,21 @@ public:
     ObjectFactory factory;
     factory.SetTypeId (ListScheduler::GetTypeId ());
     NodeEventsTestCase::LocalToAbsTimeList checks;
-    checks.push_back(std::make_pair( Time(1), Time(2) ));
-    checks.push_back(std::make_pair( Time(2), Time(4) ));
+    checks.push_back(std::make_pair( Time(1), Time(1) ));
+    checks.push_back(std::make_pair( Time(2), Time(2) ));
+    checks.push_back(std::make_pair( Time(3), Time(3) ));
 
     AddTestCase (new NodeEventsTestCase (factory, 1.0, checks), TestCase::QUICK);
-    checks.clear();
+
+
+    /// Node clock twice faster than sim time
+    /////////////////////////////////////////////////////
+//    checks.clear();
+//    checks.push_back(std::make_pair( Time(1), Time(2) ));
+//    checks.push_back(std::make_pair( Time(2), Time(4) ));
+//    checks.push_back(std::make_pair( Time(3), Time(6) ));
+//
+//    AddTestCase (new NodeEventsTestCase (factory, 2.0, checks), TestCase::QUICK);
 
   }
 } g_nodeClockTestSuite;

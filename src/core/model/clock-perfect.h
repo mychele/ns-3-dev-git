@@ -83,6 +83,7 @@ public:
 
     /**
     Adds ss_slew
+    if frequency can change, make it mutable
     \warn
      */
     virtual double GetTotalFrequency() const;

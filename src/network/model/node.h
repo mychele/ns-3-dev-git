@@ -210,6 +210,11 @@ public:
    */
   void UnregisterDeviceAdditionListener (DeviceAdditionListener listener);
 
+  // when a clock is aggregated
+  virtual void NotifyNewAggregate ();
+
+  virtual void SetClock (Ptr<Clock> clock);
+
   // Matt C++11 hack
   template<typename ... Types>
   EventId Schedule(Time const &timeOffset, Types... rest)
@@ -343,7 +348,7 @@ private:
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
 
-
+  Ptr<Clock> m_clock;
   Ptr<Scheduler> m_events;
   std::pair<EventId,EventId> m_nextEvent;   //!< mapping local / simulator events
 

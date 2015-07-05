@@ -134,10 +134,43 @@ Node::Construct (void)
 
 //  TimeStepCallback
   // TODO do it evertyime a clock is aggregated
-  clock->SetFrequencyChangeCallback(MakeCallback(&Node::RefreshEvents, Ptr<Node> (this)));
+
 //  clock->SetTimeStepCallback( MakeBoundCallback(Node::RefreshEvents, this) );
 
 
+}
+
+void
+Node::SetClock (Ptr<Clock> clock)
+{
+  NS_LOG_FUNCTION (this);
+
+  //!
+  if (clock != 0)
+    {
+        //!
+      m_clock = clock;
+      m_clock->SetFrequencyChangeCallback(MakeCallback(&Node::RefreshEvents, Ptr<Node> (this)));
+    }
+}
+
+void
+Node::NotifyNewAggregate ()
+{
+  NS_LOG_FUNCTION (this);
+  if (m_clock == 0)
+    {
+      Ptr<Clock> clock = this->GetObject<Clock> ();
+      //verify that it's a valid node and that
+      //the node was not set before
+//      if (clock != 0)
+//        {
+          this->SetClock (clock);
+
+//        }
+    }
+
+  Object::NotifyNewAggregate ();
 }
 
 void
@@ -311,7 +344,7 @@ void
 Node::Cancel (const EventId &id)
 {
     //
-    NS_FATAL_ERROR("Not implemented yet");
+//    NS_FATAL_ERROR("Not implemented yet");
     // If already in simulator list
     if(id == GetNextEvent()) {
 
