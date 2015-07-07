@@ -9,7 +9,7 @@ available_suites = [
     "tcp-option-mptcp",
     "mptcp-crypto",
     "clock",
-    "node-clock-interactions",
+    "node-scheduling",
     "mptcp-mapping",
     "time"
 ]

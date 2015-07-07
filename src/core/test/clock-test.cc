@@ -35,11 +35,6 @@ ChangeFrequency,
 ChangeOffset
 };
 
-union TestValue {
-double frequency;
-Time matchingAbs;
-};
-
 struct ClockTestParameters {
 
 ClockTestParameters( double freq ) :

@@ -149,21 +149,20 @@ public:
     Time GetLastTimeUpdateSim() const;
 
 protected:
-//    Time m_lastUpdateLocalTime; //!<
-//    Time m_lastUpdateAbsTime;   //!<
-    // there is no overload
     TracedValue<std::pair<Time,Time> > m_timeOfLastUpdate;	//!< local/abs
+
 private:
 
 
     double m_ss_slew;  //!< SingleShot slew
     Time m_ss_offset;  //!< SingleShot offset
 
-    ClockParameters parameters[2];  //!< old and new parameters (use std::swap)
-
+//    ClockParameters parameters[2];  //!< old and new parameters (use std::swap)
 	void UpdateTime();
 
-	double m_rawFrequency;
+	// TODO swhould be a traced Value so that node can Trace
+	// node should be made friend then
+	TracedValue<double> m_rawFrequency;  //!< m_node should connect to it
 	double m_maxFrequency;
 	double m_minFrequency;
 
@@ -171,13 +170,6 @@ private:
 
 	EventId m_ssOffsetCompletion;   //!< Timer that says when to reset ss_slew and ss_offset
 
-	/* */
-//	Callback<> OnNewFrequency(oldFrequency, newFrequency);
-//
-//	//!
-//	Callback<> OnTimeStep(oldFrequency, newFrequency);
-
-//	m_precision;
 
 //    double m_maxRandomOffset;
 //    Ptr<RandomVariableStream> m_gen;
