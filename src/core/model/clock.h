@@ -79,7 +79,7 @@ public:
     void DoDispose();
 
 protected:
-    void NotifyNewFrequency (double oldFreq, double newFreq);
+    virtual void NotifyNewFrequency (double oldFreq, double newFreq);
 
 private:
 

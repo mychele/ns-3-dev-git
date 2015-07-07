@@ -93,14 +93,20 @@ ClockPerfect::ClockPerfect ()
 //:
 //        m_maxRandomOffset(0)
     :
-        m_lastUpdateLocalTime(0),
-        m_lastUpdateAbsTime(0),
-        m_ss_offset(0)
+//        GetLastTimeUpdateLocal()(0),
+//        m_lastUpdateAbsTime(0),
+
+        m_ss_offset(Time(0)),
+        m_ss_slew(0),
+        m_rawFrequency(1.)
 {
 	NS_LOG_FUNCTION(this);
-	m_lastUpdateLocalTime= Simulator::Now();
-	m_lastUpdateAbsTime= Simulator::Now();
-	NS_LOG_UNCOND("Creating node at abs time" << m_lastUpdateAbsTime << m_lastUpdateAbsTime.GetInteger() );
+	m_timeOfLastUpdate.Set(std::make_pair(Simulator::Now(),Simulator::Now()) );
+//	GetLastTimeUpdateLocal()= Simulator::Now();
+//	m_lastUpdateAbsTime= Simulator::Now();
+	NS_LOG_UNCOND("Creating node at abs time"
+               << GetLastTimeUpdateSim()
+               );
 
 //    m_gen = CreateObject<UniformRandomVariable> ();
 //    m_gen->SetAttribute ("Min", DoubleValue(0));
@@ -125,7 +131,8 @@ int RefreshEvents();
 
 
 bool
-ClockPerfect::SetRawFrequency(double freq) {
+ClockPerfect::SetRawFrequency(double freq)
+{
 
     // TODO update after checking
 //	m_rawFrequency
@@ -135,9 +142,34 @@ ClockPerfect::SetRawFrequency(double freq) {
 ////		exit(1);
 //        return false;
 //	}
+    NS_ASSERT(freq > 0);
     NS_LOG_INFO("New frequency=" << freq);
-	m_rawFrequency = freq;
+	double oldFreq = m_rawFrequency;
+
+
+
+	// Move to a private function UpdateTime ?
+	// Can't use
+	Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
+    m_timeOfLastUpdate = std::make_pair( currentTime, Simulator::Now() );
+    m_rawFrequency = freq;
+
+	NotifyNewFrequency(oldFreq, m_rawFrequency);
 	return true;
+}
+
+Time
+ClockPerfect::GetLastTimeUpdateLocal() const
+{
+    //!
+    return m_timeOfLastUpdate.Get().first;
+}
+
+Time
+ClockPerfect::GetLastTimeUpdateSim() const
+{
+    //!
+    return m_timeOfLastUpdate.Get().second;
 }
 
 void
@@ -152,7 +184,8 @@ ClockPerfect::GetTime()
     NS_LOG_FUNCTION(this);
 
     // TODO display both separately
-    Time res = Simulator::Now();
+//    Time res = Simulator::Now();
+    Time res = GetLastTimeUpdateLocal() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
     NS_LOG_DEBUG("PerfectTime=" << res);
 //    res += Time(m_gen->GetValue());
 //    NS_LOG_UNCOND("Time after random (" << m_gen->GetMin() << ", " << m_gen->GetMax() << " offset =" << res);
@@ -207,20 +240,17 @@ ClockPerfect::AbsTimeLimitOfSSOffsetCompensation(Time& t)
 //    LocalDurationToAbsDuration
 //}
 
+// TODO return Time instead
 bool
 ClockPerfect::AbsTimeToLocalTime(Time absTime, Time& localTime)
 {
     //!
     NS_LOG_FUNCTION(absTime);
 
-    if(absTime < m_lastUpdateAbsTime)
-    {
-        NS_LOG_WARN("Requested time in the past " << absTime << " < " << m_lastUpdateAbsTime);
-        return false;
-    }
+    NS_ASSERT_MSG(absTime >= GetLastTimeUpdateSim(), "Can't convert to a time in the past");
 
-    AbsDurationToLocalDuration( absTime - m_lastUpdateAbsTime, localTime );
-    localTime += m_lastUpdateLocalTime ;
+    localTime = AbsToLocalDuration( absTime - GetLastTimeUpdateSim());
+    localTime += GetLastTimeUpdateLocal() ;
     return true;
 }
 
@@ -231,17 +261,17 @@ bool
 ClockPerfect::LocalTimeToAbsTime(Time localTime, Time &absTime)
 {
     NS_LOG_FUNCTION(localTime);
-
-    if(localTime < m_lastUpdateLocalTime) {
-        NS_LOG_WARN("Requested time in the past " << localTime << " < " << m_lastUpdateLocalTime);
-        return false;
-    }
+    NS_ASSERT_MSG(localTime >= GetLastTimeUpdateLocal(), "Can't convert to a time in the past");
+//    if(localTime < GetLastTimeUpdateLocal()) {
+//        NS_LOG_WARN("Requested time in the past " << localTime << " < " << GetLastTimeUpdateLocal());
+//        return false;
+//    }
 
 //    NS_ASSERT()
 
     // Returns
-    LocalToAbsDuration(localTime - m_lastUpdateLocalTime, absTime);
-    absTime += m_lastUpdateAbsTime;
+    LocalToAbsDuration(localTime - GetLastTimeUpdateLocal(), absTime);
+    absTime += GetLastTimeUpdateSim();
     return true;
 }
 
@@ -252,7 +282,7 @@ ClockPerfect::LocalToAbsDuration(Time localDuration, Time& absDuration)
 {
     NS_LOG_FUNCTION(localDuration);
 //
-//    NS_ASSERT_MSG(localStart > m_lastUpdateLocalTime, "We can't remember the frequency back then");
+//    NS_ASSERT_MSG(localStart > GetLastTimeUpdateLocal(), "We can't remember the frequency back then");
 
     absDuration = localDuration * GetTotalFrequency();
     return true;
@@ -266,12 +296,14 @@ ClockPerfect::GetTotalFrequency() const
     return m_ss_slew + m_rawFrequency;
 }
 
-bool
-ClockPerfect::AbsDurationToLocalDuration(Time absDuration, Time& localDuration)
+//, Time& localDuration
+Time
+ClockPerfect::AbsToLocalDuration(Time absDuration)
 {
-
-    localDuration = absDuration / GetTotalFrequency();
-    return true;
+    NS_LOG_FUNCTION(absDuration);
+    Time localDuration = absDuration / GetTotalFrequency();
+    NS_LOG_DEBUG( absDuration << "/" << GetTotalFrequency() << " =" << localDuration << " (localDuration)");
+    return localDuration;
 }
 
 #if 0

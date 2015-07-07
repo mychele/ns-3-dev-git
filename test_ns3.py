@@ -10,7 +10,8 @@ available_suites = [
     "mptcp-crypto",
     "clock",
     "node-clock-interactions",
-    "mptcp-mapping"
+    "mptcp-mapping",
+    "time"
 ]
 
 # type=argparse.FileType('w'),

@@ -141,26 +141,28 @@ public:
      * Conversion is composed of 2 phases; one with SS frequency,
      * one whithout
      */
+    // Rename into SimulatorToNodeDuration ?
     bool LocalToAbsDuration(Time localDuration, Time& absDuration);
-    bool AbsDurationToLocalDuration(Time absDuration, Time& localDuration);
+    Time AbsToLocalDuration(Time absDuration);
 //    bool LocalToAbsDuration(Time localDuration, Time& absDuration);
+    Time GetLastTimeUpdateLocal() const;
+    Time GetLastTimeUpdateSim() const;
 
 protected:
-    Time m_lastUpdateLocalTime; //!<
-    Time m_lastUpdateAbsTime;   //!<
+//    Time m_lastUpdateLocalTime; //!<
+//    Time m_lastUpdateAbsTime;   //!<
+    // there is no overload
+    TracedValue<std::pair<Time,Time> > m_timeOfLastUpdate;	//!< local/abs
+private:
+
 
     double m_ss_slew;  //!< SingleShot slew
     Time m_ss_offset;  //!< SingleShot offset
 
     ClockParameters parameters[2];  //!< old and new parameters (use std::swap)
 
-//	double m_rawFrequency;
-//	double m_ss_maxSlew;
-
 	void UpdateTime();
 
-	TracedValue<Time> m_time;
-	TracedValue<Time> m_timeOfLastUpdate;	//!<
 	double m_rawFrequency;
 	double m_maxFrequency;
 	double m_minFrequency;
