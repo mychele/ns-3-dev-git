@@ -169,21 +169,37 @@ PcapHelper::DefaultSink (Ptr<PcapFileWrapper> file, Ptr<const Packet> p)
 {
   NS_LOG_FUNCTION (file << p);
 
-    // TODO addition matt
-  if(file->GetDataLinkType() == PcapHelper::DLT_NETLINK)
-  {
-    NS_LOG_DEBUG("Prepending a cooked header");
-
-    SllHeader sll = SllHeader ();
-    sll.SetArpType(ARPHRD_NETLINK);
-    sll.SetPacketType(SllHeader::UNICAST_FROM_PEER_TO_ME);
-//    p2->AddHeader(sll);
-    // + sll.GetSerializedSize()
-    file->Write (Simulator::Now (), sll, p);
-  }
-  else {
+//  if(file->GetDataLinkType() == PcapHelper::DLT_NETLINK)
+//  {
+//    NS_LOG_DEBUG("Prepending a cooked header");
+//
+//    SllHeader sll = SllHeader ();
+//    sll.SetArpType(ARPHRD_NETLINK);
+//    sll.SetPacketType(SllHeader::UNICAST_FROM_PEER_TO_ME);
+//    file->Write (Simulator::Now (), sll, p);
+//  }
+//  else {
     file->Write (Simulator::Now (), p);
-  }
+//  }
+}
+
+void
+PcapHelper::SinkWithHeader (Ptr<PcapFileWrapper> file, const Header &header, Ptr<const Packet> p)
+{
+  NS_LOG_FUNCTION (file << p);
+
+//  if(file->GetDataLinkType() == PcapHelper::DLT_NETLINK)
+//  {
+//    NS_LOG_DEBUG("Prepending a cooked header");
+
+//    SllHeader sll = SllHeader ();
+//    sll.SetArpType(ARPHRD_NETLINK);
+//    sll.SetPacketType(SllHeader::UNICAST_FROM_PEER_TO_ME);
+    file->Write (Simulator::Now (), header, p);
+//  }
+//  else {
+//    file->Write (Simulator::Now (), p);
+//  }
 }
 
 AsciiTraceHelper::AsciiTraceHelper ()

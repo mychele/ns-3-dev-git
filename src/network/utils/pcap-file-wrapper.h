@@ -130,7 +130,7 @@ public:
    * \param p Packet to write to the pcap file.
    *
    */
-  void Write (Time t, Header &header, Ptr<const Packet> p);
+  void Write (Time t, const Header &header, Ptr<const Packet> p);
 
   /**
    * \brief Write the provided data buffer to the pcap file.
@@ -140,7 +140,7 @@ public:
    * \param length The size of the buffer.
    *
    */
-//  void Write (Time t, uint8_t const *buffer, uint32_t length);
+  void Write (Time t, uint8_t const *buffer, uint32_t length);
 
   /**
    * \brief Returns the magic number of the pcap file as defined by the magic_number

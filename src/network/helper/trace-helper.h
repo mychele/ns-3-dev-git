@@ -123,6 +123,9 @@ private:
    * @param p the packet to write
    */
   static void DefaultSink (Ptr<PcapFileWrapper> file, Ptr<const Packet> p);
+
+
+  static void SinkWithHeader (Ptr<PcapFileWrapper> file, const Header& header, Ptr<const Packet> p);
 };
 
 template <typename T> void

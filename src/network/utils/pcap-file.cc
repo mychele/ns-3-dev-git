@@ -28,8 +28,6 @@
 #include "ns3/buffer.h"
 #include "pcap-file.h"
 #include "ns3/log.h"
-#include "ns3/trace-helper.h"
-#include "ns3/sll-header.h"
 //
 // This file is used as part of the ns-3 test framework, so please refrain from
 // adding any ns-3 specific constructs such as Packet to this file.
@@ -415,13 +413,12 @@ void
 PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Ptr<const Packet> p)
 {
   NS_LOG_FUNCTION (this << tsSec << tsUsec << p);
-  uint32_t inclLen = 0;
-  inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
+  uint32_t inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
   p->CopyData (&m_file, inclLen);
 }
 
 void
-PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Header &header, Ptr<const Packet> p)
+PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, const Header &header, Ptr<const Packet> p)
 {
   NS_LOG_FUNCTION (this << tsSec << tsUsec << &header << p);
   uint32_t headerSize = header.GetSerializedSize ();
@@ -497,7 +494,7 @@ PcapFile::Read (
 }
 
 bool
-PcapFile::Diff (std::string const & f1, std::string const & f2, 
+PcapFile::Diff (std::string const & f1, std::string const & f2,
                 uint32_t & sec, uint32_t & usec, uint32_t & packets,
                 uint32_t snapLen)
 {
@@ -542,7 +539,7 @@ PcapFile::Diff (std::string const & f1, std::string const & f2,
         }
 
       ++packets;
-      
+
       if (tsSec1 != tsSec2 || tsUsec1 != tsUsec2)
         {
           diff = true; // Next packet timestamps do not match

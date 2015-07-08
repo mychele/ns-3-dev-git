@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2007 Georgia Tech Research Corporation
+ * Copyright (c) 2015 Université Pierre et Marie Curie (UPMC)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -39,9 +39,9 @@ ARP protocol HARDWARE identifiers.
 
 \brief Protocol header serialization and deserialization.
 
-Libpcap sometimes add an additional header to provide information that would be
+Libpcap sometimes adds an additional header to provide information that would be
 lost otherwise due to the link-layer/capture mechanism, for instance when capturing from
-"nlmon" device on linux
+"nlmon" device on linux.
 
 \see http://www.tcpdump.org/linktypes/LINKTYPE_LINUX_SLL.html
 \verbatim
@@ -78,7 +78,7 @@ public:
     BROADCAST_BY_PEER = 1, /**< packet was broadcast by somebody else */
     MULTICAST_BY_PEER = 2, /**< packet was multicast, but not broadcast, by somebody else */
     INTERCEPTED_PACKET = 3, /**< packet was sent to somebody else by somebody else **/
-    SENT_BY_US  /**< the packet was sent by us */
+    SENT_BY_US = 4 /**< the packet was sent by us */
   };
 
   /**
@@ -93,7 +93,7 @@ public:
   virtual ~SllHeader ();
 
   /**
-   *  The ARPHRD_ type field is in network byte order; it contains a Linux ARPHRD_ value for the link-layer device type.
+   * \return a Linux ARPHRD_ value for the link-layer device type.
    *
    */
   uint16_t GetArpType() const;
@@ -104,7 +104,7 @@ public:
   PacketType GetPacketType() const;
 
   /**
-   \param arphw ARP protocol hardware identifier
+   \param arphdType ARP protocol hardware identifier
    */
   void SetArpType(uint16_t arphdType);
 
@@ -122,10 +122,6 @@ public:
 
 
 protected:
-
-
-
-
     // declared in packet order
     PacketType m_packetType;
     uint16_t m_arphdType;   /**< ARP protocol hardware identifier */

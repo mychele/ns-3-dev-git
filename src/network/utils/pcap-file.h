@@ -147,7 +147,7 @@ public:
    * \param p           Packet to write
    *
    */
-  void Write (uint32_t tsSec, uint32_t tsUsec, Header &header, Ptr<const Packet> p);
+  void Write (uint32_t tsSec, uint32_t tsUsec, const Header &header, Ptr<const Packet> p);
 
 
   /**
@@ -272,7 +272,7 @@ public:
    * \param  usec       [out] Time stamp of first different packet, microseconds. Undefined if files doesn't differ.
    * \param  snapLen    Snap length (if used)
    */
-  static bool Diff (std::string const & f1, std::string const & f2, 
+  static bool Diff (std::string const & f1, std::string const & f2,
                     uint32_t & sec, uint32_t & usec, uint32_t & packets,
                     uint32_t snapLen = SNAPLEN_DEFAULT);
 
