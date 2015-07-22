@@ -204,7 +204,7 @@ Node::GetId (void) const
 }
 
 Time
-Node::GetWallTime(void) const
+Node::GetLocalTime(void) const
 {
   NS_LOG_FUNCTION (this);
   Ptr<Clock> clock = GetObject<Clock>();
@@ -280,7 +280,7 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 //  NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::Schedule Thread-unsafe invocation!");
 
 
-  Time localTime = GetWallTime();
+  Time localTime = GetLocalTime();
   Time eventLocalTime = localTime + timeOffset;
 
 

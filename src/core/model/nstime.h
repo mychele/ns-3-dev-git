@@ -118,10 +118,6 @@ public:
     NS  = 7,   //!< nanosecond
     PS  = 8,   //!< picosecond
     FS  = 9,   //!< femtosecond
-
-    // HACK. \see gmtime
-//    PRETTY_FR,   //!< example: "10/11
-//    PRETTY_US,   //!< example: "10
     LAST
   };
 

@@ -77,7 +77,7 @@ public:
   /**
    * \returns
    */
-  Time GetWallTime(void) const;
+  Time GetLocalTime(void) const;
 
   /**
    * \returns

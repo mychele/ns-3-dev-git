@@ -227,17 +227,6 @@ public:
    * \return The current simulation context
    */
   virtual uint32_t GetContext (void) const = 0;
-
-  /**
-   * Get the current simulation context.
-   *
-   * \return The current simulation context
-   */
-  virtual uint32_t GetFreeUid (void) const {
-//    NS_FATYA()
-        // Hack matt, to clean later
-        return 0;
-  };
 };
 
 } // namespace ns3

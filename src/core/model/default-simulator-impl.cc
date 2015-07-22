@@ -243,11 +243,6 @@ DefaultSimulatorImpl::Schedule (Time const &time, EventImpl *event)
   return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
 }
 
-uint32_t DefaultSimulatorImpl::GetFreeUid (void)
-{
-    return m_uid++;
-}
-
 void
 DefaultSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
 {
