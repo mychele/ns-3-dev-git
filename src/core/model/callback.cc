@@ -31,6 +31,32 @@ namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("Callback");
 
+
+bool
+CallbackBase::CheckType (const CallbackBase & other) const
+{
+    const CallbackImplBase * otherRaw = PeekPointer (other.GetImpl());
+//    Ptr<CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> > expected;
+    const CallbackImplBase * expectedRaw = PeekPointer (m_impl);
+
+    if (otherRaw != 0 && typeid(*otherRaw) == typeid(*expectedRaw)
+//        dynamic_cast<const CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> *> (PeekPointer (other)) != 0
+        )
+      {
+        return true;
+      }
+    else if (otherRaw == 0)
+      {
+        return true;
+      }
+    else
+      {
+        return false;
+      }
+
+}
+
+
 CallbackValue::CallbackValue ()
   : m_value ()
 {

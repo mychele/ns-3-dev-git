@@ -134,8 +134,9 @@ public:
    *
    * \param [in] cb The callback to connect.
    */
-  void ConnectWithoutContext (const CallbackBase &cb) {
+  bool ConnectWithoutContext (const CallbackBase &cb) {
     m_cb.ConnectWithoutContext (cb);
+    return true;
   }
   /**
    * Connect a Callback with a context string.
@@ -249,7 +250,7 @@ private:
   TracedCallback<T,T> m_cb;
 };
 
-  
+
 /********************************************************************
    Operator implementations for TracedValue
  ********************************************************************/
@@ -411,7 +412,7 @@ bool operator > (const U &lhs, const TracedValue<T> &rhs)
   return lhs > rhs.Get ();
 }
 
-  
+
 /**
  * Infix arithmetic operator for TracedValue.
  *
@@ -618,7 +619,7 @@ TracedValue<T> operator >> (const U &lhs, const TracedValue<T> &rhs) {
  * Operator assignment for TracedValue.
  *
  * The result of the arithmetic operation on the underlying values
- * is assigned to the \c lhs TracedValue.  If the new value 
+ * is assigned to the \c lhs TracedValue.  If the new value
  * is different, the Callback will be invoked.
  *
  * \tparam T \deduced The underlying type held by the left-hand argument.
@@ -717,7 +718,7 @@ TracedValue<T> &operator ^= (TracedValue<T> &lhs, const U &rhs) {
   lhs.Set (tmp);
   return lhs;
 }
-  
+
 
 /**
  * Unary arithmetic operator for TracedValue.

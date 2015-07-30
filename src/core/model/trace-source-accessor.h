@@ -134,7 +134,7 @@ namespace ns3 {
  * \returns The TraceSourceAccessor
  */
 template <typename T, typename SOURCE>
-Ptr<const TraceSourceAccessor> 
+Ptr<const TraceSourceAccessor>
 DoMakeTraceSourceAccessor (SOURCE T::*a)
 {
   struct Accessor : public TraceSourceAccessor
@@ -145,8 +145,7 @@ DoMakeTraceSourceAccessor (SOURCE T::*a)
         {
           return false;
         }
-      (p->*m_source).ConnectWithoutContext (cb);
-      return true;
+      return (p->*m_source).ConnectWithoutContext (cb);
     }
     virtual bool Connect (ObjectBase *obj, std::string context, const CallbackBase &cb) const {
       T *p = dynamic_cast<T*> (obj);
