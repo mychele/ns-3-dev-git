@@ -153,8 +153,7 @@ DoMakeTraceSourceAccessor (SOURCE T::*a)
         {
           return false;
         }
-      (p->*m_source).Connect (cb, context);
-      return true;
+      return (p->*m_source).Connect (cb, context);
     }
     virtual bool DisconnectWithoutContext (ObjectBase *obj, const CallbackBase &cb) const {
       T *p = dynamic_cast<T*> (obj);

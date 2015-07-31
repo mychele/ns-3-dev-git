@@ -147,8 +147,8 @@ public:
    * \param [in] cb The Callback to connect to the target trace source.
    * \param [in] path The context to bind to the user callback.
    */
-  void Connect (const CallbackBase &cb, std::string path) {
-    m_cb.Connect (cb, path);
+  bool Connect (const CallbackBase &cb, std::string path) {
+    return m_cb.Connect (cb, path);
   }
   /**
    * Disconnect a Callback which was connected without context.

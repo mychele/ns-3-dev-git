@@ -79,7 +79,7 @@ public:
    * \param [in] callback Callback to add to chain.
    * \param [in] path Context string to provide when invoking the Callback.
    */
-  void Connect (const CallbackBase & callback, std::string path);
+  bool Connect (const CallbackBase & callback, std::string path);
   /**
    * Remove from the chain a Callback which was connected without a context.
    *
@@ -267,7 +267,9 @@ TracedCallback<T1,T2,T3,T4,T5,T6,T7,T8>::ConnectWithoutContext (const CallbackBa
   if(!cb.CheckType(callback)) {
     return false;
   }
-  cb.Assign (callback);
+  if(!cb.Assign (callback)){
+    return false;
+  }
   m_callbackList.push_back (cb);
   return true;
 }
@@ -275,13 +277,16 @@ template<typename T1, typename T2,
          typename T3, typename T4,
          typename T5, typename T6,
          typename T7, typename T8>
-void
+bool
 TracedCallback<T1,T2,T3,T4,T5,T6,T7,T8>::Connect (const CallbackBase & callback, std::string path)
 {
   Callback<void,std::string,T1,T2,T3,T4,T5,T6,T7,T8> cb;
-  cb.Assign (callback);
+  if(!cb.Assign (callback)){
+    return false;
+  }
   Callback<void,T1,T2,T3,T4,T5,T6,T7,T8> realCb = cb.Bind (path);
   m_callbackList.push_back (realCb);
+  return true;
 }
 template<typename T1, typename T2,
          typename T3, typename T4,

@@ -149,6 +149,9 @@ public:
    * \return \c true if we are equal
    */
   virtual bool IsEqual (Ptr<const CallbackImplBase> other) const = 0;
+
+
+//  virtual bool CheckType (Ptr<const CallbackImplBase> other) const;
 };
 
 /**
@@ -909,6 +912,13 @@ public:
   CallbackBase () : m_impl () {}
   /** \return The impl pointer */
   Ptr<CallbackImplBase> GetImpl (void) const { return m_impl; }
+
+  /**
+   * Check for compatible types
+   *
+   * \param [in] other Callback Ptr
+   * \return \c true if other can be dynamic_cast to my type
+   */
   virtual bool CheckType (const CallbackBase & other) const;
 
   /**
@@ -918,12 +928,16 @@ public:
   static std::string Demangle (const std::string& mangled);
 
 protected:
+
   /**
    * Construct from a pimpl
    * \param [in] impl The CallbackImplBase Ptr
    */
   CallbackBase (Ptr<CallbackImplBase> impl) : m_impl (impl) {}
   Ptr<CallbackImplBase> m_impl;         //!< the pimpl
+
+private:
+    virtual bool DoCheckType (Ptr<const CallbackImplBase> other) const;
 };
 
 /**
@@ -986,7 +1000,7 @@ template<typename R,
          typename T9 = empty>
 class Callback : public CallbackBase {
 public:
-  Callback () {}
+  Callback () : CallbackBase() {}
 
   /**
    * Construct a functor call back, supporting operator() calls
@@ -1205,12 +1219,7 @@ public:
     return m_impl->IsEqual (other.GetImpl ());
   }
 
-  /**
-   * Check for compatible types
-   *
-   * \param [in] other Callback Ptr
-   * \return \c true if other can be dynamic_cast to my type
-   */
+
 //  bool CheckType (const CallbackBase & other) const {
 //    return DoCheckType (other.GetImpl ());
 //  }
@@ -1244,35 +1253,42 @@ private:
    * \return \c true if other can be dynamic_cast to my type
    */
   bool DoCheckType (Ptr<const CallbackImplBase> other) const {
-//    const CallbackImplBase * otherRaw = PeekPointer (other);
+
+    const CallbackImplBase * otherRaw = PeekPointer (other);
 //    Ptr<CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> > expected;
 //    CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> * expectedRaw = PeekPointer (expected);
-//    if (typeid (*otherRaw).name () == typeid (*expectedRaw).name () ){
+//    if (typeid (*otherRaw) == typeid (*expectedRaw) ){
 //        return true;
 //    }
 //    else {
 //        NS_FATAL_ERROR ("Incompatible types." << Demangle ( typeid (*otherRaw).name () ) );
 //    }
-    try {
-        NS_LOG_UNCOND("Try");
-        Ptr<CallbackImplBase> impl = const_cast<CallbackImplBase *> (PeekPointer (other));
-    }
-    catch(const std::bad_alloc& e) {
-        NS_LOG_UNCOND( e.what() );
-        return false;
-    }
-    if (other != 0 && dynamic_cast<const CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> *> (PeekPointer (other)) != 0)
+//    try {
+//        NS_LOG_UNCOND("Try");
+//        Ptr<CallbackImplBase> impl = const_cast<CallbackImplBase *> (PeekPointer (other));
+//    }
+//    catch(const std::bad_alloc& e) {
+//        NS_LOG_UNCOND( e.what() );
+//        return false;
+//    }
+//    if (other != 0 && dynamic_cast<const CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> *> (PeekPointer (other)) != 0)
+//    if (other != 0 && dynamic_cast<const CallbackImpl<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> *> (PeekPointer (other)) != 0)
+//      {
+//        return true;
+//      }
+    if (otherRaw == 0)
       {
         return true;
       }
-    else if (other == 0)
+    else if(m_impl == 0)
       {
         return true;
       }
-    else
-      {
-        return false;
-      }
+    return (typeid(*otherRaw) == typeid(*m_impl));
+//      {
+//        return true;
+//      }
+//    return false;
   }
   /**
    * Adopt the other's implementation, if type compatible
@@ -1294,7 +1310,7 @@ private:
     try {
         m_impl = const_cast<CallbackImplBase *> (PeekPointer (other));
     }
-    catch(const std::bad_alloc& e) {
+    catch(const std::bad_typeid& e) {
         NS_LOG_UNCOND( e.what() );
         return false;
     }
