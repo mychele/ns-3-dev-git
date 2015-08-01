@@ -689,17 +689,20 @@ void
 MakeCallbackTemplatesTestCase::DoRun (void)
 {
   CallbackTestClass that;
-  Callback<void,int> emptyCb;
+  Callback<void,int> emptyCb = MakeNullCallback<void, int>();
 
   Callback<void> t0 = MakeCallback (&CallbackTestClass::TestZero, &that);
   Callback<void> t02 = MakeCallback (&CallbackTestClass::TestZero, &that);
-  CallbackBase t1 = MakeCallback (&CallbackTestClass::TestOne, &that);
+//  const CallbackBase& t1 = MakeCallback (&CallbackTestClass::TestOne, &that);
+  Callback<void,int> t1 = MakeCallback (&CallbackTestClass::TestOne, &that);
+  CallbackBase t12 = MakeCallback (&CallbackTestClass::TestOne, &that);
   MakeCallback (&CallbackTestClass::TestTwo, &that);
   MakeCallback (&CallbackTestClass::TestThree, &that);
   MakeCallback (&CallbackTestClass::TestFour, &that);
   MakeCallback (&CallbackTestClass::TestFive, &that);
   MakeCallback (&CallbackTestClass::TestSix, &that);
 
+  // le C c'est pour le const
   Callback<void> c0 = MakeCallback (&CallbackTestClass::TestCZero, &that);
   Callback<void, int> c1 = MakeCallback (&CallbackTestClass::TestCOne, &that);
   MakeCallback (&CallbackTestClass::TestCTwo, &that);
@@ -737,6 +740,14 @@ MakeCallbackTemplatesTestCase::DoRun (void)
 
   that.CheckParentalRights ();
 
+
+  NS_TEST_ASSERT_MSG_EQ(emptyCb.CheckType(t0), false, "These 2 callbacks should not appear as equivalent");
+
+  // This one cvould be fixed
+  NS_TEST_ASSERT_MSG_EQ(t1.CheckType(emptyCb), true, "These 2 callbacks should not appear as equivalent");
+  NS_TEST_ASSERT_MSG_EQ(t12.CheckType(emptyCb), true, "These 2 callbacks should not appear as equivalent");
+
+  NS_TEST_ASSERT_MSG_EQ(t0.CheckType(emptyCb), false, "These 2 callbacks should not appear as equivalent");
   NS_TEST_ASSERT_MSG_EQ(t0.CheckType(t1), false, "These 2 callbacks should not appear as equivalent");
   NS_TEST_ASSERT_MSG_EQ(c0.CheckType(c1), false, "These 2 callbacks should not appear as equivalent");
 

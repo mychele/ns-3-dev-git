@@ -111,6 +111,7 @@ public:
    * @param file file wrapper
    */
   template <typename T> void HookDefaultSink (Ptr<T> object, std::string traceName, Ptr<PcapFileWrapper> file);
+//  void HookDefaultSink (Ptr<Object> object, std::string traceName, Ptr<PcapFileWrapper> file);
 
 private:
   /**
@@ -139,6 +140,8 @@ private:
 
 template <typename T> void
 PcapHelper::HookDefaultSink (Ptr<T> object, std::string tracename, Ptr<PcapFileWrapper> file)
+//void
+//PcapHelper::HookDefaultSink (Ptr<Object> object, std::string tracename, Ptr<PcapFileWrapper> file)
 {
   bool result =
     object->TraceConnectWithoutContext (tracename.c_str (), MakeBoundCallback (&DefaultSink, file));

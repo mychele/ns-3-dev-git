@@ -135,8 +135,7 @@ public:
    * \param [in] cb The callback to connect.
    */
   bool ConnectWithoutContext (const CallbackBase &cb) {
-    m_cb.ConnectWithoutContext (cb);
-    return true;
+    return m_cb.ConnectWithoutContext (cb);
   }
   /**
    * Connect a Callback with a context string.

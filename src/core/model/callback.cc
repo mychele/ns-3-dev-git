@@ -20,6 +20,7 @@
 
 #include "callback.h"
 #include "log.h"
+#include "assert.h"
 
 /**
  * \file
@@ -47,16 +48,31 @@ CallbackBase::CheckType (const CallbackBase & other) const
 //        return true;
 //      }
 //    else
-    return DoCheckType(other.GetImpl());
+    NS_ASSERT_MSG(other.m_type,"This is an ns3 problem, there should not be any instance without this member set.");
+    NS_ASSERT_MSG(m_type,"This is an ns3 problem, there should not be any instance without this member set.");
+
+    return m_type == other.m_type;
+//    return DoCheckType(other.GetImpl());
 }
 
-bool
-CallbackBase::DoCheckType (Ptr<const CallbackImplBase> other) const
+
+void
+CallbackBase::UpdateTypeInfo()
 {
-    NS_LOG_WARN("This function should be overriden by child classes. "
-                "It is likely called because of object slicing.");
-    return true;
+    //
+
+    NS_LOG_FUNCTION("test");
+    NS_LOG_INFO(typeid(*this).name());
+    m_type = const_cast<std::type_info *>(&typeid(*this));
 }
+
+//bool
+//CallbackBase::DoCheckType (Ptr<const CallbackImplBase> other) const
+//{
+//    NS_LOG_WARN("This function should be overriden by child classes. "
+//                "It is likely called because of object slicing.");
+//    return true;
+//}
 
 CallbackValue::CallbackValue ()
   : m_value ()

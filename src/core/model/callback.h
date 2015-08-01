@@ -902,6 +902,22 @@ private:
   typename TypeTraits<TX3>::ReferencedType m_a3;  //!< third bound argument
 };
 
+
+//forward declaration
+template<typename R,
+         typename T1 = empty, typename T2 = empty,
+         typename T3 = empty, typename T4 = empty,
+         typename T5 = empty, typename T6 = empty,
+         typename T7 = empty, typename T8 = empty,
+         typename T9 = empty>
+//template<typename R,
+//         typename T1 , typename T2 ,
+//         typename T3 , typename T4 ,
+//         typename T5 , typename T6 ,
+//         typename T7 , typename T8 ,
+//         typename T9 >
+class Callback;
+
 /**
  * \ingroup callbackimpl
  * Base class for Callback class.
@@ -909,9 +925,11 @@ private:
  */
 class CallbackBase {
 public:
-  CallbackBase () : m_impl () {}
+//  CallbackBase (std::type_info& type) : m_impl (), m_type(type) {}
+  CallbackBase () : m_impl (), m_type(0) {}
   /** \return The impl pointer */
   Ptr<CallbackImplBase> GetImpl (void) const { return m_impl; }
+  CallbackBase (Ptr<CallbackImplBase> impl) : m_impl (impl), m_type(0) {}
 
   /**
    * Check for compatible types
@@ -920,6 +938,7 @@ public:
    * \return \c true if other can be dynamic_cast to my type
    */
   virtual bool CheckType (const CallbackBase & other) const;
+  virtual void UpdateTypeInfo();
 
   /**
    * \param [in] mangled The mangled string
@@ -927,17 +946,45 @@ public:
    */
   static std::string Demangle (const std::string& mangled);
 
+
+
+//private:
+//template<typename R,
+//         typename T1 = empty, typename T2 = empty,
+//         typename T3 = empty, typename T4 = empty,
+//         typename T5 = empty, typename T6 = empty,
+//         typename T7 = empty, typename T8 = empty,
+//         typename T9 = empty>
+
+//    CallbackBase (const Callback<R,T1,T2,T3,T4,T5,T6,T7,T8,T9>&);
+
+    /** whenever there is object slicing */
+    template<typename R,typename T1>
+    CallbackBase (const Callback<R,T1>& c){
+        m_type = const_cast<std::type_info*>(&typeid(c));
+        m_impl = c.m_impl;
+    }
+
+    template<typename R,typename T1,typename T2>
+    CallbackBase (const Callback<R,T1,T2>& c){
+        m_type = const_cast<std::type_info*>(&typeid(c));
+        m_impl = c.m_impl;
+    }
+
 protected:
 
   /**
    * Construct from a pimpl
    * \param [in] impl The CallbackImplBase Ptr
    */
-  CallbackBase (Ptr<CallbackImplBase> impl) : m_impl (impl) {}
+//  CallbackBase (Ptr<CallbackImplBase> impl) : m_impl (impl) {}
   Ptr<CallbackImplBase> m_impl;         //!< the pimpl
+  std::type_info *m_type;
 
-private:
-    virtual bool DoCheckType (Ptr<const CallbackImplBase> other) const;
+    //! disable copy
+//    CallbackBase (const CallbackBase&);
+
+//    virtual bool DoCheckType (Ptr<const CallbackImplBase> other) const = 0;
 };
 
 /**
@@ -992,12 +1039,19 @@ private:
  *
  * \see attribute_Callback
  */
+//template<typename R,
+//         typename T1 = empty, typename T2 = empty,
+//         typename T3 = empty, typename T4 = empty,
+//         typename T5 = empty, typename T6 = empty,
+//         typename T7 = empty, typename T8 = empty,
+//         typename T9 = empty>
+
 template<typename R,
-         typename T1 = empty, typename T2 = empty,
-         typename T3 = empty, typename T4 = empty,
-         typename T5 = empty, typename T6 = empty,
-         typename T7 = empty, typename T8 = empty,
-         typename T9 = empty>
+         typename T1 , typename T2 ,
+         typename T3 , typename T4 ,
+         typename T5 , typename T6 ,
+         typename T7 , typename T8 ,
+         typename T9 >
 class Callback : public CallbackBase {
 public:
   Callback () : CallbackBase() {}
@@ -1311,7 +1365,7 @@ private:
         m_impl = const_cast<CallbackImplBase *> (PeekPointer (other));
     }
     catch(const std::bad_typeid& e) {
-        NS_LOG_UNCOND( e.what() );
+        NS_FATAL_ERROR( e.what() );
         return false;
     }
     return true;
@@ -1351,19 +1405,27 @@ bool operator != (Callback<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> a, Callback<R,T1,T2,T3,
  */
 template <typename T, typename OBJ, typename R>
 Callback<R> MakeCallback (R (T::*memPtr)(void), OBJ objPtr) {
-  return Callback<R> (objPtr, memPtr);
+  Callback<R> temp(objPtr, memPtr);
+  temp.UpdateTypeInfo();
+  return temp;
 }
 template <typename T, typename OBJ, typename R>
 Callback<R> MakeCallback (R (T::*memPtr)() const, OBJ objPtr) {
-  return Callback<R> (objPtr, memPtr);
+  Callback<R> temp(objPtr, memPtr);
+  temp.UpdateTypeInfo();
+  return temp;
 }
 template <typename T, typename OBJ, typename R, typename T1>
 Callback<R,T1> MakeCallback (R (T::*memPtr)(T1), OBJ objPtr) {
-  return Callback<R,T1> (objPtr, memPtr);
+  Callback<R,T1> temp(objPtr, memPtr);
+  temp.UpdateTypeInfo();
+  return temp;
 }
 template <typename T, typename OBJ, typename R, typename T1>
 Callback<R,T1> MakeCallback (R (T::*memPtr)(T1) const, OBJ objPtr) {
-  return Callback<R,T1> (objPtr, memPtr);
+  Callback<R,T1> temp(objPtr, memPtr);
+  temp.UpdateTypeInfo();
+  return temp;
 }
 template <typename T, typename OBJ, typename R, typename T1, typename T2>
 Callback<R,T1,T2> MakeCallback (R (T::*memPtr)(T1,T2), OBJ objPtr) {
@@ -1497,11 +1559,15 @@ Callback<R,T1,T2,T3,T4,T5,T6,T7,T8,T9> MakeCallback (R (*fnPtr)(T1,T2,T3,T4,T5,T
  */
 template <typename R>
 Callback<R> MakeNullCallback (void) {
-  return Callback<R> ();
+  Callback<R> temp;
+  temp.UpdateTypeInfo();
+  return temp;
 }
 template <typename R, typename T1>
 Callback<R,T1> MakeNullCallback (void) {
-  return Callback<R,T1> ();
+  Callback<R,T1> temp;
+  temp.UpdateTypeInfo();
+  return temp;
 }
 template <typename R, typename T1, typename T2>
 Callback<R,T1,T2> MakeNullCallback (void) {
@@ -1754,6 +1820,7 @@ public:
   /** Destructor */
   virtual ~CallbackValue ();
   /** \param [in] base The CallbackBase to use */
+//  void Set (Ptr<CallbackBase> base);
   void Set (CallbackBase base);
   /**
    * Give value my callback, if type compatible
@@ -1780,6 +1847,7 @@ public:
    */
   virtual bool DeserializeFromString (std::string value, Ptr<const AttributeChecker> checker);
 private:
+//  Ptr<CallbackBase> m_value;                 //!< the CallbackBase
   CallbackBase m_value;                 //!< the CallbackBase
 };
 
