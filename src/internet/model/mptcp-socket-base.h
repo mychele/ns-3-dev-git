@@ -784,6 +784,7 @@ private:
 
   bool     m_receivedDSS;  //!< True if we received at least one DSS
 
+  bool     m_generatedIdsn; //!<
 private:
 
 

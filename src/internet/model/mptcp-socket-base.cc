@@ -119,7 +119,11 @@ MpTcpSocketBase::GetTypeId(void)
                TypeIdValue (MpTcpScheduler::GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_schedulerTypeId),
                MakeTypeIdChecker ())
-// TODO rehabilitate
+      .AddAttribute ("KeyGeneratedIDSN", "Generate IDSN from the key",
+               BooleanValue (false),
+               MakeBooleanAccessor (&MpTcpSocketBase::m_generatedIdsn),
+               MakeBooleanChecker ())
+    // TODO rehabilitate
 //      .AddAttribute("SchedulingAlgorithm", "Algorithm for data distribution between m_subflows", EnumValue(Round_Robin),
 //          MakeEnumAccessor(&MpTcpSocketBase::SetDataDistribAlgo),
 //          MakeEnumChecker(Round_Robin, "Round_Robin"))
