@@ -628,6 +628,7 @@ TcpSocketBase::Connect (const Address & address)
   NS_LOG_FUNCTION (this << address);
 
   InitializeCwnd ();
+  GenerateUniqueMpTcpKey();
 
   // If haven't do so, Bind() this socket first
   if (InetSocketAddress::IsMatchingType (address) && m_endPoint6 == 0)
@@ -1515,18 +1516,11 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 
       // TODO is it possible to move these to CompleteFork
       // would clutter less TcpSocketBase
-//      Ptr<MpTcpSubflow> sf = new MpTcpSubflow(*newSock);
+
       Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta();
       bool result = m_tcp->AddSocket(newSock);
       NS_ASSERT_MSG(result, "could not register meta");
-//      Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
-//      NS_LOG_UNCOND("meta=" << meta);
-//      Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(this);
-//      Simulator::ScheduleNow (&MpTcpSocketBase::CompleteFork, this,
-//                          packet, tcpHeader,
-////                          master
-//                          fromAddress, toAddress
-//                          );
+      newSock->GenerateUniqueMpTcpKey();
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
 
@@ -3400,18 +3394,19 @@ TcpSocketBase::GenerateUniqueMpTcpKey()
 //
 //  TODO add a SetInitialSeqNb member into TcpSocketBase
 //  **/
-//  if(m_nullIsn)
-//  {
-//    m_nextTxSequence = (uint32_t)0;
-//  }
-//  else
-//  {
-//    m_nextTxSequence = (uint32_t)idsn;
-//  }
-//
+  if(m_nullIsn)
+  {
+    m_nextTxSequence = (uint32_t)0;
+  }
+  else
+  {
+    m_nextTxSequence = (uint32_t)idsn;
+  }
+
 ////  SetTxHead(m_nextTxSequence);
-//  m_firstTxUnack = m_nextTxSequence;
-//  m_highTxMark = m_nextTxSequence;
+  m_txBuffer->SetHeadSequence(m_nextTxSequence);
+  m_firstTxUnack = m_nextTxSequence;
+  m_highTxMark = m_nextTxSequence;
 
   return localKey;
 }
@@ -3422,12 +3417,12 @@ TcpSocketBase::AddMpTcpOptions (TcpHeader& header)
 {
     NS_LOG_FUNCTION(this);
     // If key not genereated yet
-    if (m_mptcpLocalKey == 0)
-    {
-      // for the sake of simplicity, we generate a key even if unused
-      GenerateUniqueMpTcpKey();
-      NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
-    }
+//    if (m_mptcpLocalKey == 0)
+//    {
+//      // for the sake of simplicity, we generate a key even if unused
+//      GenerateUniqueMpTcpKey();
+//      NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
+//    }
 
     if((header.GetFlags () == TcpHeader::SYN))
     {

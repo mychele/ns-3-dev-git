@@ -955,7 +955,8 @@ protected:
 
   /**
    * Generate a unique key for this host
-   * TODO move it to TcpL4 protocol
+   * TODO split move it to TcpL4 protocol
+   * or rename into something like SetupLocalKey
    * \see mptcp_set_key_sk
    */
   virtual uint64_t GenerateUniqueMpTcpKey() ;
@@ -1024,7 +1025,7 @@ protected:
 
   // Options
 //  bool    m_mptcpAllow;           //!< Window Scale option enabled
-  bool    m_mptcpEnabled;         //!< Window Scale option enabled
+  bool        m_mptcpEnabled;         //!< Window Scale option enabled
   uint64_t    m_mptcpLocalKey;        //!< MPTCP key
   uint32_t    m_mptcpLocalToken;      //!< Hash of the key
 

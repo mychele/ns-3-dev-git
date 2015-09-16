@@ -389,7 +389,6 @@ MpTcpTestCase::DoSetup (void)
   memset (m_sourceRxPayload, 0, m_totalBytes);
   memset (m_serverRxPayload, 0, m_totalBytes);
 
-  Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true) );
   Packet::EnablePrinting();
 
   if (m_useIpv6 == true)
@@ -823,6 +822,9 @@ public:
 //    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCCOlia") );
     Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::TcpNewReno") );
 
+    Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true) );
+    Config::SetDefault ("ns3::TcpSocketBase::NullISN", BooleanValue(false) );
+
 
     Time::SetResolution (Time::MS);
 
@@ -835,9 +837,9 @@ public:
         // 2) source write size, 3) source read size
         // 4) server write size, and 5) server read size
         // with units of bytes
-//        AddTestCase (new MpTcpTestCase ( i, 13, 200, 200, 200, 200, false), TestCase::QUICK);
+        AddTestCase (new MpTcpTestCase ( i, 13, 200, 200, 200, 200, false), TestCase::QUICK);
 //        AddTestCase (new MpTcpTestCase (i, 13, 1, 1, 1, 1, false), TestCase::QUICK);
-        AddTestCase (new MpTcpTestCase (i, 100000, 100, 50, 100, 20, false), TestCase::QUICK);
+//        AddTestCase (new MpTcpTestCase (i, 100000, 100, 50, 100, 20, false), TestCase::QUICK);
 //        AddTestCase (new MpTcpTestCase (i, 100000, 100, 50, 100, 20, false), TestCase::QUICK);
 
     // here it's a test where I lower streamsize to see where it starts failing.

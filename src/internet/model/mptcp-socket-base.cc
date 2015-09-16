@@ -390,13 +390,26 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 
   //! TODO Set in TcpSocketBase an attribute to enable idsn random
   // motivation is that it's clearer to plot from 0
-  if(m_nullIsn)
-  {
-    idsn = 0;
-  }
+//  if(m_nullIsn)
+//  {
+//    idsn = 0;
+//  }
+//  if(m_nullIsn)
+//  {
+//    m_nextTxSequence = (uint32_t)0;
+//  }
+//  else
+//  {
+//    m_nextTxSequence = (uint32_t)idsn;
+//  }
+
+//  SetTxHead(m_nextTxSequence);
+//  m_firstTxUnack = m_nextTxSequence;
+//  m_highTxMark = m_nextTxSequence;
+
   // + 1 ?
-  NS_LOG_DEBUG("test");
-//  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ));
+  NS_LOG_DEBUG("Setting idsn=" << idsn);
+  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ));
 }
 
 
