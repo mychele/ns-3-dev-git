@@ -470,6 +470,7 @@ protected: // protected methods
   friend class MpTcpSubflow;
   /**
    * Expects InetXSocketAddress
+   * if no callback set then returns true
    */
   virtual bool NotifyJoinRequest (const Address &from, const Address & toAddress);
   /**

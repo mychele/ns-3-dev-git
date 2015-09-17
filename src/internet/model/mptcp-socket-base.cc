@@ -111,7 +111,7 @@ MpTcpSocketBase::GetTypeId(void)
       .AddConstructor<MpTcpSocketBase>()
       .AddAttribute ("SocketType",
                "Socket type of TCP objects.",
-               TypeIdValue (MpTcpSubflow::GetTypeId ()),
+               TypeIdValue (MpTcpSubflow:t:GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_subflowTypeId),
                MakeTypeIdChecker ())
       .AddAttribute ("Scheduler",
