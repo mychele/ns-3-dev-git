@@ -951,9 +951,12 @@ MpTcpSubflow::CompleteFork(Ptr<const Packet> p, const TcpHeader& h, const Addres
     if(IsMaster())
     {
        NS_LOG_LOGIC("Setting meta endpoint to " << m_endPoint
-                    << " (old endpoint=" << GetMeta()->m_endPoint << " )");
+                    << " (old endpoint=" << GetMeta()->m_endPoint << " )"
+                    << " bound to interface " << m_endPoint->GetBoundNetDevice()
+                    );
        GetMeta()->m_endPoint = m_endPoint;
-
+       /** allows to set*/
+//       m_boundnetdevice = m_endPoint->GetBoundNetDevice();
     }
 }
 

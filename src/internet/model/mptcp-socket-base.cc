@@ -111,7 +111,7 @@ MpTcpSocketBase::GetTypeId(void)
       .AddConstructor<MpTcpSocketBase>()
       .AddAttribute ("SocketType",
                "Socket type of TCP objects.",
-               TypeIdValue (MpTcpSubflow:t:GetTypeId ()),
+               TypeIdValue (MpTcpSubflow::GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_subflowTypeId),
                MakeTypeIdChecker ())
       .AddAttribute ("Scheduler",
@@ -294,7 +294,8 @@ MpTcpSocketBase::ConnectNewSubflow(const Address &local, const Address &remote)
   AddSubflow(sf);
 
   // TODO account for this error as well ?
-  NS_ASSERT(sf->Bind(local) == 0);
+  bool res = (sf->Bind(local) == 0);
+  NS_ASSERT(res);
   int ret = sf->Connect(remote);
 
   return ret;
@@ -970,6 +971,7 @@ MpTcpSocketBase::AddSubflow(Ptr<MpTcpSubflow> sflow)
 //  sf->SetCloseCallbacks
 //  sf->SetDataSentCallback (  );
 //  sf->RecvCallback (cbRcv);
+
   sf->SetCongestionControlAlgorithm(this->m_congestionControl);
 
   m_subflows[Others].push_back( sf );
@@ -1227,7 +1229,7 @@ MpTcpSocketBase::IsConnected() const
 
 
 /** Inherited from Socket class: Bind socket to an end-point in MpTcpL4Protocol
-TODO convert to noop
+TODO convert to noop/remove
 */
 int
 MpTcpSocketBase::Bind()

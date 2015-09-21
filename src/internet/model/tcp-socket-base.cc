@@ -506,15 +506,40 @@ TcpSocketBase::Bind6 (void)
   return SetupCallback ();
 }
 
+Ptr<NetDevice>
+TcpSocketBase::MapIpToInterface(Ipv4Address addr) const
+{
+    NS_LOG_DEBUG(addr);
+      Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
+      for( uint32_t n =0; n < ipv4client->GetNInterfaces(); n++){
+        for( uint32_t a=0; a < ipv4client->GetNAddresses(n); a++){
+            NS_LOG_UNCOND( "Client addr " << n <<"/" << a << "=" << ipv4client->GetAddress(n,a));
+            if(addr ==ipv4client->GetAddress(n,a).GetLocal()) {
+                NS_LOG_UNCOND("EUREKA same ip=" << addr);
+                // That function is buggy
+//                BindToNetDevice();
+                return m_node->GetDevice(n);
+//                m_endPoint->BindToNetDevice();
+////                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+//                break;
+            }
+        }
+      }
+    return 0;
+}
+
 /* Inherit from Socket class: Bind socket (with specific address) to an end-point in TcpL4Protocol */
 int
 TcpSocketBase::Bind (const Address &address)
 {
   NS_LOG_FUNCTION (this << address);
+
   if (InetSocketAddress::IsMatchingType (address))
     {
+
       InetSocketAddress transport = InetSocketAddress::ConvertFrom (address);
       Ipv4Address ipv4 = transport.GetIpv4 ();
+      NS_LOG_DEBUG(ipv4 );
       uint16_t port = transport.GetPort ();
       if (ipv4 == Ipv4Address::GetAny () && port == 0)
         {
@@ -532,11 +557,41 @@ TcpSocketBase::Bind (const Address &address)
         {
           m_endPoint = m_tcp->Allocate (ipv4, port);
         }
+
+      NS_LOG_UNCOND("TATA" );
       if (0 == m_endPoint)
         {
           m_errno = port ? ERROR_ADDRINUSE : ERROR_ADDRNOTAVAIL;
           return -1;
         }
+
+      Ptr<NetDevice> dev = MapIpToInterface(m_endPoint->GetLocalAddress());
+
+      if(dev) {
+                m_endPoint->BindToNetDevice(dev);
+                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+      }
+      #if 0
+      Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
+      for( uint32_t n =0; n < ipv4client->GetNInterfaces(); n++){
+        for( uint32_t a=0; a < ipv4client->GetNAddresses(n); a++){
+            NS_LOG_UNCOND( "Client addr " << n <<"/" << a << "=" << ipv4client->GetAddress(n,a));
+            if(m_endPoint->GetLocalAddress() ==ipv4client->GetAddress(n,a).GetLocal()) {
+                NS_LOG_UNCOND("EUREKA same ip=" << m_endPoint->GetLocalAddress());
+                // That function is buggy
+//                BindToNetDevice();
+                m_endPoint->BindToNetDevice(m_node->GetDevice(n));
+//                m_boundnetdevice = m_node->GetDevice(n);
+                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+                break;
+            }
+        }
+      }
+      #endif
+      NS_LOG_UNCOND("BOUND NETDEV=" << m_boundnetdevice );
+//      BindToNetDevice(
+//      m_endPoint->GetBoundNetDevice();
+
     }
   else if (Inet6SocketAddress::IsMatchingType (address))
     {
@@ -648,7 +703,8 @@ TcpSocketBase::Connect (const Address & address)
 
       // Get the appropriate local address and port number from the routing protocol and set up endpoint
       if (SetupEndpoint () != 0)
-        { // Route to destination does not exist
+        {
+          NS_LOG_ERROR("Route to destination does not exist ?!");
           return -1;
         }
     }
@@ -937,10 +993,9 @@ TcpSocketBase::BindToNetDevice (Ptr<NetDevice> netdevice)
           return;
         }
       NS_ASSERT (m_endPoint != 0);
+      m_endPoint->BindToNetDevice (netdevice);
     }
-  m_endPoint->BindToNetDevice (netdevice);
-
-  if (m_endPoint6 == 0)
+  else if (m_endPoint6 == 0)
     {
       if (Bind6 () == -1)
         {
@@ -948,8 +1003,11 @@ TcpSocketBase::BindToNetDevice (Ptr<NetDevice> netdevice)
           return;
         }
       NS_ASSERT (m_endPoint6 != 0);
+      m_endPoint6->BindToNetDevice (netdevice);
     }
-  m_endPoint6->BindToNetDevice (netdevice);
+  else {
+    NS_FATAL_ERROR("What the hell happened ?");
+  }
 
   return;
 }
@@ -1518,6 +1576,10 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // would clutter less TcpSocketBase
 
       Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta();
+
+      // HACK matt otherwise the new subflow sends the packet on the wroing interface
+      master->m_boundnetdevice = this->m_boundnetdevice;
+
       bool result = m_tcp->AddSocket(newSock);
       NS_ASSERT_MSG(result, "could not register meta");
       newSock->GenerateUniqueMpTcpKey();
@@ -1541,6 +1603,8 @@ TcpSocketBase::UpgradeToMeta()
   MpTcpSubflow *subflow = new MpTcpSubflow(*this);
 //  CompleteConstruct(sf);
   Ptr<MpTcpSubflow> master(subflow, true);
+
+
 
   // the master is always a new socket, hence we should register it
   bool result = m_tcp->AddSocket(master);
@@ -1597,44 +1661,6 @@ TcpSocketBase::UpgradeToMeta()
   return master;
 //    return 0;
 }
-
-
-//int
-//TcpSocketBase::ProcessOptionMpTcpSynSent(const Ptr<const TcpOption> option)
-//{
-//  NS_LOG_DEBUG(option);
-//  Ptr<const TcpOptionMpTcpCapable> mpc = DynamicCast<const TcpOptionMpTcpCapable>(option);
-//
-//  if(mpc)
-//  {
-//    NS_LOG_UNCOND("found MP_CAPABLE");
-//    return 1;
-//  }
-//  return 0;
-//}
-
-//int
-//TcpSocketBase::ProcessOptionMpTcpEstablished(const Ptr<const TcpOption> option)
-//{
-//    NS_LOG_FUNCTION(this << "Does nothing");
-//}
-
-
-
-//int
-//TcpSocketBase::ProcessTcpOptionsLastAck(const TcpHeader& header)
-//{
-//  NS_LOG_FUNCTION (this << header);
-//}
-//
-//int
-//TcpSocketBase::ProcessTcpOptionsClosing(const TcpHeader& header)
-//{
-//  NS_LOG_FUNCTION (this << header);
-//
-//  return 0;
-//}
-//
 
 
 int
@@ -1835,8 +1861,14 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
         // SendRst?
         // TODO save endpoint
 //        if(m_endpoint != 0)
+        Ipv4EndPoint* endPoint = m_endPoint;
+        Ptr<NetDevice> boundDev = m_boundnetdevice;
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
         Ptr<MpTcpSubflow> master = UpgradeToMeta();
+//              // HACK matt otherwise the new subflow sends the packet on the wroing interface
+        master->m_boundnetdevice = boundDev;
+        master->m_endPoint = endPoint;
+
         NS_LOG_DEBUG("MATT2 end of upgrade" << this << " "<< GetInstanceTypeId());
 //        bool result = m_tcp->AddSocket(master);
 //        NS_ASSERT(result);
@@ -2518,6 +2550,15 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
                                     InetSocketAddress::ConvertFrom (toAddress).GetPort (),
                                     InetSocketAddress::ConvertFrom (fromAddress).GetIpv4 (),
                                     InetSocketAddress::ConvertFrom (fromAddress).GetPort ());
+
+      Ptr<NetDevice> dev = MapIpToInterface(InetSocketAddress::ConvertFrom (toAddress).GetIpv4 ());
+      if(dev) {
+        NS_LOG_UNCOND("device found; binding to it");
+        m_endPoint->BindToNetDevice(dev);
+        m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+      }
+
+      /* la il faut chercher */
       m_endPoint6 = 0;
       NS_ASSERT(m_endPoint);
     }

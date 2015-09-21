@@ -172,6 +172,10 @@ public:
 
   // Set associated Node, TcpL4Protocol, RttEstimator to this socket
 
+
+  Ptr<NetDevice>
+  MapIpToInterface(Ipv4Address) const;
+
   /**
    * \brief Set the associated node.
    * \param node the node

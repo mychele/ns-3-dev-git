@@ -52,7 +52,8 @@ class OutputStreamWrapper;
 
 /**
 TODO move all the supplementary stuff to MpTcpSocketState
-
+remove the bind, in fact this socket should not care about m_endPoint
+so it could be removed as well
 */
 //class MpTcpSocketState : TcpSocketState
 //{

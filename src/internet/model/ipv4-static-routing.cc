@@ -222,7 +222,7 @@ Ipv4StaticRouting::RemoveMulticastRoute (uint32_t index)
 Ptr<Ipv4Route>
 Ipv4StaticRouting::LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)
 {
-  NS_LOG_FUNCTION (this << dest << " " << oif);
+  NS_LOG_FUNCTION (this << dest << " request interface=" << oif);
   Ptr<Ipv4Route> rtentry = 0;
   uint16_t longest_mask = 0;
   uint32_t shortest_metric = 0xffffffff;
@@ -249,7 +249,10 @@ Ipv4StaticRouting::LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)
       Ipv4Mask mask = (j)->GetDestNetworkMask ();
       uint16_t masklen = mask.GetPrefixLength ();
       Ipv4Address entry = (j)->GetDestNetwork ();
-      NS_LOG_LOGIC ("Searching for route to " << dest << ", checking against route to " << entry << "/" << masklen);
+      NS_LOG_LOGIC ("Searching for route to " << dest << ", checking against route to "
+                    << entry << "/" << masklen
+                    << " " << j->GetInterface()
+                    );
       if (mask.IsMatch (dest, entry))
         {
           NS_LOG_LOGIC ("Found global network route " << j << ", mask length " << masklen << ", metric " << metric);
