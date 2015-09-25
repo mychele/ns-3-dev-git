@@ -100,12 +100,22 @@ public:
    */
   virtual Ptr<NetDevice> GetDevice (uint32_t i) const;
 
-protected:
   /**
    * \brief Get the delay associated with this channel
+   * \param i Between 0 and 1: select the link
    * \returns Time delay
    */
   Time GetDelay (void) const;
+  Time GetDelay (uint32_t i) const;
+
+  /**
+   * Must be called before link initialization
+   * \param t duration of packet transfer in both directions
+   */
+  void SetDelay (Time t) ;
+
+protected:
+
 
   /**
    * \brief Check to make sure the link is initialized
@@ -147,7 +157,8 @@ private:
   /** Each point to point link has exactly two net devices. */
   static const int N_DEVICES = 2;
 
-  Time          m_delay;    //!< Propagation delay
+  Time          m_delay;             //!< Propagation delay
+  Time          m_alternateDelay;    //!< Propagation delay
   int32_t       m_nDevices; //!< Devices of this channel
 
   /**
@@ -190,11 +201,12 @@ public:
     /** \brief Create the link, it will be in INITIALIZING state
      *
      */
-    Link() : m_state (INITIALIZING), m_src (0), m_dst (0) {}
+    Link() : m_state (INITIALIZING), m_src (0), m_dst (0), m_delay(0) {}
 
     WireState                  m_state; //!< State of the link
     Ptr<PointToPointNetDevice> m_src;   //!< First NetDevice
     Ptr<PointToPointNetDevice> m_dst;   //!< Second NetDevice
+    Time m_delay;                       //!< Propagation delay
   };
 
   Link    m_link[N_DEVICES]; //!< Link model
