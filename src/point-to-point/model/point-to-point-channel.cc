@@ -29,7 +29,7 @@ NS_LOG_COMPONENT_DEFINE ("PointToPointChannel");
 
 NS_OBJECT_ENSURE_REGISTERED (PointToPointChannel);
 
-TypeId 
+TypeId
 PointToPointChannel::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::PointToPointChannel")
@@ -56,7 +56,7 @@ PointToPointChannel::GetTypeId (void)
 }
 
 //
-// By default, you get a channel that 
+// By default, you get a channel that
 // has an "infitely" fast transmission speed and zero delay.
 PointToPointChannel::PointToPointChannel()
   :
@@ -115,7 +115,7 @@ PointToPointChannel::TransmitStart (
   return true;
 }
 
-uint32_t 
+uint32_t
 PointToPointChannel::GetNDevices (void) const
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -159,10 +159,11 @@ PointToPointChannel::SetDelay (Time owd)
   m_delay = owd;
 
   /* if m_alternateDelay set to its default value than we update it */
-  struct TypeId::AttributeInformation info;
-  if(GetTypeId().LookupAttributeByName("AlternateDelay", &info) && info.originalInitialValue == info.initialValue) {
-    m_alternateDelay = owd;
-  }
+  // REMOVED cause it was buggy ?!
+//  struct TypeId::AttributeInformation info;
+//  if(GetTypeId().LookupAttributeByName("AlternateDelay", &info) && info.originalInitialValue == info.initialValue) {
+//    m_alternateDelay = owd;
+//  }
 
 }
 

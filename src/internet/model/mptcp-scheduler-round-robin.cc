@@ -26,8 +26,12 @@
 
 NS_LOG_COMPONENT_DEFINE("MpTcpSchedulerRoundRobin");
 
+
+
 namespace ns3
 {
+
+NS_OBJECT_ENSURE_REGISTERED (MpTcpSchedulerRoundRobin);
 
 TypeId
 MpTcpSchedulerRoundRobin::GetTypeId (void)
