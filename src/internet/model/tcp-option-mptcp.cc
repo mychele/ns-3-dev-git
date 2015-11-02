@@ -1153,8 +1153,9 @@ uint32_t
 TcpOptionMpTcpAddAddress::Deserialize (Buffer::Iterator i)
 {
   uint32_t length =  TcpOptionMpTcpMain::DeserializeRef (i);
-  NS_ASSERT ( length == 10 || length == 22 );
+  NS_ASSERT ( length > 3);
 
+  // TODO here we should be able to deserialize more than one
   uint8_t subtype_and_ipversion = i.ReadU8 ();
   NS_ASSERT ( subtype_and_ipversion >> 4 == GetSubType ()  );
 
