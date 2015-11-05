@@ -46,7 +46,7 @@ class GccTraits(CompilerTraits):
 		elif level == 1:
 			return (['-g'], [])
 		elif level >= 2:
-			return (['-ggdb', '-g3'], ['_DEBUG'])
+			return (['-g', '-g3', '-frecord-gcc-switches'], ['_DEBUG'])
 		
 
 class IccTraits(CompilerTraits):

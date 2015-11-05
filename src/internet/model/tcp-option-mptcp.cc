@@ -960,14 +960,14 @@ number that corresponds with the DATA_FIN itself
 bool
 TcpOptionMpTcpDSS::DataFinMappingOnly () const
 {
-  return (m_flags & DataFin) && m_dataLevelLength == 1 && m_ssn == 0;
+  return (m_flags & DataFin) && (m_dataLevelLength == 1) && (m_ssn == 0);
 }
 
 bool
 TcpOptionMpTcpDSS::IsInfiniteMapping () const
 {
   //  The checksum, in such a case, will also be set to zero
-  return (GetFlags () & DSNMappingPresent) && m_dataLevelLength == 0;
+  return (GetFlags () & DSNMappingPresent) && (m_dataLevelLength == 0);
 }
 
 uint64_t
