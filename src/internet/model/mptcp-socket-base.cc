@@ -181,8 +181,8 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_subflowConnectionSucceeded(sock.m_subflowConnectionSucceeded),
   m_subflowConnectionFailure(sock.m_subflowConnectionFailure),
   m_joinRequest(sock.m_joinRequest),
-  m_subflowCreated(sock.m_subflowCreated),
   m_receivedDSS(sock.m_receivedDSS),
+  m_subflowCreated(sock.m_subflowCreated),
   m_subflowTypeId(sock.m_subflowTypeId),
   m_schedulerTypeId(sock.m_schedulerTypeId)
 

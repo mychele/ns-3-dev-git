@@ -21,7 +21,7 @@
  */
 #undef NS_LOG_APPEND_CONTEXT
 #define NS_LOG_APPEND_CONTEXT \
-  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << ": ] "; }
+  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << ": sf " << "] "; }
 //<< TcpStateName[m_node->GetTcp()->GetState()] <<
 
 #include <iostream>
@@ -103,6 +103,7 @@ GetMapping(const Ptr<const TcpOptionMpTcpDSS> dss)
     dss->GetMapping (dsn, ssn, length);
     mapping.SetHeadDSN( SequenceNumber64(dsn));
     mapping.SetMappingSize(length);
+    // TODO convert to
     mapping.MapToSSN( SequenceNumber32(ssn));
     return mapping;
 }
@@ -255,7 +256,8 @@ If copied from a legacy socket, then it's a master socket
 MpTcpSubflow::MpTcpSubflow(const TcpSocketBase& sock)
     : TcpSocketBase(sock),
     m_dssFlags(0),
-    m_masterSocket(true)
+    m_masterSocket(true),
+    m_localNonce(0)
 
 {
     NS_LOG_FUNCTION (this << &sock);
@@ -279,9 +281,11 @@ MpTcpSubflow::MpTcpSubflow(const TcpSocketBase& sock)
 // Does this constructor even make sense ? no ? to remove ?
 MpTcpSubflow::MpTcpSubflow(const MpTcpSubflow& sock)
   : TcpSocketBase(sock),
+  m_dssFlags(0),
   m_masterSocket(sock.m_masterSocket),  //!false
+  m_backupSubflow(sock.m_backupSubflow),
   m_localNonce(sock.m_localNonce),
-  m_dssFlags(0)
+  m_prefixCounter(0)
 {
   NS_LOG_FUNCTION (this << &sock);
   NS_LOG_LOGIC ("Invoked the copy constructor");
@@ -293,9 +297,12 @@ MpTcpSubflow::MpTcpSubflow(
     TcpSocketBase(),
     m_routeId(0),
     m_metaSocket(0),
+    m_dssFlags(0),
     m_backupSubflow(false),
     m_masterSocket(false),
-    m_localNonce(0)
+    m_localNonce(0),
+    m_prefixCounter(0)
+    
 {
   NS_LOG_FUNCTION(this);
 }
@@ -469,6 +476,7 @@ MpTcpSubflow::SendMapping(Ptr<Packet> p, MpTcpMapping& mapping)
 //
 //}
 
+/* used by Meta socket */
 bool
 MpTcpSubflow::AddLooseMapping(SequenceNumber64 dsnHead, uint16_t length)
 {

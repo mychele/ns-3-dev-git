@@ -55,7 +55,8 @@ public:
   // Accessors
 
   /**
-   * Returns the first byte's sequence number
+   * Returns the first byte's sequence number, i.e.
+   * the Initial Sequence Number of the connection
    * \returns the first byte's sequence number
    */
   SequenceNumber32 HeadSequence (void) const;

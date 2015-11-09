@@ -283,6 +283,9 @@ TcpSocketBase::TcpSocketBase (void)
     m_rWnd (0),
     m_highRxMark (0),
     m_highRxAckMark (0),
+    m_bytesAckedNotProcessed(0),
+    m_nullIsn(true),
+    m_peerISN(0),
     m_mptcpEnabled(false),
     m_mptcpLocalKey(0),
     m_mptcpLocalToken(0),
@@ -348,6 +351,9 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_rWnd (sock.m_rWnd),
     m_highRxMark (sock.m_highRxMark),
     m_highRxAckMark (sock.m_highRxAckMark),
+    m_bytesAckedNotProcessed(0),
+    m_nullIsn(sock.m_nullIsn),
+    m_peerISN(sock.m_peerISN),
     m_mptcpEnabled (sock.m_mptcpEnabled),
     m_mptcpLocalKey(sock.m_mptcpLocalKey),
     m_mptcpLocalToken(sock.m_mptcpLocalToken),
@@ -1818,12 +1824,25 @@ TcpSocketBase::ProcessTcpOptionsListen(const TcpHeader& header)
 }
 #endif
 
+
+void 
+TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn) 
+{
+    m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
+    m_peerISN = peerIsn;
+}
 //int
 //TcpSocketBase::ProcessTcpOptionsSynRcvd(const TcpHeader& header)
 //{
 //    return 1;
 //}
-
+SequenceNumber32 
+TcpSocketBase::GetPeerIsn(void) const
+{
+    // TODO check it's connected 
+//    NS_ASSERT()
+    return m_peerISN;
+}
 
 /* Received a packet upon SYN_SENT */
 void
@@ -1852,7 +1871,8 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       NS_LOG_INFO ("SYN_SENT -> SYN_RCVD");
       m_state = SYN_RCVD;
       m_cnCount = m_cnRetries;
-      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+//      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+      InitPeerISN(tcpHeader.GetSequenceNumber ());
       SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
     }
   else if (tcpflags == (TcpHeader::SYN | TcpHeader::ACK)
@@ -1885,7 +1905,8 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
       m_connected = true;
       m_retxEvent.Cancel ();
-      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+      InitPeerISN(tcpHeader.GetSequenceNumber ());
+//      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
       m_highTxMark = ++m_nextTxSequence;
       m_txBuffer->SetHeadSequence (m_nextTxSequence);
       m_firstTxUnack = m_nextTxSequence;
@@ -1934,6 +1955,7 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       m_connected = true;
       m_retxEvent.Cancel ();
       m_highTxMark = ++m_nextTxSequence;
+//      SetTxHead()
       m_txBuffer->SetHeadSequence (m_nextTxSequence);
       m_firstTxUnack = m_nextTxSequence;
 
@@ -1975,7 +1997,8 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
     }
   else if (tcpflags == TcpHeader::SYN)
     { // Probably the peer lost my SYN+ACK
-      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+      InitPeerISN(tcpHeader.GetSequenceNumber ());
+//      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
       SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
     }
   else if (tcpflags == (TcpHeader::FIN | TcpHeader::ACK))

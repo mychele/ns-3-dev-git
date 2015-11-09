@@ -202,6 +202,7 @@ public:
    * \param seq First byte unacknowledged
    */
 //  virtual void SetTxHead(const SequenceNumber32& seq);
+  virtual void InitPeerISN(const SequenceNumber32& seq);
 
 
   virtual SequenceNumber32 FirstUnackedSeq() const;
@@ -326,6 +327,9 @@ public:
   virtual int GetSockName (Address &address) const; // Return local addr:port in address
   virtual void BindToNetDevice (Ptr<NetDevice> netdevice); // NetDevice with my m_endPoint
 
+  // Return Peer ISN
+  virtual SequenceNumber32 GetPeerIsn(void) const;
+  
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
   virtual uint32_t GetSndBufSize (void) const;
@@ -350,6 +354,10 @@ protected:
   virtual void     SetSegSize (uint32_t size);
   virtual void     SetInitialSSThresh (uint32_t threshold);
   virtual void     SetInitialCwnd (uint32_t cwnd);
+  
+//  virtual void     SetLocalISN (SequenceNumber32 seq);
+  
+  
   virtual void     SetConnTimeout (Time timeout);
   virtual void     SetConnCount (uint32_t count);
   virtual void     SetDelAckTimeout (Time timeout);
@@ -1026,6 +1034,9 @@ protected:
   TracedValue<SequenceNumber32> m_highRxAckMark;  //!< Highest ack received
   uint32_t                      m_bytesAckedNotProcessed;  //!< Bytes acked, but not processed
   bool m_nullIsn;       //< Should the ISN be null ?
+  // TODO remove, it exists in TcpXxBuffer
+//  SequenceNumber32 m_ISN;       //!< Initial sequence number
+  SequenceNumber32 m_peerISN;       //!< Initial sequence number
 
   // Options
 //  bool    m_mptcpAllow;           //!< Window Scale option enabled
