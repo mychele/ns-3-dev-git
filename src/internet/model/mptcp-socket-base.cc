@@ -397,28 +397,14 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 
   NS_LOG_DEBUG("Peer key/token set to " << m_peerKey << "/" << m_peerToken);
 
-  //! TODO Set in TcpSocketBase an attribute to enable idsn random
-  // motivation is that it's clearer to plot from 0
-//  if(m_nullIsn)
-//  {
-//    idsn = 0;
-//  }
-//  if(m_nullIsn)
-//  {
-//    m_nextTxSequence = (uint32_t)0;
-//  }
-//  else
-//  {
-//    m_nextTxSequence = (uint32_t)idsn;
-//  }
-
 //  SetTxHead(m_nextTxSequence);
 //  m_firstTxUnack = m_nextTxSequence;
 //  m_highTxMark = m_nextTxSequence;
 
   // + 1 ?
   NS_LOG_DEBUG("Setting idsn=" << idsn << " (thus RxNext=idsn + 1)");
-  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ) + SequenceNumber32(1));
+  InitPeerISN(SequenceNumber32( (uint32_t)idsn ));
+//  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ) + SequenceNumber32(1));
 }
 
 
@@ -431,6 +417,22 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 //}
 
 
+
+void 
+MpTcpSocketBase::InitLocalISN(const SequenceNumber32& seq)
+{
+    //!
+    TcpSocketBase::InitLocalISN(seq);
+
+    /*
+    The SYN with MP_CAPABLE occupies the first octet of data sequence
+   space, although this does not need to be acknowledged at the
+   connection level until the first data is sent (see Section 3.3).*/
+    m_nextTxSequence++;
+    m_firstTxUnack = m_nextTxSequence;
+    m_highTxMark = m_nextTxSequence;
+    m_txBuffer->SetHeadSequence (m_nextTxSequence);
+}
 
 void
 MpTcpSocketBase::ProcessListen(Ptr<Packet> packet, const TcpHeader& mptcpHeader, const Address& fromAddress, const Address& toAddress)
@@ -1533,6 +1535,10 @@ MpTcpSocketBase::NewAck(SequenceNumber32 const& dsn)
 {
   NS_LOG_FUNCTION(this << " new dataack=[" <<  dsn << "]");
 
+  if(m_state == SYN_SENT) {
+    
+    
+  }
   TcpSocketBase::NewAck(dsn);
 
   #if 0
@@ -1631,10 +1637,10 @@ MpTcpSocketBase::BecomeFullyEstablished()
     m_receivedDSS = true;
     
     // same as in ProcessSynSent upon SYN/ACK reception
-    m_nextTxSequence++;
-    m_firstTxUnack = m_nextTxSequence;
-    m_highTxMark = m_nextTxSequence;
-    m_txBuffer->SetHeadSequence (m_nextTxSequence);
+//    m_nextTxSequence++;
+//    m_firstTxUnack = m_nextTxSequence;
+//    m_highTxMark = m_nextTxSequence;
+//    m_txBuffer->SetHeadSequence (m_nextTxSequence);
     // should be called only on client side
     ConnectionSucceeded();
 }

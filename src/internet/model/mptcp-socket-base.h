@@ -271,7 +271,7 @@ public:
   **/
 //  virtual uint64_t GenerateKey();
 
-
+  virtual void InitLocalISN(const SequenceNumber32& seq);
 
   /**
   * TODO when is it considered

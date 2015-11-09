@@ -1601,7 +1601,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
 
-        return;
+      return;
     }
 
   NS_LOG_LOGIC ("Cloned a TcpSocketBase " << newSock);
@@ -1944,7 +1944,7 @@ uint32_t localToken;
         SequenceNumber32 sidsn( (uint32_t) idsn);
         
         NS_LOG_DEBUG("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
-        InitLocalISN( sidsn);
+        InitLocalISN(sidsn);
 //              // HACK matt otherwise the new subflow sends the packet on the wroing interface
         master->m_boundnetdevice = boundDev;
         master->m_endPoint = endPoint;
