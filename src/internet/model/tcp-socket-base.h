@@ -203,6 +203,8 @@ public:
    */
 //  virtual void SetTxHead(const SequenceNumber32& seq);
   virtual void InitPeerISN(const SequenceNumber32& seq);
+  virtual void InitLocalISN();
+  virtual void InitLocalISN(const SequenceNumber32& seq);
 
 
   virtual SequenceNumber32 FirstUnackedSeq() const;
@@ -328,6 +330,7 @@ public:
   virtual void BindToNetDevice (Ptr<NetDevice> netdevice); // NetDevice with my m_endPoint
 
   // Return Peer ISN
+  virtual SequenceNumber32 GetLocalIsn(void) const;
   virtual SequenceNumber32 GetPeerIsn(void) const;
   
   // Implementing ns3::TcpSocket -- Attribute get/set
@@ -1035,7 +1038,7 @@ protected:
   uint32_t                      m_bytesAckedNotProcessed;  //!< Bytes acked, but not processed
   bool m_nullIsn;       //< Should the ISN be null ?
   // TODO remove, it exists in TcpXxBuffer
-//  SequenceNumber32 m_ISN;       //!< Initial sequence number
+  SequenceNumber32 m_localISN;       //!< Initial sequence number
   SequenceNumber32 m_peerISN;       //!< Initial sequence number
 
   // Options

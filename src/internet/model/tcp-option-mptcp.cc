@@ -800,7 +800,7 @@ TcpOptionMpTcpDSS::Print (std::ostream& os) const
           os << "Has datafin for seq [" << GetDataFinDSN () << "]";
         }
 
-      os << " DSN:" << m_dsn << " length=" << m_dataLevelLength;
+      os << " DSN:" << m_dsn << " length=" << m_dataLevelLength << " ssn=" << m_ssn;
       if (GetFlags () & DSNOfEightBytes)
         {
           os << "(8bytes mapping)";

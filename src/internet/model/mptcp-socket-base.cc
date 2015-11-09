@@ -119,6 +119,7 @@ MpTcpSocketBase::GetTypeId(void)
                TypeIdValue (MpTcpScheduler::GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_schedulerTypeId),
                MakeTypeIdChecker ())
+      //TODO remove ?
       .AddAttribute ("KeyGeneratedIDSN", "Generate IDSN from the key",
                BooleanValue (false),
                MakeBooleanAccessor (&MpTcpSocketBase::m_generatedIdsn),
@@ -149,6 +150,12 @@ static const std::string containerNames[MpTcpSocketBase::Maximum] = {
 };
 
 
+/*
+
+GenerateTokenForKey( HMAC_SHA1, localKey, localToken, idsn );
+
+*/
+
 // TODO unused for now
 MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
   TcpSocketBase(sock),
@@ -166,7 +173,7 @@ MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
     NS_LOG_LOGIC("Copying from TcpSocketBase");
     m_remotePathIdManager = Create<MpTcpPathIdManagerImpl>();
 
-  CreateScheduler(m_schedulerTypeId);
+    CreateScheduler(m_schedulerTypeId);
 }
 
 
@@ -193,6 +200,7 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_remotePathIdManager = Create<MpTcpPathIdManagerImpl>();
 
 
+  // TODO
   CreateScheduler(m_schedulerTypeId);
 
   //! TODO here I should generate a new Key
@@ -409,8 +417,8 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 //  m_highTxMark = m_nextTxSequence;
 
   // + 1 ?
-  NS_LOG_DEBUG("Setting idsn=" << idsn);
-  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ));
+  NS_LOG_DEBUG("Setting idsn=" << idsn << " (thus RxNext=idsn + 1)");
+  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ) + SequenceNumber32(1));
 }
 
 
@@ -1621,7 +1629,12 @@ MpTcpSocketBase::BecomeFullyEstablished()
 {
     NS_LOG_FUNCTION (this);
     m_receivedDSS = true;
-
+    
+    // same as in ProcessSynSent upon SYN/ACK reception
+    m_nextTxSequence++;
+    m_firstTxUnack = m_nextTxSequence;
+    m_highTxMark = m_nextTxSequence;
+    m_txBuffer->SetHeadSequence (m_nextTxSequence);
     // should be called only on client side
     ConnectionSucceeded();
 }

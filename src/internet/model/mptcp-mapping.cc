@@ -403,7 +403,7 @@ MpTcpMappingContainer::GetMappingForSSN(const SequenceNumber32& ssn, MpTcpMappin
 //  }
   it--;
   mapping = *it;
-  NS_LOG_DEBUG("Is ssn in " << mapping << " ?");
+  NS_LOG_DEBUG("Is ssn "<< ssn << " in " << mapping << " ?");
   return mapping.IsSSNInRange( ssn );
 
 

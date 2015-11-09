@@ -347,7 +347,8 @@ MpTcpSubflow::Send(Ptr<Packet> p, uint32_t flags)
 //      SequenceNumber32 ssnTail = m_txBuffer->TailSequence();
       MpTcpMapping temp;
       SequenceNumber32 ssnHead = m_txBuffer->TailSequence() - p->GetSize();
-      NS_ASSERT(m_TxMappings.GetMappingForSSN(ssnHead, temp));
+      bool ok = m_TxMappings.GetMappingForSSN(ssnHead, temp);
+      NS_ASSERT(ok);
 //      return ret;
   }
 
@@ -869,19 +870,36 @@ MpTcpSubflow::AddMpTcpOptionDSS(TcpHeader& header)
   if( sendDataFin && !(m_dssFlags & TcpOptionMpTcpDSS::DSNMappingPresent))
   {
 
+    // we want to set the final ssn to 0 but m_txBuffer->HeadSequence() is always removed from current SSN
+    // hence we set it here to m_txBuffer->HeadSequence() so that it becomes 
+    // (m_txBuffer->HeadSequence() - m_txBuffer->HeadSequence() = 0 later.
+    // TODO rewrite so that it becomes clearer, maybe when we setMapping
+//    m_dssMapping.MapToSSN(m_txBuffer->HeadSequence());
     m_dssMapping.MapToSSN(SequenceNumber32(0));
     m_dssMapping.SetHeadDSN(SEQ64TO32(GetMeta()->m_txBuffer->TailSequence() ));
     m_dssMapping.SetMappingSize(1);
 
     m_dssFlags |= TcpOptionMpTcpDSS::DSNMappingPresent;
   }
+  else if(m_dssFlags & TcpOptionMpTcpDSS::DSNMappingPresent) {
+    // TODO explain
+//    + SequenceNumber32(1)
+    // +1 ?
+    m_dssMapping.MapToSSN(
+        SequenceNumber32(m_dssMapping.HeadSSN().GetValue() - GetLocalIsn().GetValue()
+                         )
+                          );
+    NS_LOG_DEBUG("Converting to relative SSN " << m_dssMapping.HeadSSN());
+  }
 
   // if there is a mapping to send
   if(m_dssFlags & TcpOptionMpTcpDSS::DSNMappingPresent)
   {
 
-      dss->SetMapping(m_dssMapping.HeadDSN().GetValue(), m_dssMapping.HeadSSN().GetValue(),
-                            m_dssMapping.GetLength(), sendDataFin);
+      dss->SetMapping(m_dssMapping.HeadDSN().GetValue(), 
+                      /** SSN should be relative **/
+                      m_dssMapping.HeadSSN().GetValue(),
+                      m_dssMapping.GetLength(), sendDataFin);
    }
   header.AppendOption(dss);
 }
@@ -947,8 +965,9 @@ MpTcpSubflow::CompleteFork(Ptr<const Packet> p, const TcpHeader& h, const Addres
 {
   NS_LOG_INFO( this << "Completing fork of MPTCP subflow");
 
+    // Already done in ForkMeta => TODO remove
+//  GetMeta()->GenerateUniqueMpTcpKey(true);
 
-  GetMeta()->GenerateUniqueMpTcpKey();
 
   // Get port and address from peer (connecting host)
   // TODO upstream ns3 should assert that to and from Address are of the same kind
@@ -1395,166 +1414,6 @@ MpTcpSubflow::ProcessSynRcvd(Ptr<Packet> packet, const TcpHeader& tcpHeader, con
   TcpSocketBase::ProcessSynRcvd(packet, tcpHeader, fromAddress, toAddress);
 }
 
-// TODO and normally I should wait for a fourth ack
-#if 0
-void
-MpTcpSubflow::ProcessSynRcvd(Ptr<Packet> packet, const TcpHeader& tcpHeader, const Address& fromAddress,
-    const Address& toAddress)
-{
-  //!
-  NS_LOG_FUNCTION (this << tcpHeader);
-
-
-
-
-  // Extract the flags. PSH and URG are not honoured.
-  uint8_t tcpflags = tcpHeader.GetFlags() & ~(TcpHeader::PSH | TcpHeader::URG);
-
-  //! TODO replace by FirstUnack
-  if (tcpflags == 0 || (tcpflags == TcpHeader::ACK && m_nextTxSequence + SequenceNumber32(1) == tcpHeader.GetAckNumber()))
-    { // If it is bare data, accept it and move to ESTABLISHED state. This is
-      // possibly due to ACK lost in 3WHS. If in-sequence ACK is received, the
-      // handshake is completed nicely.
-
-      m_connected = true;
-      m_retxEvent.Cancel();
-      m_highTxMark = ++m_nextTxSequence;
-//      SetTxHead(m_nextTxSequence);
-      m_txBuffer->SetHeadSequence (m_nextTxSequence);
-      m_firstTxUnack = m_nextTxSequence;
-//      NS_LOG_LOGIC("Updating receive window");
-//      GetMeta()->SetRemoteWindow(tcpHeader.GetWindowSize());
-
-//0.07s 0 0.07 [node 0: ] MpTcpSubflow:ProcessSynRcvd(0x1f1cc20, 4420 > 50000 [ ACK ] Seq=1 Ack=1 Win=65535
-//ns3::TcpOptionMpTcpMain(MP_JOIN: [Ack] with hash [TODO]) ns3::TcpOptionMpTcpMain( MP_DSS: Acknowledges [1680] ))
-      // Expecting ack
-      Ptr<TcpOptionMpTcpCapable> mp_capable;
-      Ptr<TcpOptionMpTcpJoin>    mp_join;
-      if(GetMpTcpOption(tcpHeader, mp_capable))
-      {
-        NS_LOG_INFO("Received a MP_CAPABLE");
-        NS_ASSERT_MSG( IsMaster(), "Makes no sense to receive an MP_CAPABLE if we are not the master subflow");
-      }
-      else if(GetMpTcpOption(tcpHeader, mp_join))
-      {
-        NS_LOG_INFO("Received a MP_JOIN");
-        NS_ASSERT_MSG( !IsMaster(), "Makes no sense to receive an MP_JOIN if we are the master");
-
-      }
-      else
-      {
-        NS_FATAL_ERROR("We should have received either an MP_JOIN or MP_CAPABLE. Fallback to TCP is not supported.");
-      }
-//      NS_LOG_INFO ( "Should contain both keys" );
-
-
-
-      // I think it's already set sooner. To check
-      if (m_endPoint)
-        {
-          m_endPoint->SetPeer(InetSocketAddress::ConvertFrom(fromAddress).GetIpv4(),
-              InetSocketAddress::ConvertFrom(fromAddress).GetPort());
-        }
-      else if (m_endPoint6)
-        {
-          m_endPoint6->SetPeer(Inet6SocketAddress::ConvertFrom(fromAddress).GetIpv6(),
-              Inet6SocketAddress::ConvertFrom(fromAddress).GetPort());
-        }
-
-      NS_LOG_INFO ( "SYN_RCVD -> ESTABLISHED");
-      // TODO we should check for the mptcp capable option
-      m_state = ESTABLISHED;
-
-      // Always respond to first data packet to speed up the connection.
-      // Remove to get the behaviour of old NS-3 code.
-      m_delAckCount = m_delAckMaxCount;
-      ReceivedAck(packet, tcpHeader);
-
-      // TODO this may be remvoed otherwise it will be
-//      GetMeta()->OnSubflowEstablishment(this);
-
-//      NotifyNewConnectionCreated(this, fromAddress);
-      // As this connection is established, the socket is available to send data now
-      if (GetTxAvailable() > 0)
-        {
-          NotifySend(GetTxAvailable());
-        }
-    }
-  else if (tcpflags == TcpHeader::SYN)
-    { // Probably the peer lost my SYN+ACK
-      m_rxBuffer->SetNextRxSequence(tcpHeader.GetSequenceNumber() + SequenceNumber32(1));
-      SendEmptyPacket(TcpHeader::SYN | TcpHeader::ACK);
-    }
-  else if (tcpflags == (TcpHeader::FIN | TcpHeader::ACK))
-    {
-      if (tcpHeader.GetSequenceNumber() == m_rxBuffer->NextRxSequence())
-        { // In-sequence FIN before connection complete. Set up connection and close.
-          m_connected = true;
-          m_retxEvent.Cancel();
-          m_highTxMark = ++m_nextTxSequence;
-//          SetTxHead(m_nextTxSequence);
-          m_txBuffer->SetHeadSequence (m_nextTxSequence);
-          m_firstTxUnack = m_nextTxSequence;
-          if (m_endPoint)
-            {
-              m_endPoint->SetPeer(InetSocketAddress::ConvertFrom(fromAddress).GetIpv4(),
-                  InetSocketAddress::ConvertFrom(fromAddress).GetPort());
-            }
-          else if (m_endPoint6)
-            {
-              m_endPoint6->SetPeer(Inet6SocketAddress::ConvertFrom(fromAddress).GetIpv6(),
-                  Inet6SocketAddress::ConvertFrom(fromAddress).GetPort());
-            }
-          PeerClose(packet, tcpHeader);
-        }
-    }
-  else
-    { // Other in-sequence input
-      if (tcpflags != TcpHeader::RST)
-        { // When (1) rx of SYN+ACK; (2) rx of FIN; (3) rx of bad flags
-          NS_LOG_LOGIC ("Illegal flag " << tcpflags << " received. Reset packet is sent.");
-          if (m_endPoint)
-            {
-              m_endPoint->SetPeer(InetSocketAddress::ConvertFrom(fromAddress).GetIpv4(),
-                  InetSocketAddress::ConvertFrom(fromAddress).GetPort());
-            }
-          else if (m_endPoint6)
-            {
-              m_endPoint6->SetPeer(Inet6SocketAddress::ConvertFrom(fromAddress).GetIpv6(),
-                  Inet6SocketAddress::ConvertFrom(fromAddress).GetPort());
-            }
-          SendRST();
-        }
-      CloseAndNotify();
-    }
-
-
-  // In case our syn/ack got lost
-//  if (tcpflags == TcpHeader::SYN)
-//    {
-//      NS_FATAL_ERROR("Not implemented yet");
-//      // TODO check for MP_CAPABLE
-//      // factorize with code from Listen( that sends options !!
-//
-//      // Probably the peer lost my SYN+ACK
-//      // So we need to resend it with the MPTCP option
-//      // This could be a join case too
-//      Ptr<TcpOptionMpTcpCapable> mpc;
-//      TcpHeader answerHeader;
-//      GenerateEmptyPacketHeader(answerHeader,TcpHeader::SYN | TcpHeader::ACK);
-//      mpc->SetSenderKey( GetMeta()->GetLocalKey() );
-//      m_rxBuffer->SetNextRxSequence(tcpHeader.GetSequenceNumber() + SequenceNumber32(1));
-//
-//      answerHeader.AppendOption(mpc);
-//      SendEmptyPacket(answerHeader);
-//      return;
-//    }
-
-  //
-//  TcpSocketBase::ProcessSynRcvd( packet, tcpHeader, fromAddress, toAddress);
-
-}
-#endif
 bool
 MpTcpSubflow::SendPendingData(bool withAck)
 {
@@ -1971,11 +1830,8 @@ MpTcpSubflow::ExtractAtMostOneMapping(uint32_t maxSize, bool only_full_mapping, 
 
   // as in linux, we extract in order
   SequenceNumber32 headSSN = m_rxBuffer->HeadSequence();
-
 //  NS_LOG_LOGIC("Extracting from SSN [" << headSSN << "]");
   //SequenceNumber32 headDSN;
-
-
    if(!m_RxMappings.GetMappingForSSN(headSSN, mapping))
 //  if(!m_RxMappings.TranslateSSNtoDSN(headSSN, dsn))
   {
@@ -2085,7 +1941,10 @@ MpTcpSubflow::ReceivedData(Ptr<Packet> p, const TcpHeader& tcpHeader)
 
 //  OutOfRange
   // If cannot find an adequate mapping, then it should [check RFC]
-  if(!m_RxMappings.GetMappingForSSN(tcpHeader.GetSequenceNumber(), mapping) )
+//  if(!m_RxMappings.GetMappingForSSN(tcpHeader.GetSequenceNumber(), mapping) )
+  SequenceNumber32 t= tcpHeader.GetSequenceNumber();
+//  t  -= GetPeerIsn();
+  if(!m_RxMappings.GetMappingForSSN( t, mapping) )
   {
 
     m_RxMappings.Dump();
@@ -2613,7 +2472,13 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS
   if(!GetMeta()->FullyEstablished() )
   {
     NS_LOG_LOGIC("First DSS received !");
-
+    
+    /* TODO 
+    this should be removed and the meta should become fully established only when
+    the datack is received, hence it should be processed
+    maybe rework that part so that it pro 
+    BecomeFullyEstablished
+    */
     GetMeta()->BecomeFullyEstablished();
 
   }
@@ -2623,7 +2488,9 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS
   {
       MpTcpMapping m;
       // TODO Get mapping n'est utilisé qu'une fois, copier le code ici
+      //+ SequenceNumber(1) 
       m = GetMapping(dss);
+      m.MapToSSN( m.HeadSSN() + GetPeerIsn() );
 //      AddPeerMapping(m);
       // Add peer mapping
       bool ok = m_RxMappings.AddMapping( m );

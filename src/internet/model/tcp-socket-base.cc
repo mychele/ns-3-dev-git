@@ -285,6 +285,7 @@ TcpSocketBase::TcpSocketBase (void)
     m_highRxAckMark (0),
     m_bytesAckedNotProcessed(0),
     m_nullIsn(true),
+    m_localISN(0),
     m_peerISN(0),
     m_mptcpEnabled(false),
     m_mptcpLocalKey(0),
@@ -353,6 +354,7 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_highRxAckMark (sock.m_highRxAckMark),
     m_bytesAckedNotProcessed(0),
     m_nullIsn(sock.m_nullIsn),
+    m_localISN(sock.m_localISN),
     m_peerISN(sock.m_peerISN),
     m_mptcpEnabled (sock.m_mptcpEnabled),
     m_mptcpLocalKey(sock.m_mptcpLocalKey),
@@ -758,6 +760,9 @@ TcpSocketBase::Connect (const Address & address)
   m_rtt->Reset ();
   m_cnCount = m_cnRetries;
 
+  // TODO regenerate ISN
+   InitLocalISN();
+  
   // DoConnect() will do state-checking and send a SYN packet
   return DoConnect ();
 }
@@ -1654,7 +1659,7 @@ TcpSocketBase::UpgradeToMeta()
   MpTcpSocketBase* meta = new (this) MpTcpSocketBase(*master);
   meta->SetTcp(master->m_tcp);
   meta->SetNode(master->GetNode());
-
+//InitLocalISN
   // we add it to tcp so that it can be freed and used for token lookup
 
 //  MpTcpSocketBase* meta = new (this) MpTcpSocketBase();
@@ -1826,8 +1831,40 @@ TcpSocketBase::ProcessTcpOptionsListen(const TcpHeader& header)
 
 
 void 
+TcpSocketBase::InitLocalISN() 
+{
+    SequenceNumber32 isn(0);
+     if(!m_nullIsn)
+      {
+        NS_LOG_INFO("Generating Initial Sequence Number");
+        isn = rand();
+      }
+    InitLocalISN(isn);
+}
+
+void 
+TcpSocketBase::InitLocalISN(const SequenceNumber32& localIsn)
+{
+    
+//    SequenceNumber32 localIsn;
+// TODO replace m_nullIsn by a attribute
+//  	RandomVariable
+
+    NS_LOG_INFO("Setting local ISN to" << localIsn);
+    // TODO check it was not initialized already ?
+//    m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
+    m_nextTxSequence = localIsn;
+    m_firstTxUnack = m_nextTxSequence;
+    m_highTxMark = m_nextTxSequence;
+    m_txBuffer->SetHeadSequence (m_nextTxSequence);
+    m_localISN = m_nextTxSequence;
+}
+
+void 
 TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn) 
 {
+    NS_LOG_INFO("Setting peer ISN=" << peerIsn);
+    // TODO check it was not initialized already ?
     m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
     m_peerISN = peerIsn;
 }
@@ -1840,16 +1877,28 @@ SequenceNumber32
 TcpSocketBase::GetPeerIsn(void) const
 {
     // TODO check it's connected 
-//    NS_ASSERT()
+//    NS_ASSERT(m_connected);
     return m_peerISN;
 }
+
+
+
+SequenceNumber32 
+TcpSocketBase::GetLocalIsn(void) const
+{
+    // TODO check it's connected 
+//    NS_ASSERT(m_connected);
+    return m_localISN;
+}
+
 
 /* Received a packet upon SYN_SENT */
 void
 TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
-
+uint64_t idsn;
+uint32_t localToken;
   // Extract the flags. PSH and URG are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
 
@@ -1888,7 +1937,14 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
         Ipv4EndPoint* endPoint = m_endPoint;
         Ptr<NetDevice> boundDev = m_boundnetdevice;
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
+        // master = first subflow
         Ptr<MpTcpSubflow> master = UpgradeToMeta();
+
+        GenerateTokenForKey( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
+        SequenceNumber32 sidsn( (uint32_t) idsn);
+        
+        NS_LOG_DEBUG("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
+        InitLocalISN( sidsn);
 //              // HACK matt otherwise the new subflow sends the packet on the wroing interface
         master->m_boundnetdevice = boundDev;
         master->m_endPoint = endPoint;
@@ -2610,7 +2666,9 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   m_cnCount = m_cnRetries;
   SetupCallback ();
   // Set the sequence number and send SYN+ACK
-  m_rxBuffer->SetNextRxSequence (h.GetSequenceNumber () + SequenceNumber32 (1));
+  InitLocalISN();
+  InitPeerISN(h.GetSequenceNumber ());
+//  m_rxBuffer->SetNextRxSequence ( + SequenceNumber32 (1));
 
   SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
 }
@@ -3457,24 +3515,13 @@ TcpSocketBase::GenerateUniqueMpTcpKey()
 //  NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
 //  uint64_t idsn = 0;
 //  /**
-//
 //  /!\ seq nb must be 64 bits for mptcp but that would mean rewriting lots of code so
-//
 //  TODO add a SetInitialSeqNb member into TcpSocketBase
 //  **/
-  if(m_nullIsn)
-  {
-    m_nextTxSequence = (uint32_t)0;
-  }
-  else
-  {
-    m_nextTxSequence = (uint32_t)idsn;
-  }
 
 ////  SetTxHead(m_nextTxSequence);
-  m_txBuffer->SetHeadSequence(m_nextTxSequence);
-  m_firstTxUnack = m_nextTxSequence;
-  m_highTxMark = m_nextTxSequence;
+//  m_txBuffer->SetHeadSequence(m_nextTxSequence);
+//  InitLocalISN(m_nextTxSequence);
 
   return localKey;
 }
