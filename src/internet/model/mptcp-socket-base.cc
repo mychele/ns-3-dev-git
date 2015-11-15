@@ -1653,6 +1653,29 @@ MpTcpSocketBase::FullyEstablished() const
 }
 
 
+
+  
+//void
+//MpTcpSocketBase::SetupSubflowTracing(Ptr<MpTcpSubflow> sf)
+//{
+//  NS_ASSERT_MSG(m_tracePrefix.length() != 0, "please call SetupMetaTracing before." );
+//  NS_LOG_LOGIC("Meta=" << this << " Setup tracing for sf " << sf << " with prefix [" << m_tracePrefix << "]");
+////  f.open(filename, std::ofstream::out | std::ofstream::trunc);
+//
+//  // For now, there is no subflow deletion so this should be good enough, else it will crash
+//  std::stringstream os;
+//  //! we start at 1 because it's nicer
+//
+////  os << m_tracePrefix << "subflow" <<  m_prefixCounter++;
+//
+//  SetupSocketTracing(sf, os.str().c_str());
+//}
+
+/*****************************
+END TRACING system 
+*****************************/
+
+
 /**
  * Sending data via subflows with available window size.
  * Todo somehow rename to dispatch

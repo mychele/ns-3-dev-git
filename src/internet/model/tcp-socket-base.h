@@ -976,6 +976,26 @@ protected:
    */
   virtual uint64_t GenerateUniqueMpTcpKey() ;
 
+   /****** BEGIN TRACING *****/
+  /**
+  ONLY TEMPORARY
+  Used to export a whole range of statistics to csv files (filenames hardcoded).
+  This would likely need a rework before upstream, for instance to allow
+  enabling/disabling
+  **/
+public:
+  virtual void
+  SetupTracing(std::string prefix);
+protected:
+  //SetupTracingIfEnabled
+  bool 
+  IsTracingEnabled() const;
+//  bool EnableTracing();
+  std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
+//  int m_prefixCounter;      //!< TODO remove and put in a helper
+ /****** END TRACING *****/
+
+
 protected:
   //!< TODO try to remove some friends
   friend class MpTcpSubflow;

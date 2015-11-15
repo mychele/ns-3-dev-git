@@ -754,8 +754,22 @@ protected: // protected variables
 //  virtual void OnRemAddress();
 
 public:
-//  std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
+  /**
+  ONLY TEMPORARY
+  Used to export a whole range of statistics to csv files (filenames hardcoded).
+  This would likely need a rework before upstream, for instance to allow
+  enabling/disabling
+  **/
+//  virtual void
+//  SetupTracing(std::string prefix);
+  // Returns result based on m_tracePrefix
+  bool
+  IsTracingEnabled() const;
+//  virtual void
+//  SetupSubflowTracing(Ptr<MpTcpSubflow> sf);
+  std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
 //  int m_prefixCounter;      //!< TODO remove and put in a helper
+ /****** END TRACING *****/
 
 protected:
   virtual void CreateScheduler(TypeId schedulerTypeId);
@@ -787,6 +801,8 @@ private:
   bool     m_receivedDSS;  //!< True if we received at least one DSS
 
   bool     m_generatedIdsn; //!<
+  
+
 private:
 
 

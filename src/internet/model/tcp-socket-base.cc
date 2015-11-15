@@ -41,6 +41,7 @@
 #include "ns3/double.h"
 #include "ns3/pointer.h"
 #include "ns3/trace-source-accessor.h"
+#include "ns3/tcp-trace-helper.h"
 #include "tcp-socket-base.h"
 #include "tcp-l4-protocol.h"
 #include "ipv4-end-point.h"
@@ -1829,6 +1830,33 @@ TcpSocketBase::ProcessTcpOptionsListen(const TcpHeader& header)
 }
 #endif
 
+/*****************************
+BEGIN TRACING system (to remove after tests ?)
+*****************************/
+void
+TcpSocketBase::SetupTracing(std::string prefix)
+{
+    if(IsTracingEnabled())
+        return;
+
+    //  f.open(filename, std::ofstream::out | std::ofstream::trunc);
+    m_tracePrefix = prefix;
+
+    //  prefix = m_tracePrefix + "/meta";
+//    TcpTraceHelper traceHelper;
+    // TODO move out to
+    TcpTraceHelper::SetupSocketTracing(this, m_tracePrefix);
+
+    /** **/
+}
+
+
+bool
+TcpSocketBase::IsTracingEnabled() const
+{
+    //
+    return !m_tracePrefix.empty();
+}
 
 void 
 TcpSocketBase::InitLocalISN() 
@@ -2668,6 +2696,9 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   // Set the sequence number and send SYN+ACK
   InitLocalISN();
   InitPeerISN(h.GetSequenceNumber ());
+//  if(IsTracingEnabled()) {
+//    SetupTracingIfEnabled();
+//  }
 //  m_rxBuffer->SetNextRxSequence ( + SequenceNumber32 (1));
 
   SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);

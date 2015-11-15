@@ -22,14 +22,16 @@
 #define TCP_TRACE_HELPER_H
 
 #include "ns3/assert.h"
-#include "ns3/ipv4-interface-container.h"
-#include "ns3/ipv6-interface-container.h"
-#include "ns3/ipv4.h"
-#include "ns3/ipv6.h"
+//#include "ns3/ipv4-interface-container.h"
+//#include "ns3/ipv6-interface-container.h"
+//#include "ns3/ipv4.h"
+//#include "ns3/ipv6.h"
 #include "ns3/trace-helper.h"
+#include "ns3/ptr.h"
 
 namespace ns3 {
 
+class TcpSocketBase;
 
 // TODO look in TCP example for similar code
 // TODO move those to a TCP helper
@@ -64,7 +66,7 @@ public:
   virtual ~TcpTraceHelper () {}
 
 
-  virtual void SetupSocketTracing(Ptr<TcpSocketBase> sock, const std::string prefix);
+  static void SetupSocketTracing(Ptr<TcpSocketBase> sock, const std::string prefix);
 };
 
 
