@@ -152,8 +152,6 @@ static const std::string containerNames[MpTcpSocketBase::Maximum] = {
 
 /*
 
-GenerateTokenForKey( HMAC_SHA1, localKey, localToken, idsn );
-
 */
 
 // TODO unused for now
@@ -271,7 +269,7 @@ void
 MpTcpSocketBase::CreateScheduler(TypeId schedulerTypeId)
 {
   NS_LOG_FUNCTION(this);
-  NS_LOG_WARN("Overriding scheduler choice");
+  NS_LOG_WARN("Overriding scheduler choice to RoundRobin");
   ObjectFactory schedulerFactory;
 //  schedulerTypeId = MpTcpSchedulerFastestRTT;
   schedulerTypeId = MpTcpSchedulerRoundRobin::GetTypeId();
@@ -1320,7 +1318,8 @@ MpTcpSocketBase::PeerClose( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
   // Return if FIN is out of sequence, otherwise move to CLOSE_WAIT state by DoPeerClose
   if (!m_rxBuffer->Finished())
   {
-    NS_LOG_WARN("Out of range");
+    NS_LOG_WARN("Not finished yet, NextRxSequence=" << m_rxBuffer->NextRxSequence());
+    m_rxBuffer->Dump();
     return;
   }
 
@@ -3128,6 +3127,7 @@ MpTcpSocketBase::ComputeTotalCWND()
         {
 //          NS_LOG_WARN("Don't consider Fast recovery yet");
 //          totalCwnd += sf->m_cWnd.Get();          // Should be this all the time ?!
+            NS_LOG_DEBUG("Adding " << sf->Window() << " to total window");
           totalCwnd += sf->Window();          // Should be this all the time ?!
         }
     }

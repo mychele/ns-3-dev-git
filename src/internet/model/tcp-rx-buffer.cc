@@ -153,7 +153,9 @@ TcpRxBuffer::SetFinSequence (const SequenceNumber32& s)
 
   m_gotFin = true;
   m_finSeq = s;
-  if (m_nextRxSeq == m_finSeq) ++m_nextRxSeq;
+  if (m_nextRxSeq == m_finSeq) {
+    ++m_nextRxSeq;
+  }
 }
 
 bool

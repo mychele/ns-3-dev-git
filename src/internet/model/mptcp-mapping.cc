@@ -83,7 +83,7 @@ operator<<(std::ostream& os, const MpTcpMapping& mapping)
   //
   os << "DSN [" << mapping.HeadDSN() << "-" << mapping.TailDSN ()
   //of size [" << mapping.GetLength() <<"] from DSN [" << mapping.HeadDSN()
-    << "] mapped to SSN [" <<  mapping.HeadSSN() << "-" <<  mapping.TailSSN() << "]";
+    << "] mapped to SSN [" <<  mapping.HeadSSN() << "-" <<  mapping.TailSSN() << "] (size=" << mapping.GetLength() << ")";
   return os;
 }
 

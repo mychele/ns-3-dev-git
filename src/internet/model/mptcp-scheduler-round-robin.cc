@@ -126,7 +126,7 @@ MpTcpSchedulerRoundRobin::GenerateMapping(int& activeSubflowArrayId, SequenceNum
         Ptr<MpTcpSubflow> subflow = m_metaSock->GetSubflow(m_lastUsedFlowId);
         uint32_t subflowWindow = subflow->AvailableWindow();
 
-        NS_LOG_DEBUG("subflow AvailableWindow  [" << subflowWindow << "]");
+        NS_LOG_DEBUG("subflow [" << m_lastUsedFlowId << "] AvailableWindow=" << subflowWindow);
         uint32_t canSend = std::min( subflowWindow, metaWindow);
 
         //! Can't send more than SegSize
@@ -137,8 +137,10 @@ MpTcpSchedulerRoundRobin::GenerateMapping(int& activeSubflowArrayId, SequenceNum
             activeSubflowArrayId = m_lastUsedFlowId;
             dsn = metaNextTxSeq;
             canSend = std::min(canSend, amountOfDataToSend);
+            NS_LOG_DEBUG("min(candSend=" << canSend << ", amountOfDataToSend=" << amountOfDataToSend << ")");
             // For now we limit ourselves to a per packet basis
             length = std::min(canSend, subflow->GetSegSize());
+            NS_LOG_DEBUG("length=" << length << "=min(candSend=" << canSend << ", segSize=" << subflow->GetSegSize() << ")");
             return true;
         }
     }

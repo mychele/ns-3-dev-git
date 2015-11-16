@@ -590,7 +590,9 @@ MpTcpSubflow::SendPacket(TcpHeader header, Ptr<Packet> p)
         NS_FATAL_ERROR("Could not find mapping associated to ssn");
       }
       NS_ASSERT_MSG(mapping.TailSSN() >= ssnHead +p->GetSize() -1, "mapping should cover the whole packet" );
-
+    
+      // otherwise sometimes we were sending too  long mappings and the datafin number was way off
+//      mapping.SetMappingSize( std::min( p->GetSize(), (uint32_t)mapping.GetLength()));
       AppendDSSMapping(mapping);
     ///============================
 
@@ -611,11 +613,8 @@ MpTcpSubflow::SendPacket(TcpHeader header, Ptr<Packet> p)
 uint32_t
 MpTcpSubflow::SendDataPacket(TcpHeader& header, SequenceNumber32 ssnHead, uint32_t maxSize)
 {
-  NS_LOG_FUNCTION(this << "Sending packet starting at SSN [" << ssnHead.GetValue() << "] with len=" << maxSize);
+  NS_LOG_FUNCTION(this << "Sending packet starting at SSN [" << ssnHead.GetValue() << "] with maxSize=" << maxSize);
   //! if we send data...
-//  if(p->GetSize() && !IsInfiniteMappingEnabled())
-//  {
-
       MpTcpMapping mapping;
       // TODO
       bool result = m_TxMappings.GetMappingForSSN(ssnHead, mapping);
@@ -628,9 +627,6 @@ MpTcpSubflow::SendDataPacket(TcpHeader& header, SequenceNumber32 ssnHead, uint32
 
       AppendDSSMapping(mapping);
     ///============================
-
-//  }
-//  #error TODO copy some commands from TcpSocketBase
 
   // Here we set the maxsize to the size of the mapping
   return TcpSocketBase::SendDataPacket(header, ssnHead, std::min( (int)maxSize,mapping.TailSSN()-ssnHead+1));
@@ -899,7 +895,10 @@ MpTcpSubflow::AddMpTcpOptionDSS(TcpHeader& header)
       dss->SetMapping(m_dssMapping.HeadDSN().GetValue(), 
                       /** SSN should be relative **/
                       m_dssMapping.HeadSSN().GetValue(),
-                      m_dssMapping.GetLength(), sendDataFin);
+                      m_dssMapping.GetLength(),
+                      // HACK to fix bug 
+//                      std::min(m_dssMapping.GetLength(), header.Get), 
+                      sendDataFin);
    }
   header.AppendOption(dss);
 }

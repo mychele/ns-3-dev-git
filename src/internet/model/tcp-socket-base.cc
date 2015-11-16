@@ -656,7 +656,7 @@ TcpSocketBase::InitializeCwnd (void)
 void
 TcpSocketBase::SetInitialSSThresh (uint32_t threshold)
 {
-  NS_ABORT_MSG_UNLESS (m_state == CLOSED,
+  NS_ABORT_MSG_UNLESS ( (m_state == CLOSED) || threshold == m_tcb->m_initialSsThresh,
     "TcpSocketBase::SetSSThresh() cannot change initial ssThresh after connection started.");
 
   m_tcb->m_initialSsThresh = threshold;
@@ -671,7 +671,7 @@ TcpSocketBase::GetInitialSSThresh (void) const
 void
 TcpSocketBase::SetInitialCwnd (uint32_t cwnd)
 {
-  NS_ABORT_MSG_UNLESS (m_state == CLOSED,
+  NS_ABORT_MSG_UNLESS ( (m_state == CLOSED) || cwnd == m_tcb->m_initialCWnd,
     "TcpSocketBase::SetInitialCwnd() cannot change initial cwnd after connection started.");
 
   m_tcb->m_initialCWnd = cwnd;
@@ -1658,6 +1658,7 @@ TcpSocketBase::UpgradeToMeta()
   // I don't want the destructor to be called in that moment
 //  delete temp[];
   MpTcpSocketBase* meta = new (this) MpTcpSocketBase(*master);
+  CompleteConstruct(meta);
   meta->SetTcp(master->m_tcp);
   meta->SetNode(master->GetNode());
 //InitLocalISN
@@ -3338,8 +3339,9 @@ TcpSocketBase::GetRcvBufSize (void) const
 void
 TcpSocketBase::SetSegSize (uint32_t size)
 {
+  NS_ABORT_MSG_UNLESS ( (m_state == CLOSED) || (m_tcb->m_segmentSize == size), "Cannot change segment size dynamically.");
   m_tcb->m_segmentSize = size;
-  NS_ABORT_MSG_UNLESS (m_state == CLOSED, "Cannot change segment size dynamically.");
+  
 }
 
 uint32_t
@@ -3850,7 +3852,7 @@ TcpSocketBase::UpdateAckState (TcpSocketState::TcpAckState_t oldValue,
 void
 TcpSocketBase::SetCongestionControlAlgorithm (Ptr<TcpCongestionOps> algo)
 {
-  NS_LOG_FUNCTION (this << algo);
+  NS_LOG_FUNCTION (this << algo << algo->GetInstanceTypeId());
   m_congestionControl = algo;
 }
 
