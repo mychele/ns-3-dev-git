@@ -168,6 +168,9 @@ public:
 
   /**
    * \brief Get the window size
+   * This should be in bytes but the definite value may need to be corrected in 
+   * case the TCP window scale option is enabled
+   *
    * \return the window size for this TcpHeader
    */
   uint16_t GetWindowSize () const;
@@ -327,7 +330,7 @@ private:
   SequenceNumber32 m_ackNumber;       //!< ACK number
   uint8_t m_length;             //!< Length (really a uint4_t) in words.
   uint8_t m_flags;              //!< Flags (really a uint6_t)
-  uint16_t m_windowSize;        //!< Window size
+  uint16_t m_windowSize;        //!< Window size (SEG.WND)
   uint16_t m_urgentPointer;     //!< Urgent pointer
 
   Address m_source;       //!< Source IP address

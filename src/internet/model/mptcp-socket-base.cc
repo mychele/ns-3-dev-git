@@ -292,8 +292,10 @@ MpTcpSocketBase::ConnectNewSubflow(const Address &local, const Address &remote)
   // TODO remove next line (but will cause a bug, likely because m_subflowTypeId is
   // not constructed properly since MpTcpSocketBase creation is hackish
   // and does not call CompleteConstruct
+  // TODO pb c'est la, les 2 ss flots se partagent le mm congestion control !!
   m_subflowTypeId = MpTcpSubflow::GetTypeId();
-  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl, m_subflowTypeId);
+//  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl->Fork(), m_subflowTypeId);
+  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl->Fork(), m_subflowTypeId);
   NS_ASSERT(socket);
   Ptr<MpTcpSubflow> sf = DynamicCast<MpTcpSubflow>(socket);
   NS_ASSERT(sf);

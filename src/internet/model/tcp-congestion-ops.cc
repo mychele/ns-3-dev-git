@@ -38,10 +38,12 @@ TcpCongestionOps::GetTypeId (void)
 
 TcpCongestionOps::TcpCongestionOps ()
 {
+//    NS_LOG_FUNCTION(this);
 }
 
 TcpCongestionOps::TcpCongestionOps (const TcpCongestionOps &other)
 {
+//    NS_LOG_FUNCTION(this << "Copy");
 }
 
 TcpCongestionOps::~TcpCongestionOps ()
@@ -80,7 +82,7 @@ TcpNewReno::TcpNewReno (void) : TcpCongestionOps ()
 TcpNewReno::TcpNewReno (const TcpNewReno& sock)
   : TcpCongestionOps (sock)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this << " Copy constructor");
 }
 
 TcpNewReno::~TcpNewReno (void)
@@ -96,7 +98,7 @@ TcpNewReno::IncreaseWindow (Ptr<TcpSocketState> tcb)
   if (tcb->m_cWnd < tcb->m_ssThresh)
     {
       tcb->m_cWnd += tcb->m_segmentSize;
-      NS_LOG_INFO ("In SlowStart, updated to cwnd " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
+      NS_LOG_INFO ("In SlowStart, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
     }
   else
     { // Congestion avoidance mode, increase by (segSize*segSize)/cwnd. (RFC2581, sec.3.1)
@@ -104,7 +106,7 @@ TcpNewReno::IncreaseWindow (Ptr<TcpSocketState> tcb)
       double adder = static_cast<double> (tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get ();
       adder = std::max (1.0, adder);
       tcb->m_cWnd += static_cast<uint32_t> (adder);
-      NS_LOG_INFO ("In CongAvoid, updated to cwnd " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
+      NS_LOG_INFO ("In CongAvoid, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
     }
 }
 

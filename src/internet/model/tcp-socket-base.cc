@@ -105,7 +105,7 @@ TcpSocketBase::GetTypeId (void)
                    MakeCallbackAccessor (&TcpSocketBase::m_icmpCallback6),
                    MakeCallbackChecker ())
     .AddAttribute ("WindowScaling", "Enable or disable Window Scaling option",
-                   BooleanValue (true),
+                   BooleanValue (false),
                    MakeBooleanAccessor (&TcpSocketBase::m_winScalingEnabled),
                    MakeBooleanChecker ())
     .AddAttribute ("NoDelay", "Enable or disable Nagle algorithm",
@@ -174,6 +174,7 @@ TcpSocketBase::GetTypeId (void)
                      "Remote side's flow control window",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rWnd),
                      "ns3::TracedValue::Uint32Callback")
+    // This is strange since zis is decorellated from rxBuffer->NextRxSequence
     .AddTraceSource ("HighestRxSequence",
                      "Highest sequence number received from peer",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_highRxMark),
@@ -291,6 +292,7 @@ TcpSocketBase::TcpSocketBase (void)
     m_mptcpEnabled(false),
     m_mptcpLocalKey(0),
     m_mptcpLocalToken(0),
+    m_winScalingEnabled(false),
     m_sndScaleFactor (0),
     m_rcvScaleFactor (0),
     m_timestampEnabled (true),
@@ -1617,6 +1619,8 @@ TcpSocketBase::UpgradeToMeta()
 
   //*this
   MpTcpSubflow *subflow = new MpTcpSubflow(*this);
+  // TODO could do sthg like CopyObject<MpTcpSubflow>(this) ?
+  // Otherwise uncoimment CompleteConstruct
 //  CompleteConstruct(sf);
   Ptr<MpTcpSubflow> master(subflow, true);
 
@@ -1658,7 +1662,8 @@ TcpSocketBase::UpgradeToMeta()
   // I don't want the destructor to be called in that moment
 //  delete temp[];
   MpTcpSocketBase* meta = new (this) MpTcpSocketBase(*master);
-  CompleteConstruct(meta);
+  // update attributes with default
+//  CompleteConstruct(meta);
   meta->SetTcp(master->m_tcp);
   meta->SetNode(master->GetNode());
 //InitLocalISN
@@ -3667,6 +3672,7 @@ TcpSocketBase::ProcessOptionWScale (const Ptr<const TcpOption> option)
                  static_cast<int> (m_rcvScaleFactor));
 }
 
+// TODO this should be a static function with params maxBufferSize
 uint8_t
 TcpSocketBase::CalculateWScale () const
 {
