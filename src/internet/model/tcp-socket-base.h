@@ -711,37 +711,37 @@ protected:
    * \brief Return count of number of unacked bytes
    * \returns count of number of unacked bytes
    */
-  virtual uint32_t UnAckDataCount (void);
+  virtual uint32_t UnAckDataCount (void) const;
 
   /**
    * \brief Return total bytes in flight
    * \returns total bytes in flight
    */
-  virtual uint32_t BytesInFlight (void);
+  virtual uint32_t BytesInFlight (void) const;
 
   /**
    * \brief Return the max possible number of unacked bytes
    * \returns the max possible number of unacked bytes
    */
-  virtual uint32_t Window (void);
+  virtual uint32_t Window (void) const;
 
   /**
    * \brief Return unfilled portion of window
    * \return unfilled portion of window
    */
-  virtual uint32_t AvailableWindow (void);
+  virtual uint32_t AvailableWindow (void) const;
 
   /**
    * \brief The amount of Rx window announced to the peer
    * \returns size of Rx window announced to the peer
    */
-  virtual uint16_t AdvertisedWindowSize (void);
+  virtual uint16_t AdvertisedWindowSize (void) const;
 
   /**
-   * \brief Update the receiver window (RWND) based on the value of the
+   * \brief Update the receiver window (RWND) based on the value of the 
    * window field in the header.
    *
-   * This method suppresses updates unless one of the following three
+   * This method suppresses updates unless one of the following three 
    * conditions holds:  1) segment contains new data (advancing the right
    * edge of the receive buffer), 2) segment does not contain new data
    * but the segment acks new data (highest sequence number acked advances),
