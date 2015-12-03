@@ -420,11 +420,22 @@ protected:
   virtual void     SetInitialSSThresh (uint32_t threshold);
   virtual void     SetInitialCwnd (uint32_t cwnd);
   virtual void     SetConnTimeout (Time timeout);
+  virtual Time     GetConnTimeout (void) const;
+  virtual void     SetSynRetries (uint32_t count);
+  virtual uint32_t GetSynRetries (void) const;
+  virtual void     SetDataRetries (uint32_t retries);
+  virtual uint32_t GetDataRetries (void) const;
   virtual void     SetDelAckTimeout (Time timeout);
+  virtual Time     GetDelAckTimeout (void) const;
   virtual void     SetDelAckMaxCount (uint32_t count);
+  virtual uint32_t GetDelAckMaxCount (void) const;
   virtual void     SetTcpNoDelay (bool noDelay);
+  virtual bool     GetTcpNoDelay (void) const;
   virtual void     SetPersistTimeout (Time timeout);
+  virtual Time     GetPersistTimeout (void) const;
   virtual bool     SetAllowBroadcast (bool allowBroadcast);
+  virtual bool     GetAllowBroadcast (void) const;
+
 
 
   // Helper functions: Connection set up
