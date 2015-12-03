@@ -409,6 +409,8 @@ public:
   virtual bool     GetTcpNoDelay (void) const;
   virtual Time     GetPersistTimeout (void) const;
   virtual bool     GetAllowBroadcast (void) const;
+  virtual uint32_t GetSynRetries (void) const;
+  virtual uint32_t GetDataRetries (void) const;
 
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
@@ -420,21 +422,13 @@ protected:
   virtual void     SetInitialSSThresh (uint32_t threshold);
   virtual void     SetInitialCwnd (uint32_t cwnd);
   virtual void     SetConnTimeout (Time timeout);
-  virtual Time     GetConnTimeout (void) const;
   virtual void     SetSynRetries (uint32_t count);
-  virtual uint32_t GetSynRetries (void) const;
   virtual void     SetDataRetries (uint32_t retries);
-  virtual uint32_t GetDataRetries (void) const;
   virtual void     SetDelAckTimeout (Time timeout);
-  virtual Time     GetDelAckTimeout (void) const;
   virtual void     SetDelAckMaxCount (uint32_t count);
-  virtual uint32_t GetDelAckMaxCount (void) const;
   virtual void     SetTcpNoDelay (bool noDelay);
-  virtual bool     GetTcpNoDelay (void) const;
   virtual void     SetPersistTimeout (Time timeout);
-  virtual Time     GetPersistTimeout (void) const;
   virtual bool     SetAllowBroadcast (bool allowBroadcast);
-  virtual bool     GetAllowBroadcast (void) const;
 
 
 
@@ -778,7 +772,7 @@ protected:
    * \param tcpHeader the packet's TCP header
    */
   virtual void ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader);
-  virtual void ReceivedAck (SequenceNumber32 ack);
+  virtual void ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack);
 
   /**
    * \brief Recv of a data, put into buffer, call L7 to get it if necessary
@@ -809,6 +803,11 @@ protected:
    * \brief Halving cwnd and call DoRetransmit()
    */
   virtual void Retransmit (void);
+
+  /**
+   * \brief Called when a new ack arrvied
+   */
+  virtual void UpdateTxBuffer(void);
 
   /**
    * \brief Action upon delay ACK timeout, i.e. send an ACK

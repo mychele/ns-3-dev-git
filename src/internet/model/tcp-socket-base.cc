@@ -237,7 +237,7 @@ TcpSocketState::TcpSocketState (const TcpSocketState &other)
     m_initialCWnd (other.m_initialCWnd),
     m_initialSsThresh (other.m_initialSsThresh),
     m_segmentSize (other.m_segmentSize),
-    m_ackState (other.m_ackState)
+    m_congState (other.m_congState)
 {
 }
 
@@ -1361,7 +1361,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet,
 
 /* Process the newly received ACK */
 void
-TcpSocketBase::ReceivedAck (SequenceNumber32 ack)
+TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
 {
   NS_LOG_FUNCTION (this << ack);
 
@@ -1381,12 +1381,12 @@ TcpSocketBase::ReceivedAck (SequenceNumber32 ack)
                 " Segments acked: " << segsAcked <<
                 " bytes left: " << m_bytesAckedNotProcessed);
 
-  NS_LOG_DEBUG ("ACK of " << tcpHeader.GetAckNumber () <<
-                " SND.UNA=" << m_txBuffer->HeadSequence () <<
+  NS_LOG_DEBUG ("ACK of " << ack <<
+                " SND.UNA=" << FirstUnackedSeq() <<
                 " SND.NXT=" << m_nextTxSequence);
 
-  if (tcpHeader.GetAckNumber () == m_txBuffer->HeadSequence () &&
-      tcpHeader.GetAckNumber () < m_nextTxSequence &&
+  if (ack == FirstUnackedSeq() &&
+      ack < m_nextTxSequence &&
       packet->GetSize () == 0)
     {
       // There is a DupAck
