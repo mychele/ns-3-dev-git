@@ -246,6 +246,7 @@ public:
   static TypeId GetTypeId (void);
 
   friend class TcpGeneralTest;
+  virtual TypeId GetInstanceTypeId() const;
 
   /**
    * Create an unbound TCP socket
@@ -279,6 +280,8 @@ public:
    * \param rtt the RTT estimator
    */
   virtual void SetRtt (Ptr<RttEstimator> rtt);
+
+  virtual SequenceNumber32 FirstUnackedSeq() const;
 
   /**
    * \brief Sets the Minimum RTO.
@@ -391,38 +394,37 @@ public:
   typedef void (* TcpTxRxTracedCallback)
     (const Ptr<const Packet> packet, const TcpHeader& header,
      const Ptr<const TcpSocketBase> socket);
+  
+  // Implementing ns3::TcpSocket -- Attribute get/set
+  // inherited, no need to doc
+  virtual uint32_t GetSndBufSize (void) const;
+  virtual uint32_t GetRcvBufSize (void) const;
+  virtual uint32_t GetSegSize (void) const;
+  virtual uint32_t GetInitialSSThresh (void) const;
+  virtual uint32_t GetInitialCwnd (void) const;
+  virtual Time     GetConnTimeout (void) const;
+  virtual uint32_t GetConnCount (void) const;
+  virtual Time     GetDelAckTimeout (void) const;
+  virtual uint32_t GetDelAckMaxCount (void) const;
+  virtual bool     GetTcpNoDelay (void) const;
+  virtual Time     GetPersistTimeout (void) const;
+  virtual bool     GetAllowBroadcast (void) const;
 
 protected:
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
 
   virtual void     SetSndBufSize (uint32_t size);
-  virtual uint32_t GetSndBufSize (void) const;
   virtual void     SetRcvBufSize (uint32_t size);
-  virtual uint32_t GetRcvBufSize (void) const;
   virtual void     SetSegSize (uint32_t size);
-  virtual uint32_t GetSegSize (void) const;
   virtual void     SetInitialSSThresh (uint32_t threshold);
-  virtual uint32_t GetInitialSSThresh (void) const;
   virtual void     SetInitialCwnd (uint32_t cwnd);
-  virtual uint32_t GetInitialCwnd (void) const;
   virtual void     SetConnTimeout (Time timeout);
-  virtual Time     GetConnTimeout (void) const;
-  virtual void     SetSynRetries (uint32_t count);
-  virtual uint32_t GetSynRetries (void) const;
-  virtual void     SetDataRetries (uint32_t retries);
-  virtual uint32_t GetDataRetries (void) const;
   virtual void     SetDelAckTimeout (Time timeout);
-  virtual Time     GetDelAckTimeout (void) const;
   virtual void     SetDelAckMaxCount (uint32_t count);
-  virtual uint32_t GetDelAckMaxCount (void) const;
   virtual void     SetTcpNoDelay (bool noDelay);
-  virtual bool     GetTcpNoDelay (void) const;
   virtual void     SetPersistTimeout (Time timeout);
-  virtual Time     GetPersistTimeout (void) const;
   virtual bool     SetAllowBroadcast (bool allowBroadcast);
-  virtual bool     GetAllowBroadcast (void) const;
-
 
 
   // Helper functions: Connection set up
@@ -567,7 +569,7 @@ protected:
   /**
    * \brief Send reset and tear down this socket
    */
-  void SendRST (void);
+  virtual void SendRST (void);
 
   /**
    * \brief Check if a sequence number range is within the rx window
@@ -576,7 +578,7 @@ protected:
    * \param tail end of the Sequence window
    * \returns true if it is in range
    */
-  bool OutOfRange (SequenceNumber32 head, SequenceNumber32 tail) const;
+  virtual bool OutOfRange (SequenceNumber32 head, SequenceNumber32 tail) const;
 
 
   // Helper functions: Connection close
@@ -586,12 +588,12 @@ protected:
    *
    * \returns 0 on success
    */
-  int DoClose (void);
+  virtual int DoClose (void);
 
   /**
    * \brief Peacefully close the socket by notifying the upper layer and deallocate end point
    */
-  void CloseAndNotify (void);
+  virtual void CloseAndNotify (void);
 
   /**
    * \brief Kill this socket by zeroing its attributes (IPv4)
@@ -599,7 +601,7 @@ protected:
    * This is a callback function configured to m_endpoint in
    * SetupCallback(), invoked when the endpoint is destroyed.
    */
-  void Destroy (void);
+  virtual void Destroy (void);
 
   /**
    * \brief Kill this socket by zeroing its attributes (IPv6)
@@ -607,12 +609,12 @@ protected:
    * This is a callback function configured to m_endpoint in
    * SetupCallback(), invoked when the endpoint is destroyed.
    */
-  void Destroy6 (void);
+  virtual void Destroy6 (void);
 
   /**
    * \brief Deallocate m_endPoint and m_endPoint6
    */
-  void DeallocateEndPoint (void);
+  virtual void DeallocateEndPoint (void);
 
   /**
    * \brief Received a FIN from peer, notify rx buffer
@@ -620,22 +622,22 @@ protected:
    * \param p the packet
    * \param tcpHeader the packet's TCP header
    */
-  void PeerClose (Ptr<Packet> p, const TcpHeader& tcpHeader);
+  virtual void PeerClose (Ptr<Packet> p, const TcpHeader& tcpHeader);
 
   /**
    * \brief FIN is in sequence, notify app and respond with a FIN
    */
-  void DoPeerClose (void);
+  virtual void DoPeerClose (void);
 
   /**
    * \brief Cancel all timer when endpoint is deleted
    */
-  void CancelAllTimers (void);
+  virtual void CancelAllTimers (void);
 
   /**
    * \brief Move from CLOSING or FIN_WAIT_2 to TIME_WAIT state
    */
-  void TimeWait (void);
+  virtual void TimeWait (void);
 
   // State transition functions
 
@@ -647,7 +649,7 @@ protected:
    * \param packet the packet
    * \param tcpHeader the packet's TCP header
    */
-  void ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader); // Received a packet upon ESTABLISHED state
+  virtual void ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeader); // Received a packet upon ESTABLISHED state
 
   /**
    * \brief Received a packet upon LISTEN state.
@@ -657,7 +659,7 @@ protected:
    * \param fromAddress the source address
    * \param toAddress the destination address
    */
-  void ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
+  virtual void ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
                       const Address& fromAddress, const Address& toAddress);
 
   /**
@@ -666,7 +668,7 @@ protected:
    * \param packet the packet
    * \param tcpHeader the packet's TCP header
    */
-  void ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+  virtual void ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
   /**
    * \brief Received a packet upon SYN_RCVD.
@@ -676,7 +678,7 @@ protected:
    * \param fromAddress the source address
    * \param toAddress the destination address
    */
-  void ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
+  virtual void ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
                        const Address& fromAddress, const Address& toAddress);
 
   /**
@@ -685,7 +687,7 @@ protected:
    * \param packet the packet
    * \param tcpHeader the packet's TCP header
    */
-  void ProcessWait (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+  virtual void ProcessWait (Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
   /**
    * \brief Received a packet upon CLOSING
@@ -693,7 +695,7 @@ protected:
    * \param packet the packet
    * \param tcpHeader the packet's TCP header
    */
-  void ProcessClosing (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+  virtual void ProcessClosing (Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
   /**
    * \brief Received a packet upon LAST_ACK
@@ -701,7 +703,7 @@ protected:
    * \param packet the packet
    * \param tcpHeader the packet's TCP header
    */
-  void ProcessLastAck (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+  virtual void ProcessLastAck (Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
   // Window management
 
@@ -709,45 +711,46 @@ protected:
    * \brief Return count of number of unacked bytes
    * \returns count of number of unacked bytes
    */
-  virtual uint32_t UnAckDataCount (void) const;
+  virtual uint32_t UnAckDataCount (void);
 
   /**
    * \brief Return total bytes in flight
    * \returns total bytes in flight
    */
-  virtual uint32_t BytesInFlight (void) const;
+  virtual uint32_t BytesInFlight (void);
 
   /**
    * \brief Return the max possible number of unacked bytes
    * \returns the max possible number of unacked bytes
    */
-  virtual uint32_t Window (void) const;
+  virtual uint32_t Window (void);
 
   /**
    * \brief Return unfilled portion of window
    * \return unfilled portion of window
    */
-  virtual uint32_t AvailableWindow (void) const;
+  virtual uint32_t AvailableWindow (void);
 
   /**
    * \brief The amount of Rx window announced to the peer
    * \returns size of Rx window announced to the peer
    */
-  virtual uint16_t AdvertisedWindowSize (void) const;
+  virtual uint16_t AdvertisedWindowSize (void);
 
   /**
-   * \brief Update the receiver window (RWND) based on the value of the 
+   * \brief Update the receiver window (RWND) based on the value of the
    * window field in the header.
    *
-   * This method suppresses updates unless one of the following three 
+   * This method suppresses updates unless one of the following three
    * conditions holds:  1) segment contains new data (advancing the right
    * edge of the receive buffer), 2) segment does not contain new data
    * but the segment acks new data (highest sequence number acked advances),
    * or 3) the advertised window is larger than the current send window
    *
    * \param header TcpHeader from which to extract the new window value
+   * \return true if receiver window got updated
    */
-  void UpdateWindowSize (const TcpHeader& header);
+  virtual bool UpdateWindowSize (const TcpHeader& header);
 
 
   // Manage data tx/rx
@@ -764,6 +767,7 @@ protected:
    * \param tcpHeader the packet's TCP header
    */
   virtual void ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader);
+  virtual void ReceivedAck (SequenceNumber32 ack);
 
   /**
    * \brief Recv of a data, put into buffer, call L7 to get it if necessary
@@ -940,6 +944,7 @@ protected:
   Ptr<RttEstimator> m_rtt; //!< Round trip time estimator
 
   // Rx and Tx buffer management
+  TracedValue<SequenceNumber32> m_firstTxUnack;   //!< First unacknowledged seq nb  (SND.UNA)
   TracedValue<SequenceNumber32> m_nextTxSequence; //!< Next seqnum to be sent (SND.NXT), ReTx pushes it back
   TracedValue<SequenceNumber32> m_highTxMark;     //!< Highest seqno ever sent, regardless of ReTx
   Ptr<TcpRxBuffer>              m_rxBuffer;       //!< Rx buffer (reordering buffer)
