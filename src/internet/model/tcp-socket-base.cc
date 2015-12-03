@@ -242,15 +242,13 @@ TcpSocketState::TcpSocketState (const TcpSocketState &other)
 }
 
 const char* const
-TcpSocketState::TcpAckStateName[TcpSocketState::LAST_ACKSTATE] =
+TcpSocketState::TcpCongStateName[TcpSocketState::CA_LAST_STATE] =
 {
-  "OPEN", "DISORDER", "CWR", "RECOVERY", "LOSS"
+  "CA_OPEN", "CA_DISORDER", "CA_CWR", "CA_RECOVERY", "CA_LOSS"
 };
 
 TcpSocketBase::TcpSocketBase (void)
-  :
-    TcpSocket(),
-    m_dupAckCount (0),
+  : m_dupAckCount (0),
     m_delAckCount (0),
     m_endPoint (0),
     m_endPoint6 (0),
