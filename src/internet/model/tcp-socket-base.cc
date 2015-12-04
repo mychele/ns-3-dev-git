@@ -1350,7 +1350,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet,
   // If there is any data piggybacked, store it into m_rxBuffer
   NS_LOG_FUNCTION(this << packet << tcpHeader);
   NS_ASSERT (0 != (tcpHeader.GetFlags () & TcpHeader::ACK));
-  ReceivedAck(tcpHeader.GetAckNumber());
+  ReceivedAck(packet, tcpHeader.GetAckNumber());
   if (packet->GetSize () > 0)
     {
       ReceivedData (packet, tcpHeader);
@@ -1442,12 +1442,12 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
       // Artificially call PktsAcked. After all, one segment has been ACKed.
       m_congestionControl->PktsAcked (m_tcb, 1, m_lastRtt);
     }
-  else if (tcpHeader.GetAckNumber () == m_txBuffer->HeadSequence () &&
-           tcpHeader.GetAckNumber () == m_nextTxSequence)
+  else if (ack == FirstUnackedSeq () &&
+           ack == m_nextTxSequence)
     {
       // Dupack, but the ACK is precisely equal to the nextTxSequence
     }
-  else if (tcpHeader.GetAckNumber () > m_txBuffer->HeadSequence ())
+  else if (ack > FirstUnackedSeq ())
     { // Case 3: New ACK, reset m_dupAckCount and update m_txBuffer
       bool callCongestionControl = true;
       bool resetRTO = true;
@@ -1485,7 +1485,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
         }
       else if (m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
         {
-          if (tcpHeader.GetAckNumber () < m_recover)
+          if (ack < m_recover)
             {
               /* Partial ACK.
                * In case of partial ACK, retransmit the first unacknowledged
@@ -1584,7 +1584,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
           NS_ASSERT (m_tcb->m_congState == TcpSocketState::CA_RECOVERY);
         }
 
-      NewAck (tcpHeader.GetAckNumber (), resetRTO);
+      NewAck (ack, resetRTO);
 
       // Try to send more data
       if (!m_sendPendingDataEvent.IsRunning ())
