@@ -1288,7 +1288,7 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
           // Case 1:  If the ACK is a duplicate (SEG.ACK < SND.UNA), it can be ignored.
           // Pag. 72 RFC 793
           NS_LOG_LOGIC ("Ignored ack of " << tcpHeader.GetAckNumber () <<
-                        " SND.UNA = " << m_txBuffer->HeadSequence ());
+                        " SND.UNA = " << FirstUnackedSeq ());
 
           // TODO: RFC 5961 5.2 [Blind Data Injection Attack].[Mitigation]
         }
@@ -1513,7 +1513,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
 
               callCongestionControl = false; // No congestion control on cWnd show be invoked
               m_dupAckCount -= segsAcked;    // Update the dupAckCount
-              m_txBuffer->DiscardUpTo (tcpHeader.GetAckNumber ());  //Bug 1850:  retransmit before newack
+              m_txBuffer->DiscardUpTo (ack);  //Bug 1850:  retransmit before newack
               DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
 
               if (m_isFirstPartialAck)
@@ -1531,12 +1531,12 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
                */
               m_congestionControl->PktsAcked (m_tcb, 1, m_lastRtt);
 
-              NS_LOG_INFO ("Partial ACK for seq " << tcpHeader.GetAckNumber () <<
+              NS_LOG_INFO ("Partial ACK for seq " << ack <<
                            " in fast recovery: cwnd set to " << m_tcb->m_cWnd <<
                            " recover seq: " << m_recover <<
                            " dupAck count: " << m_dupAckCount);
             }
-          else if (tcpHeader.GetAckNumber () >= m_recover)
+          else if (ack  >= m_recover)
             {// Full ACK (RFC2582 sec.3 bullet #5 paragraph 2, option 1)
               m_tcb->m_cWnd = std::min (m_tcb->m_ssThresh.Get (),
                                         BytesInFlight () + m_tcb->m_segmentSize);
@@ -1549,10 +1549,10 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
                * except the (maybe) new ACKs which come from a new window
                */
               m_congestionControl->PktsAcked (m_tcb, segsAcked, m_lastRtt);
-              newSegsAcked = (tcpHeader.GetAckNumber () - m_recover) / m_tcb->m_segmentSize;
+              newSegsAcked = (ack - m_recover) / m_tcb->m_segmentSize;
               m_tcb->m_congState = TcpSocketState::CA_OPEN;
 
-              NS_LOG_INFO ("Received full ACK for seq " << tcpHeader.GetAckNumber () <<
+              NS_LOG_INFO ("Received full ACK for seq " << ack <<
                            ". Leaving fast recovery with cwnd set to " << m_tcb->m_cWnd);
               NS_LOG_DEBUG ("RECOVERY -> OPEN");
             }
@@ -1593,12 +1593,6 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
                                                         &TcpSocketBase::SendPendingData,
                                                         this, m_connected);
         }
-    }
-
-  // If there is any data piggybacked, store it into m_rxBuffer
-  if (packet->GetSize () > 0)
-    {
-      ReceivedData (packet, tcpHeader);
     }
 }
 
@@ -1672,6 +1666,7 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
       m_highTxMark = ++m_nextTxSequence;
       m_txBuffer->SetHeadSequence (m_nextTxSequence);
+      m_firstTxUnack = m_nextTxSequence;
       SendEmptyPacket (TcpHeader::ACK);
       SendPendingData (m_connected);
       Simulator::ScheduleNow (&TcpSocketBase::ConnectionSucceeded, this);
@@ -2566,7 +2561,7 @@ TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
 
   // Put into Rx buffer
   SequenceNumber32 expectedSeq = m_rxBuffer->NextRxSequence ();
-  if (!m_rxBuffer->Add (p, tcpHeader))
+  if (!m_rxBuffer->Add (p, tcpHeader.GetSequenceNumber ()))
     { // Insert failed: No data or RX buffer full
       SendEmptyPacket (TcpHeader::ACK);
       return;
@@ -2844,7 +2839,8 @@ TcpSocketBase::Retransmit ()
    * are not able to retransmit anything because of local congestion.
    */
 
-  m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack
+  // MATT m_nextTxSequence = m_txBuffer->HeadSequence (); // Restart from highest Ack
+  m_nextTxSequence = FirstUnackedSeq (); // Restart from highest Ack
   m_dupAckCount = 0;
 
   if (m_tcb->m_congState != TcpSocketState::CA_LOSS)
@@ -2900,12 +2896,13 @@ TcpSocketBase::DoRetransmit ()
     }
 
   // Retransmit a data packet: Call SendDataPacket
-  NS_LOG_LOGIC ("TcpSocketBase " << this << " retxing seq " << FirstUnackedSeq());
+  NS_LOG_LOGIC ("TcpSocketBase " << this << " retxing seq " << FirstUnackedSeq ());
   uint32_t sz = SendDataPacket (FirstUnackedSeq(), GetSegSize(), true);
   // In case of RTO, advance m_nextTxSequence
-  m_nextTxSequence = std::max (m_nextTxSequence.Get (), FirstUnackedSeq() + sz);
-
-  NS_LOG_DEBUG ("retxing seq " << m_txBuffer->HeadSequence ());
+  m_nextTxSequence = std::max (FirstUnackedSeq (), FirstUnackedSeq () + sz);
+//  m_firstTxUnack = m_nextTxSequence;
+  
+  NS_LOG_DEBUG ("retxing seq " << FirstUnackedSeq ());
 }
 
 void

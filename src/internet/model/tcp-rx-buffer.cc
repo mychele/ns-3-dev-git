@@ -231,7 +231,7 @@ TcpRxBuffer::Extract (uint32_t maxSize)
 {
   NS_LOG_FUNCTION (this << maxSize);
 
-  uint32_t extractSize = std::min (maxSize, m_availBytes.Get());
+  uint32_t extractSize = std::min (maxSize, m_availBytes);
   NS_LOG_LOGIC ("Requested to extract " << extractSize << " bytes from TcpRxBuffer of size=" << m_size);
   if (extractSize == 0) return 0;  // No contiguous block to return
   NS_ASSERT (m_data.size ()); // At least we have something to extract

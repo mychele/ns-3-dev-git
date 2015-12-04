@@ -403,7 +403,7 @@ public:
   virtual uint32_t GetInitialSSThresh (void) const;
   virtual uint32_t GetInitialCwnd (void) const;
   virtual Time     GetConnTimeout (void) const;
-  virtual uint32_t GetConnCount (void) const;
+//  virtual uint32_t GetConnCount (void) const;
   virtual Time     GetDelAckTimeout (void) const;
   virtual uint32_t GetDelAckMaxCount (void) const;
   virtual bool     GetTcpNoDelay (void) const;
