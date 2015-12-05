@@ -1340,8 +1340,6 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
     }
 }
 
-
-// TODO this function should be removed
 void
 TcpSocketBase::ReceivedAck (Ptr<Packet> packet,
                             const TcpHeader& tcpHeader
