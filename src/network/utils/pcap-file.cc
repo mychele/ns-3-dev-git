@@ -448,7 +448,7 @@ PcapFile::Read (
   uint32_t &readLen)
 {
   NS_LOG_FUNCTION (this << &data <<maxBytes << tsSec << tsUsec << inclLen << origLen << readLen);
-  NS_ASSERT (m_file.good ());
+  NS_ASSERT (m_file.is_open ());
 
   PcapRecordHeader header;
 

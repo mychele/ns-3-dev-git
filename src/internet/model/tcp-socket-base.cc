@@ -1513,7 +1513,8 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, SequenceNumber32 ack)
 
               callCongestionControl = false; // No congestion control on cWnd show be invoked
               m_dupAckCount -= segsAcked;    // Update the dupAckCount
-              m_txBuffer->DiscardUpTo (ack);  //Bug 1850:  retransmit before newack
+              m_firstTxUnack = ack;
+              UpdateTxBuffer (); //Bug 1850:  retransmit before newack
               DoRetransmit (); // Assume the next seq is lost. Retransmit lost packet
 
               if (m_isFirstPartialAck)
