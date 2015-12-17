@@ -197,6 +197,7 @@ TcpTxBuffer::CopyFromSequence (uint32_t numBytes, const SequenceNumber32& seq)
         }
       count += pktSize;
     }
+  NS_ASSERT (outPacket);
   NS_ASSERT (outPacket->GetSize () == s);
   return outPacket;
 }

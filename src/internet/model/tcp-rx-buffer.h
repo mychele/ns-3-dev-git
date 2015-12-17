@@ -54,7 +54,7 @@ public:
 
   // Accessors
   /**
-   * \brief Get Next Rx Sequence number
+   * \brief Get Next in-order Rx Sequence number (RCV.NXT)
    * \returns Next Rx Sequence number
    */
   SequenceNumber32 NextRxSequence (void) const;
@@ -78,12 +78,12 @@ public:
    */
   void SetFinSequence (const SequenceNumber32& s);
   /**
-   * \brief Get the Maximum buffer size
+   * \brief Get the Maximum buffer size (in bytes)
    * \returns the Maximum buffer size
    */
   uint32_t MaxBufferSize (void) const;
   /**
-   * \brief Set the Maximum buffer size
+   * \brief Set the Maximum buffer size (in bytes)
    * \param s the Maximum buffer size
    */
   void SetMaxBufferSize (uint32_t s);
@@ -114,7 +114,7 @@ public:
    * \param tcph packet's TCP header
    * \return True when success, false otherwise.
    */
-  bool Add (Ptr<Packet> p, TcpHeader const& tcph);
+  bool Add (Ptr<Packet> p, SequenceNumber32 const& headSeq);
 
   /**
    * Extract data from the head of the buffer as indicated by nextRxSeq.

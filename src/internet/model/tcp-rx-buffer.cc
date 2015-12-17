@@ -102,7 +102,7 @@ TcpRxBuffer::IncNextRxSequence ()
   NS_LOG_FUNCTION (this);
   // Increment nextRxSeq is valid only if we don't have any data buffered,
   // this is supposed to be called only during the three-way handshake
-  NS_ASSERT (m_size == 0);
+  NS_ASSERT (m_size == (uint32_t)0);
   m_nextRxSeq++;
 }
 
@@ -138,12 +138,12 @@ TcpRxBuffer::Finished (void)
 }
 
 bool
-TcpRxBuffer::Add (Ptr<Packet> p, TcpHeader const& tcph)
+TcpRxBuffer::Add (Ptr<Packet> p,  SequenceNumber32 const& _headSeq)
 {
-  NS_LOG_FUNCTION (this << p << tcph);
+  NS_LOG_FUNCTION (this << p << _headSeq);
 
   uint32_t pktSize = p->GetSize ();
-  SequenceNumber32 headSeq = tcph.GetSequenceNumber ();
+  SequenceNumber32 headSeq = _headSeq;
   SequenceNumber32 tailSeq = headSeq + SequenceNumber32 (pktSize);
   NS_LOG_LOGIC ("Add pkt " << p << " len=" << pktSize << " seq=" << headSeq
                            << ", when NextRxSeq=" << m_nextRxSeq << ", buffsize=" << m_size);
@@ -188,7 +188,7 @@ TcpRxBuffer::Add (Ptr<Packet> p, TcpHeader const& tcph)
     }
   else
     {
-      uint32_t start = headSeq - tcph.GetSequenceNumber ();
+      uint32_t start = headSeq - _headSeq;
       uint32_t length = tailSeq - headSeq;
       p = p->CreateFragment (start, length);
       NS_ASSERT (length == p->GetSize ());
