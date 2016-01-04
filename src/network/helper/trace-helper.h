@@ -110,8 +110,11 @@ public:
    * @param traceName trace source name
    * @param file file wrapper
    */
-  template <typename T> void HookDefaultSink (Ptr<T> object, std::string traceName, Ptr<PcapFileWrapper> file);
-
+//  void HookDefaultSink (Ptr<Object> object, std::string traceName, Ptr<PcapFileWrapper> file);
+  template <typename T> void
+  HookDefaultSink (Ptr<T> object, std::string tracename, Ptr<PcapFileWrapper> file);
+//  PcapHelper::HookDefaultSink (Ptr<T> object, std::string tracename, Ptr<PcapFileWrapper> file);
+  
 private:
   /**
    * The basic default trace sink.
@@ -137,11 +140,18 @@ private:
   static void SinkWithHeader (Ptr<PcapFileWrapper> file, const Header& header, Ptr<const Packet> p);
 };
 
-template <typename T> void
+template<typename T> void
 PcapHelper::HookDefaultSink (Ptr<T> object, std::string tracename, Ptr<PcapFileWrapper> file)
 {
-  bool result =
-    object->TraceConnectWithoutContext (tracename.c_str (), MakeBoundCallback (&DefaultSink, file));
+  bool result = false;
+
+  if(file->GetDataLinkType() == DLT_NETLINK)
+  {
+    result = object->TraceConnectWithoutContext (tracename.c_str (), MakeBoundCallback (&SinkWithHeader, file));
+  }
+  else {
+    result = object->TraceConnectWithoutContext (tracename.c_str (), MakeBoundCallback (&DefaultSink, file));
+  }
   NS_ASSERT_MSG (result == true, "PcapHelper::HookDefaultSink():  Unable to hook \"" << tracename << "\"");
 }
 
