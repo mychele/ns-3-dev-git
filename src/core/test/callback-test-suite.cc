@@ -641,17 +641,20 @@ void
 MakeCallbackTemplatesTestCase::DoRun (void)
 {
   CallbackTestClass that;
+  Callback<void,int> emptyCb = MakeNullCallback<void, int>();
 
-  MakeCallback (&CallbackTestClass::TestZero, &that);
-  MakeCallback (&CallbackTestClass::TestOne, &that);
+  Callback<void> t0 = MakeCallback (&CallbackTestClass::TestZero, &that);
+  Callback<void> t02 = MakeCallback (&CallbackTestClass::TestZero, &that);
+  Callback<void,int> t1 = MakeCallback (&CallbackTestClass::TestOne, &that);
+
   MakeCallback (&CallbackTestClass::TestTwo, &that);
   MakeCallback (&CallbackTestClass::TestThree, &that);
   MakeCallback (&CallbackTestClass::TestFour, &that);
   MakeCallback (&CallbackTestClass::TestFive, &that);
   MakeCallback (&CallbackTestClass::TestSix, &that);
 
-  MakeCallback (&CallbackTestClass::TestCZero, &that);
-  MakeCallback (&CallbackTestClass::TestCOne, &that);
+  Callback<void> c0 = MakeCallback (&CallbackTestClass::TestCZero, &that);
+  Callback<void, int> c1 = MakeCallback (&CallbackTestClass::TestCOne, &that);
   MakeCallback (&CallbackTestClass::TestCTwo, &that);
   MakeCallback (&CallbackTestClass::TestCThree, &that);
   MakeCallback (&CallbackTestClass::TestCFour, &that);
@@ -686,6 +689,17 @@ MakeCallbackTemplatesTestCase::DoRun (void)
   MakeBoundCallback (&TestFRFive, 1);
 
   that.CheckParentalRights ();
+
+  NS_TEST_ASSERT_MSG_EQ(emptyCb.CheckType(t0), false, "These 2 callbacks should not appear as equivalent");
+
+  NS_TEST_ASSERT_MSG_EQ(t1.CheckType(emptyCb), true, "These 2 callbacks should appear as equivalent");
+
+  NS_TEST_ASSERT_MSG_EQ(t0.CheckType(emptyCb), false, "These 2 callbacks should not appear as equivalent");
+  NS_TEST_ASSERT_MSG_EQ(t0.CheckType(t1), false, "These 2 callbacks should not appear as equivalent");
+  NS_TEST_ASSERT_MSG_EQ(c0.CheckType(c1), false, "These 2 callbacks should not appear as equivalent");
+
+  NS_TEST_ASSERT_MSG_EQ(emptyCb.CheckType(t1), true, "These 2 callbacks should appear as equivalent");
+  NS_TEST_ASSERT_MSG_EQ(t0.CheckType(t02), true, "These 2 callbacks should appear as equivalent");
 }
 
 // ===========================================================================
