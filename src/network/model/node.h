@@ -210,57 +210,71 @@ public:
    */
   void UnregisterDeviceAdditionListener (DeviceAdditionListener listener);
 
-  // when a clock is aggregated
+  /**
+   * \returns true if checksums are enabled, false otherwise.
+   */
+  static bool ChecksumEnabled (void);
+
+  ///////////////////////////////////////////////////
+  /// GSOC Additions: begin 
+  ///////////////////////////////////////////////////
+
+  /**
+   * Detect when a clock is aggregated and save it into a private member
+   */
   virtual void NotifyNewAggregate ();
 
+  // TODO remove ? setup callback in Clock
   virtual void SetClock (Ptr<Clock> clock);
 
-  // Matt C++11 hack
+  // C++11 quick & dirty hacks
   template<typename ... Types>
   EventId Schedule(Time const &timeOffset, Types... rest)
   {
       // That's basically what does Simulator::DoSchedule
-      // Pare
       return DoSchedule( timeOffset, MakeEvent( (rest)...));
 //    return Simulator::Schedule(rest...);
   }
 
   EventId ScheduleNow (EventImpl *event);
 
-    template<typename ... Types>
-    EventId ScheduleNow(Types... rest)
-    {
+  // TODO fix tabs
+  template<typename ... Types>
+  EventId ScheduleNow(Types... rest)
+  {
 
-        EventId event = DoSchedule(Time(0), rest...);
-        //    m_events[m_currentActiveEventsArray].push_back(event);
-        return event;
-    }
-
+      EventId event = DoSchedule(Time(0), rest...);
+      //    m_events[m_currentActiveEventsArray].push_back(event);
+      return event;
+  }
 
   EventId DoSchedule (Time const &time, EventImpl *event);
 
-  /** return local next event **/
+  /** 
+   * return local next event
+   */
   EventId GetNextEvent() const;
+
+  /**
+   * TODO rename to Simulator ?
+   * \return EventId under which is registered the local next event in the Simulator.
+   */
   EventId GetNextEventSim() const;
-  // GetTime
-//  virtual Time Now (EventImpl *event);
 
   /**
   EventImpl will have a time local
   **/
-
 
   // Does remove make sense ?
   // virtual void Remove (const EventId &id);
   virtual void Cancel (const EventId &id);
 
   void SetScheduler (ObjectFactory schedulerFactory);
-  void RefreshEvents(double oldFreq, double newFreq);
 
   /**
-   * \returns true if checksums are enabled, false otherwise.
+   * rename to OnClockUpdate, called when clock changes parameters
    */
-  static bool ChecksumEnabled (void);
+  void RefreshEvents (double oldFreq, double newFreq);
 
 
 protected:
@@ -348,15 +362,16 @@ private:
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
 
-  Ptr<Clock> m_clock;
-  Ptr<Scheduler> m_events;
-  std::pair<EventId,EventId> m_nextEvent;   //!< mapping local / simulator events
+  Ptr<Clock> m_clock; //!< Local variable pointing at the aggregated clock if any
 
-//  uint32_t    m_nextSimulatorUid;         //!< mapping of
+  Ptr<Scheduler> m_events; //!< List of
+
+  /**
+   * Maps the local EventId to simulator EventId to allow for cancelling the event.
+   */
+  std::pair<EventId,EventId> m_nextEvent;
+
   uint32_t    m_localUid;         //!< Next free event uid
-//  std::list<EventId> m_events[2];   //!< Store this node's events in order to update them
-//  int m_currentActiveEventsArray;   //!< Valid index of previous array
-//  Ptr<Clock> m_clock; //!< TODO removed, we want to aggregate it
 };
 
 } // namespace ns3

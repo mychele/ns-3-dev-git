@@ -32,13 +32,13 @@ NS_LOG_COMPONENT_DEFINE ("ClockPerfect");
 
 // TODO move to static
 inline Time
-LocalToAbs(Time duration, double frequency)
+LocalToAbs (Time duration, double frequency)
 {
     return duration*frequency;
 }
 
 inline Time
-AbsToLocal(Time duration, double frequency)
+AbsToLocal (Time duration, double frequency)
 {
     return duration/frequency;
 }
@@ -195,9 +195,9 @@ ClockPerfect::GetTime()
 int
 ClockPerfect::SetTime(Time)
 {
-	//! Noop, do nothing
-	NS_LOG_WARN("SetTime has no meaning for the perfect clock");
-	return -1;
+    //! Noop, do nothing
+    NS_FATAL_ERROR ("SetTime has no meaning for the perfect clock");
+    return -1;
 }
 
 double
@@ -242,7 +242,7 @@ ClockPerfect::AbsTimeLimitOfSSOffsetCompensation(Time& t)
 
 // TODO return Time instead
 bool
-ClockPerfect::AbsTimeToLocalTime(Time absTime, Time& localTime)
+ClockPerfect::SimulatorTimeToLocalTime (Time absTime, Time *localTime)
 {
     //!
     NS_LOG_FUNCTION(absTime);
@@ -258,7 +258,7 @@ ClockPerfect::AbsTimeToLocalTime(Time absTime, Time& localTime)
 
 // OK
 bool
-ClockPerfect::LocalTimeToAbsTime(Time localTime, Time &absTime)
+ClockPerfect::LocalTimeToSimulatorTime (Time localTime, Time *absTime)
 {
     NS_LOG_FUNCTION(localTime);
     NS_ASSERT_MSG(localTime >= GetLastTimeUpdateLocal(), "Can't convert to a time in the past");
@@ -270,7 +270,7 @@ ClockPerfect::LocalTimeToAbsTime(Time localTime, Time &absTime)
 //    NS_ASSERT()
 
     // Returns
-    LocalToAbsDuration(localTime - GetLastTimeUpdateLocal(), absTime);
+    LocalToAbsDuration (localTime - GetLastTimeUpdateLocal(), absTime);
     absTime += GetLastTimeUpdateSim();
     return true;
 }
@@ -278,7 +278,7 @@ ClockPerfect::LocalTimeToAbsTime(Time localTime, Time &absTime)
 // Ok
 bool
 //ClockPerfect::LocalDurationToAbsDuration(Time duration, Time& absDuration)
-ClockPerfect::LocalToAbsDuration(Time localDuration, Time& absDuration)
+ClockPerfect::LocalToAbsDuration (Time localDuration, Time& absDuration)
 {
     NS_LOG_FUNCTION(localDuration);
 //
@@ -290,7 +290,7 @@ ClockPerfect::LocalToAbsDuration(Time localDuration, Time& absDuration)
 
 
 double
-ClockPerfect::GetTotalFrequency() const
+ClockPerfect::GetTotalFrequency () const
 {
     //!
     return m_ss_slew + m_rawFrequency;

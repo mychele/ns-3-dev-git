@@ -208,7 +208,8 @@ Node::GetLocalTime(void) const
 {
   NS_LOG_FUNCTION (this);
   Ptr<Clock> clock = GetObject<Clock>();
-  if(clock) {
+  if(clock) 
+  {
     return clock->GetTime();
   }
   return Simulator::Now();

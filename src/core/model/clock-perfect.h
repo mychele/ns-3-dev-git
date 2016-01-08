@@ -62,7 +62,8 @@ double raw_frequency;
 * \see ClockMonoticIncreasing
 * No drift
  TODO maybe rename into ClockImpl
-*/
+ * TODO keep clock perfect simple and move threshold completion into ClockAdjtimex ?
+ */
 class ClockPerfect : public Clock
 {
 
@@ -126,7 +127,7 @@ public:
      May be merged with the next one
     */
     bool
-    LocalTimeToAbsTime(Time localTime, Time &absTime);
+    LocalTimeToSimulatorTime(Time localTime, Time *absTime);
 
     /**
      * \param duration convert duration from abs duration to local duration
@@ -135,7 +136,7 @@ public:
     */
 //    Time AbsToLocal(Time , bool oldParameters = false);
     bool
-    AbsTimeToLocalTime(Time absTime, Time& localTime);
+    SimulatorTimeToLocalTime(Time absTime, Time *localTime);
 
     /**
      * Conversion is composed of 2 phases; one with SS frequency,

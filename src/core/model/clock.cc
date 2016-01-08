@@ -32,6 +32,9 @@ Clock::GetTypeId (void)
  // TODO add accuracy/freq/offset ?
   static TypeId tid = TypeId ("ns3::Clock")
     .SetParent<Object> ()
+//    .AddTraceSource ("LastUpdate", "toto",
+//                   MakeTraceSourceAccessor (ClockPerfect:: m_timeOfLastUpdate)
+//                   "ns3::Time::TracedCallback”);
     // TimeValue(InitialOffset)
 //    .AddConstructor<Clock> ()
 //    .AddTraceSource ("Resolution",
@@ -59,22 +62,33 @@ Clock::GetInstanceTypeId (void) const
 }
 
 
-void
-Clock::SettimeStepCallback( TimeStepCallback )
-{
+//void
+//Clock::SettimeStepCallback( TimeStepCallback )
+//{
+//
+//    NS_FATAL_ERROR("NOT implemented");
+//}
 
-    NS_FATAL_ERROR("NOT implemented");
-}
-
 void
-Clock::SetFrequencyChangeCallback(FrequencyCallback frequencyCb)
+Clock::SetFrequencyChangeCallback (FrequencyCallback frequencyCb)
 {
     NS_LOG_FUNCTION (this << &frequencyCb);
     m_onNewFrequency = frequencyCb;
 }
+//
+//void
+//Clock::NotifyNewFrequency (double oldFreq, double newFreq)
+//{
+//  NS_LOG_FUNCTION (this);
+//  if (!m_onNewFrequency.IsNull ())
+//    {
+//      m_onNewFrequency (oldFreq, newFreq);
+//    }
+//}
 
+// Used to be NotifyNewFrequency
 void
-Clock::NotifyNewFrequency (double oldFreq, double newFreq)
+Clock::NotifyNewParameters (double oldFreq, double newFreq)
 {
   NS_LOG_FUNCTION (this);
   if (!m_onNewFrequency.IsNull ())
@@ -84,7 +98,7 @@ Clock::NotifyNewFrequency (double oldFreq, double newFreq)
 }
 
 void
-Clock::DoDispose()
+Clock::DoDispose ()
 {
     m_onNewFrequency = MakeNullCallback<void, double, double > ();
 }
