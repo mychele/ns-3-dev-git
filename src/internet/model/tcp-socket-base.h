@@ -430,6 +430,8 @@ protected:
   virtual bool     GetAllowBroadcast (void) const;
 
 
+  Ptr<NetDevice>
+  MapIpToInterface (Ipv4Address addr) const;
 
   // Helper functions: Connection set up
 

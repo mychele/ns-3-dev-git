@@ -475,6 +475,28 @@ TcpSocketBase::GetNode (void) const
   return m_node;
 }
 
+Ptr<NetDevice>
+TcpSocketBase::MapIpToInterface(Ipv4Address addr) const
+{
+    NS_LOG_DEBUG(addr);
+      Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
+      for( uint32_t n =0; n < ipv4client->GetNInterfaces(); n++){
+        for( uint32_t a=0; a < ipv4client->GetNAddresses(n); a++){
+            NS_LOG_UNCOND( "Client addr " << n <<"/" << a << "=" << ipv4client->GetAddress(n,a));
+            if(addr ==ipv4client->GetAddress(n,a).GetLocal()) {
+                NS_LOG_UNCOND("EUREKA same ip=" << addr);
+                // That function is buggy
+//                BindToNetDevice();
+                return m_node->GetDevice(n);
+//                m_endPoint->BindToNetDevice();
+////                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+//                break;
+            }
+        }
+      }
+    return 0;
+}
+
 /* Inherit from Socket class: Bind socket to an end-point in TcpL4Protocol */
 int
 TcpSocketBase::Bind (void)
