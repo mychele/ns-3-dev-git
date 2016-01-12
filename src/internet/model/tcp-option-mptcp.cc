@@ -800,7 +800,7 @@ TcpOptionMpTcpDSS::Print (std::ostream& os) const
           os << "Has datafin for seq [" << GetDataFinDSN () << "]";
         }
 
-      os << " DSN:" << m_dsn << " length=" << m_dataLevelLength;
+      os << " DSN:" << m_dsn << " length=" << m_dataLevelLength << " ssn=" << m_ssn;
       if (GetFlags () & DSNOfEightBytes)
         {
           os << "(8bytes mapping)";
@@ -960,14 +960,14 @@ number that corresponds with the DATA_FIN itself
 bool
 TcpOptionMpTcpDSS::DataFinMappingOnly () const
 {
-  return (m_flags & DataFin) && m_dataLevelLength == 1 && m_ssn == 0;
+  return (m_flags & DataFin) && (m_dataLevelLength == 1) && (m_ssn == 0);
 }
 
 bool
 TcpOptionMpTcpDSS::IsInfiniteMapping () const
 {
   //  The checksum, in such a case, will also be set to zero
-  return (GetFlags () & DSNMappingPresent) && m_dataLevelLength == 0;
+  return (GetFlags () & DSNMappingPresent) && (m_dataLevelLength == 0);
 }
 
 uint64_t
@@ -1153,8 +1153,9 @@ uint32_t
 TcpOptionMpTcpAddAddress::Deserialize (Buffer::Iterator i)
 {
   uint32_t length =  TcpOptionMpTcpMain::DeserializeRef (i);
-  NS_ASSERT ( length == 10 || length == 22 );
+  NS_ASSERT ( length > 3);
 
+  // TODO here we should be able to deserialize more than one
   uint8_t subtype_and_ipversion = i.ReadU8 ();
   NS_ASSERT ( subtype_and_ipversion >> 4 == GetSubType ()  );
 

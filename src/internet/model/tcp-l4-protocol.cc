@@ -294,7 +294,24 @@ Ipv4EndPoint *
 TcpL4Protocol::Allocate (Ipv4Address address, uint16_t port)
 {
   NS_LOG_FUNCTION (this << address << port);
-  return m_endPoints->Allocate (address, port);
+//  NS_LOG_UNCOND("Matt should check if address belong to node before ?");
+  // TODO map ipv4 to and NetDevice
+  Ipv4EndPoint * endPoint = m_endPoints->Allocate (address, port);
+//  if(endPoint) {
+//    //!
+//
+//    Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
+//      for( uint32_t n =0; n < ipv4client->GetNInterfaces(); n++){
+//        for( uint32_t a=0; a < ipv4client->GetNAddresses(n); a++){
+//            NS_LOG_UNCOND( "Client addr " << n <<"/" << a << "=" << ipv4client->GetAddress(n,a));
+//            if(address ==ipv4client->GetAddress(n,a).GetLocal()) {
+//                NS_LOG_UNCOND("EUREKA same ip=" << address);
+////                endPoint->BindToNetDevice(m_node->GetDevice(n));
+//            }
+//        }
+//      }
+//  }
+  return endPoint;
 }
 
 Ipv4EndPoint *

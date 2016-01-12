@@ -511,6 +511,11 @@ private:
  *       so you may find bugs
  *
  * \warn checksum are not supported since they make little sense in ns3 case
+ * The data sequence number is specified as an absolute value, whereas
+   the subflow sequence numbering is relative (the SYN at the start of
+   the subflow has relative subflow sequence number 0).  This is to
+   allow middleboxes to change the initial sequence number of a subflow,
+   such as firewalls that undertake ISN randomization.
  *
  * Data Sequence Signal (DSS) Option
 \verbatim

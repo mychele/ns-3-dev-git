@@ -52,7 +52,8 @@ class OutputStreamWrapper;
 
 /**
 TODO move all the supplementary stuff to MpTcpSocketState
-
+remove the bind, in fact this socket should not care about m_endPoint
+so it could be removed as well
 */
 //class MpTcpSocketState : TcpSocketState
 //{
@@ -270,7 +271,7 @@ public:
   **/
 //  virtual uint64_t GenerateKey();
 
-
+  virtual void InitLocalISN(const SequenceNumber32& seq);
 
   /**
   * TODO when is it considered
@@ -470,6 +471,7 @@ protected: // protected methods
   friend class MpTcpSubflow;
   /**
    * Expects InetXSocketAddress
+   * if no callback set then returns true
    */
   virtual bool NotifyJoinRequest (const Address &from, const Address & toAddress);
   /**
@@ -752,8 +754,22 @@ protected: // protected variables
 //  virtual void OnRemAddress();
 
 public:
-//  std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
+  /**
+  ONLY TEMPORARY
+  Used to export a whole range of statistics to csv files (filenames hardcoded).
+  This would likely need a rework before upstream, for instance to allow
+  enabling/disabling
+  **/
+//  virtual void
+//  SetupTracing(std::string prefix);
+  // Returns result based on m_tracePrefix
+  bool
+  IsTracingEnabled() const;
+//  virtual void
+//  SetupSubflowTracing(Ptr<MpTcpSubflow> sf);
+  std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
 //  int m_prefixCounter;      //!< TODO remove and put in a helper
+ /****** END TRACING *****/
 
 protected:
   virtual void CreateScheduler(TypeId schedulerTypeId);
@@ -783,6 +799,9 @@ private:
   bool     m_doChecksum;  //!< Compute the checksum. Negociated during 3WHS. Unused
 
   bool     m_receivedDSS;  //!< True if we received at least one DSS
+
+  bool     m_generatedIdsn; //!<
+  
 
 private:
 

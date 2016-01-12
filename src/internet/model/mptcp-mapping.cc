@@ -83,7 +83,7 @@ operator<<(std::ostream& os, const MpTcpMapping& mapping)
   //
   os << "DSN [" << mapping.HeadDSN() << "-" << mapping.TailDSN ()
   //of size [" << mapping.GetLength() <<"] from DSN [" << mapping.HeadDSN()
-    << "] mapped to SSN [" <<  mapping.HeadSSN() << "-" <<  mapping.TailSSN() << "]";
+    << "] mapped to SSN [" <<  mapping.HeadSSN() << "-" <<  mapping.TailSSN() << "] (size=" << mapping.GetLength() << ")";
   return os;
 }
 
@@ -403,7 +403,7 @@ MpTcpMappingContainer::GetMappingForSSN(const SequenceNumber32& ssn, MpTcpMappin
 //  }
   it--;
   mapping = *it;
-  NS_LOG_DEBUG("Is ssn in " << mapping << " ?");
+  NS_LOG_DEBUG("Is ssn "<< ssn << " in " << mapping << " ?");
   return mapping.IsSSNInRange( ssn );
 
 

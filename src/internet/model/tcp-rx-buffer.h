@@ -88,12 +88,12 @@ public:
    */
   void SetFinSequence (const SequenceNumber32& s);
   /**
-   * \brief Get the Maximum buffer size
+   * \brief Get the Maximum buffer size (in bytes)
    * \returns the Maximum buffer size
    */
   uint32_t MaxBufferSize (void) const;
   /**
-   * \brief Set the Maximum buffer size
+   * \brief Set the Maximum buffer size (in bytes)
    * \param s the Maximum buffer size
    */
   void SetMaxBufferSize (uint32_t s);

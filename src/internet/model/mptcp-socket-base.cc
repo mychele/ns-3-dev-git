@@ -119,7 +119,12 @@ MpTcpSocketBase::GetTypeId(void)
                TypeIdValue (MpTcpScheduler::GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_schedulerTypeId),
                MakeTypeIdChecker ())
-// TODO rehabilitate
+      //TODO remove ?
+      .AddAttribute ("KeyGeneratedIDSN", "Generate IDSN from the key",
+               BooleanValue (false),
+               MakeBooleanAccessor (&MpTcpSocketBase::m_generatedIdsn),
+               MakeBooleanChecker ())
+    // TODO rehabilitate
 //      .AddAttribute("SchedulingAlgorithm", "Algorithm for data distribution between m_subflows", EnumValue(Round_Robin),
 //          MakeEnumAccessor(&MpTcpSocketBase::SetDataDistribAlgo),
 //          MakeEnumChecker(Round_Robin, "Round_Robin"))
@@ -145,6 +150,10 @@ static const std::string containerNames[MpTcpSocketBase::Maximum] = {
 };
 
 
+/*
+
+*/
+
 // TODO unused for now
 MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
   TcpSocketBase(sock),
@@ -162,7 +171,7 @@ MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
     NS_LOG_LOGIC("Copying from TcpSocketBase");
     m_remotePathIdManager = Create<MpTcpPathIdManagerImpl>();
 
-  CreateScheduler(m_schedulerTypeId);
+    CreateScheduler(m_schedulerTypeId);
 }
 
 
@@ -177,8 +186,8 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_subflowConnectionSucceeded(sock.m_subflowConnectionSucceeded),
   m_subflowConnectionFailure(sock.m_subflowConnectionFailure),
   m_joinRequest(sock.m_joinRequest),
-  m_subflowCreated(sock.m_subflowCreated),
   m_receivedDSS(sock.m_receivedDSS),
+  m_subflowCreated(sock.m_subflowCreated),
   m_subflowTypeId(sock.m_subflowTypeId),
   m_schedulerTypeId(sock.m_schedulerTypeId)
 
@@ -189,6 +198,7 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_remotePathIdManager = Create<MpTcpPathIdManagerImpl>();
 
 
+  // TODO
   CreateScheduler(m_schedulerTypeId);
 
   //! TODO here I should generate a new Key
@@ -259,7 +269,7 @@ void
 MpTcpSocketBase::CreateScheduler(TypeId schedulerTypeId)
 {
   NS_LOG_FUNCTION(this);
-  NS_LOG_WARN("Overriding scheduler choice");
+  NS_LOG_WARN("Overriding scheduler choice to RoundRobin");
   ObjectFactory schedulerFactory;
 //  schedulerTypeId = MpTcpSchedulerFastestRTT;
   schedulerTypeId = MpTcpSchedulerRoundRobin::GetTypeId();
@@ -282,15 +292,18 @@ MpTcpSocketBase::ConnectNewSubflow(const Address &local, const Address &remote)
   // TODO remove next line (but will cause a bug, likely because m_subflowTypeId is
   // not constructed properly since MpTcpSocketBase creation is hackish
   // and does not call CompleteConstruct
+  // TODO pb c'est la, les 2 ss flots se partagent le mm congestion control !!
   m_subflowTypeId = MpTcpSubflow::GetTypeId();
-  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl, m_subflowTypeId);
+//  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl->Fork(), m_subflowTypeId);
+  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl->Fork(), m_subflowTypeId);
   NS_ASSERT(socket);
   Ptr<MpTcpSubflow> sf = DynamicCast<MpTcpSubflow>(socket);
   NS_ASSERT(sf);
   AddSubflow(sf);
 
   // TODO account for this error as well ?
-  NS_ASSERT(sf->Bind(local) == 0);
+  bool res = (sf->Bind(local) == 0);
+  NS_ASSERT(res);
   int ret = sf->Connect(remote);
 
   return ret;
@@ -384,15 +397,14 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 
   NS_LOG_DEBUG("Peer key/token set to " << m_peerKey << "/" << m_peerToken);
 
-  //! TODO Set in TcpSocketBase an attribute to enable idsn random
-  // motivation is that it's clearer to plot from 0
-  if(m_nullIsn)
-  {
-    idsn = 0;
-  }
+//  SetTxHead(m_nextTxSequence);
+//  m_firstTxUnack = m_nextTxSequence;
+//  m_highTxMark = m_nextTxSequence;
+
   // + 1 ?
-  NS_LOG_DEBUG("test");
-//  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ));
+  NS_LOG_DEBUG("Setting idsn=" << idsn << " (thus RxNext=idsn + 1)");
+  InitPeerISN(SequenceNumber32( (uint32_t)idsn ));
+//  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ) + SequenceNumber32(1));
 }
 
 
@@ -405,6 +417,22 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 //}
 
 
+
+void 
+MpTcpSocketBase::InitLocalISN(const SequenceNumber32& seq)
+{
+    //!
+    TcpSocketBase::InitLocalISN(seq);
+
+    /*
+    The SYN with MP_CAPABLE occupies the first octet of data sequence
+   space, although this does not need to be acknowledged at the
+   connection level until the first data is sent (see Section 3.3).*/
+    m_nextTxSequence++;
+    m_firstTxUnack = m_nextTxSequence;
+    m_highTxMark = m_nextTxSequence;
+    m_txBuffer->SetHeadSequence (m_nextTxSequence);
+}
 
 void
 MpTcpSocketBase::ProcessListen(Ptr<Packet> packet, const TcpHeader& mptcpHeader, const Address& fromAddress, const Address& toAddress)
@@ -953,6 +981,7 @@ MpTcpSocketBase::AddSubflow(Ptr<MpTcpSubflow> sflow)
 //  sf->SetCloseCallbacks
 //  sf->SetDataSentCallback (  );
 //  sf->RecvCallback (cbRcv);
+
   sf->SetCongestionControlAlgorithm(this->m_congestionControl);
 
   m_subflows[Others].push_back( sf );
@@ -1210,7 +1239,7 @@ MpTcpSocketBase::IsConnected() const
 
 
 /** Inherited from Socket class: Bind socket to an end-point in MpTcpL4Protocol
-TODO convert to noop
+TODO convert to noop/remove
 */
 int
 MpTcpSocketBase::Bind()
@@ -1291,7 +1320,8 @@ MpTcpSocketBase::PeerClose( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
   // Return if FIN is out of sequence, otherwise move to CLOSE_WAIT state by DoPeerClose
   if (!m_rxBuffer->Finished())
   {
-    NS_LOG_WARN("Out of range");
+    NS_LOG_WARN("Not finished yet, NextRxSequence=" << m_rxBuffer->NextRxSequence());
+    m_rxBuffer->Dump();
     return;
   }
 
@@ -1506,6 +1536,10 @@ MpTcpSocketBase::NewAck(SequenceNumber32 const& dsn)
 {
   NS_LOG_FUNCTION(this << " new dataack=[" <<  dsn << "]");
 
+  if(m_state == SYN_SENT) {
+    
+    
+  }
   TcpSocketBase::NewAck(dsn);
 
   #if 0
@@ -1602,7 +1636,12 @@ MpTcpSocketBase::BecomeFullyEstablished()
 {
     NS_LOG_FUNCTION (this);
     m_receivedDSS = true;
-
+    
+    // same as in ProcessSynSent upon SYN/ACK reception
+//    m_nextTxSequence++;
+//    m_firstTxUnack = m_nextTxSequence;
+//    m_highTxMark = m_nextTxSequence;
+//    m_txBuffer->SetHeadSequence (m_nextTxSequence);
     // should be called only on client side
     ConnectionSucceeded();
 }
@@ -1613,6 +1652,29 @@ MpTcpSocketBase::FullyEstablished() const
     NS_LOG_FUNCTION_NOARGS();
     return m_receivedDSS;
 }
+
+
+
+  
+//void
+//MpTcpSocketBase::SetupSubflowTracing(Ptr<MpTcpSubflow> sf)
+//{
+//  NS_ASSERT_MSG(m_tracePrefix.length() != 0, "please call SetupMetaTracing before." );
+//  NS_LOG_LOGIC("Meta=" << this << " Setup tracing for sf " << sf << " with prefix [" << m_tracePrefix << "]");
+////  f.open(filename, std::ofstream::out | std::ofstream::trunc);
+//
+//  // For now, there is no subflow deletion so this should be good enough, else it will crash
+//  std::stringstream os;
+//  //! we start at 1 because it's nicer
+//
+////  os << m_tracePrefix << "subflow" <<  m_prefixCounter++;
+//
+//  SetupSocketTracing(sf, os.str().c_str());
+//}
+
+/*****************************
+END TRACING system 
+*****************************/
 
 
 /**
@@ -3067,6 +3129,7 @@ MpTcpSocketBase::ComputeTotalCWND()
         {
 //          NS_LOG_WARN("Don't consider Fast recovery yet");
 //          totalCwnd += sf->m_cWnd.Get();          // Should be this all the time ?!
+            NS_LOG_DEBUG("Adding " << sf->Window() << " to total window");
           totalCwnd += sf->Window();          // Should be this all the time ?!
         }
     }

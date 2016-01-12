@@ -41,6 +41,7 @@
 #include "ns3/double.h"
 #include "ns3/pointer.h"
 #include "ns3/trace-source-accessor.h"
+#include "ns3/tcp-trace-helper.h"
 #include "tcp-socket-base.h"
 #include "tcp-l4-protocol.h"
 #include "ipv4-end-point.h"
@@ -105,8 +106,12 @@ TcpSocketBase::GetTypeId (void)
                    MakeCallbackAccessor (&TcpSocketBase::m_icmpCallback6),
                    MakeCallbackChecker ())
     .AddAttribute ("WindowScaling", "Enable or disable Window Scaling option",
-                   BooleanValue (true),
+                   BooleanValue (false),
                    MakeBooleanAccessor (&TcpSocketBase::m_winScalingEnabled),
+                   MakeBooleanChecker ())
+    .AddAttribute ("NoDelay", "Enable or disable Nagle algorithm",
+                   BooleanValue (false),
+                   MakeBooleanAccessor (&TcpSocketBase::GetTcpNoDelay,&TcpSocketBase::SetTcpNoDelay),
                    MakeBooleanChecker ())
     .AddAttribute ("Timestamp", "Enable or disable Timestamp option",
                    BooleanValue (false),
@@ -170,6 +175,7 @@ TcpSocketBase::GetTypeId (void)
                      "Remote side's flow control window",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_rWnd),
                      "ns3::TracedValue::Uint32Callback")
+    // This is strange since zis is decorellated from rxBuffer->NextRxSequence
     .AddTraceSource ("HighestRxSequence",
                      "Highest sequence number received from peer",
                      MakeTraceSourceAccessor (&TcpSocketBase::m_highRxMark),
@@ -280,9 +286,14 @@ TcpSocketBase::TcpSocketBase (void)
     m_rWnd (0),
     m_highRxMark (0),
     m_highRxAckMark (0),
+    m_bytesAckedNotProcessed(0),
+    m_nullIsn(true),
+    m_localISN(0),
+    m_peerISN(0),
     m_mptcpEnabled(false),
     m_mptcpLocalKey(0),
     m_mptcpLocalToken(0),
+    m_winScalingEnabled(false),
     m_sndScaleFactor (0),
     m_rcvScaleFactor (0),
     m_timestampEnabled (true),
@@ -345,6 +356,10 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_rWnd (sock.m_rWnd),
     m_highRxMark (sock.m_highRxMark),
     m_highRxAckMark (sock.m_highRxAckMark),
+    m_bytesAckedNotProcessed(0),
+    m_nullIsn(sock.m_nullIsn),
+    m_localISN(sock.m_localISN),
+    m_peerISN(sock.m_peerISN),
     m_mptcpEnabled (sock.m_mptcpEnabled),
     m_mptcpLocalKey(sock.m_mptcpLocalKey),
     m_mptcpLocalToken(sock.m_mptcpLocalToken),
@@ -507,15 +522,40 @@ TcpSocketBase::Bind6 (void)
   return SetupCallback ();
 }
 
+Ptr<NetDevice>
+TcpSocketBase::MapIpToInterface(Ipv4Address addr) const
+{
+    NS_LOG_DEBUG(addr);
+      Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
+      for( uint32_t n =0; n < ipv4client->GetNInterfaces(); n++){
+        for( uint32_t a=0; a < ipv4client->GetNAddresses(n); a++){
+            NS_LOG_UNCOND( "Client addr " << n <<"/" << a << "=" << ipv4client->GetAddress(n,a));
+            if(addr ==ipv4client->GetAddress(n,a).GetLocal()) {
+                NS_LOG_UNCOND("EUREKA same ip=" << addr);
+                // That function is buggy
+//                BindToNetDevice();
+                return m_node->GetDevice(n);
+//                m_endPoint->BindToNetDevice();
+////                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+//                break;
+            }
+        }
+      }
+    return 0;
+}
+
 /* Inherit from Socket class: Bind socket (with specific address) to an end-point in TcpL4Protocol */
 int
 TcpSocketBase::Bind (const Address &address)
 {
   NS_LOG_FUNCTION (this << address);
+
   if (InetSocketAddress::IsMatchingType (address))
     {
+
       InetSocketAddress transport = InetSocketAddress::ConvertFrom (address);
       Ipv4Address ipv4 = transport.GetIpv4 ();
+      NS_LOG_DEBUG(ipv4 );
       uint16_t port = transport.GetPort ();
       if (ipv4 == Ipv4Address::GetAny () && port == 0)
         {
@@ -533,11 +573,41 @@ TcpSocketBase::Bind (const Address &address)
         {
           m_endPoint = m_tcp->Allocate (ipv4, port);
         }
+
+      NS_LOG_UNCOND("TATA" );
       if (0 == m_endPoint)
         {
           m_errno = port ? ERROR_ADDRINUSE : ERROR_ADDRNOTAVAIL;
           return -1;
         }
+
+      Ptr<NetDevice> dev = MapIpToInterface(m_endPoint->GetLocalAddress());
+
+      if(dev) {
+                m_endPoint->BindToNetDevice(dev);
+                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+      }
+      #if 0
+      Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
+      for( uint32_t n =0; n < ipv4client->GetNInterfaces(); n++){
+        for( uint32_t a=0; a < ipv4client->GetNAddresses(n); a++){
+            NS_LOG_UNCOND( "Client addr " << n <<"/" << a << "=" << ipv4client->GetAddress(n,a));
+            if(m_endPoint->GetLocalAddress() ==ipv4client->GetAddress(n,a).GetLocal()) {
+                NS_LOG_UNCOND("EUREKA same ip=" << m_endPoint->GetLocalAddress());
+                // That function is buggy
+//                BindToNetDevice();
+                m_endPoint->BindToNetDevice(m_node->GetDevice(n));
+//                m_boundnetdevice = m_node->GetDevice(n);
+                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+                break;
+            }
+        }
+      }
+      #endif
+      NS_LOG_UNCOND("BOUND NETDEV=" << m_boundnetdevice );
+//      BindToNetDevice(
+//      m_endPoint->GetBoundNetDevice();
+
     }
   else if (Inet6SocketAddress::IsMatchingType (address))
     {
@@ -589,7 +659,7 @@ TcpSocketBase::InitializeCwnd (void)
 void
 TcpSocketBase::SetInitialSSThresh (uint32_t threshold)
 {
-  NS_ABORT_MSG_UNLESS (m_state == CLOSED,
+  NS_ABORT_MSG_UNLESS ( (m_state == CLOSED) || threshold == m_tcb->m_initialSsThresh,
     "TcpSocketBase::SetSSThresh() cannot change initial ssThresh after connection started.");
 
   m_tcb->m_initialSsThresh = threshold;
@@ -604,7 +674,7 @@ TcpSocketBase::GetInitialSSThresh (void) const
 void
 TcpSocketBase::SetInitialCwnd (uint32_t cwnd)
 {
-  NS_ABORT_MSG_UNLESS (m_state == CLOSED,
+  NS_ABORT_MSG_UNLESS ( (m_state == CLOSED) || cwnd == m_tcb->m_initialCWnd,
     "TcpSocketBase::SetInitialCwnd() cannot change initial cwnd after connection started.");
 
   m_tcb->m_initialCWnd = cwnd;
@@ -629,6 +699,7 @@ TcpSocketBase::Connect (const Address & address)
   NS_LOG_FUNCTION (this << address);
 
   InitializeCwnd ();
+  GenerateUniqueMpTcpKey();
 
   // If haven't do so, Bind() this socket first
   if (InetSocketAddress::IsMatchingType (address) && m_endPoint6 == 0)
@@ -648,7 +719,8 @@ TcpSocketBase::Connect (const Address & address)
 
       // Get the appropriate local address and port number from the routing protocol and set up endpoint
       if (SetupEndpoint () != 0)
-        { // Route to destination does not exist
+        {
+          NS_LOG_ERROR("Route to destination does not exist ?!");
           return -1;
         }
     }
@@ -692,6 +764,9 @@ TcpSocketBase::Connect (const Address & address)
   m_rtt->Reset ();
   m_cnCount = m_cnRetries;
 
+  // TODO regenerate ISN
+   InitLocalISN();
+  
   // DoConnect() will do state-checking and send a SYN packet
   return DoConnect ();
 }
@@ -937,10 +1012,9 @@ TcpSocketBase::BindToNetDevice (Ptr<NetDevice> netdevice)
           return;
         }
       NS_ASSERT (m_endPoint != 0);
+      m_endPoint->BindToNetDevice (netdevice);
     }
-  m_endPoint->BindToNetDevice (netdevice);
-
-  if (m_endPoint6 == 0)
+  else if (m_endPoint6 == 0)
     {
       if (Bind6 () == -1)
         {
@@ -948,8 +1022,11 @@ TcpSocketBase::BindToNetDevice (Ptr<NetDevice> netdevice)
           return;
         }
       NS_ASSERT (m_endPoint6 != 0);
+      m_endPoint6->BindToNetDevice (netdevice);
     }
-  m_endPoint6->BindToNetDevice (netdevice);
+  else {
+    NS_FATAL_ERROR("What the hell happened ?");
+  }
 
   return;
 }
@@ -1516,22 +1593,19 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 
       // TODO is it possible to move these to CompleteFork
       // would clutter less TcpSocketBase
-//      Ptr<MpTcpSubflow> sf = new MpTcpSubflow(*newSock);
+
       Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta();
+
+      // HACK matt otherwise the new subflow sends the packet on the wroing interface
+      master->m_boundnetdevice = this->m_boundnetdevice;
+
       bool result = m_tcp->AddSocket(newSock);
       NS_ASSERT_MSG(result, "could not register meta");
-//      Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
-//      NS_LOG_UNCOND("meta=" << meta);
-//      Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(this);
-//      Simulator::ScheduleNow (&MpTcpSocketBase::CompleteFork, this,
-//                          packet, tcpHeader,
-////                          master
-//                          fromAddress, toAddress
-//                          );
+      newSock->GenerateUniqueMpTcpKey();
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
 
-        return;
+      return;
     }
 
   NS_LOG_LOGIC ("Cloned a TcpSocketBase " << newSock);
@@ -1546,8 +1620,12 @@ TcpSocketBase::UpgradeToMeta()
 
   //*this
   MpTcpSubflow *subflow = new MpTcpSubflow(*this);
+  // TODO could do sthg like CopyObject<MpTcpSubflow>(this) ?
+  // Otherwise uncoimment CompleteConstruct
 //  CompleteConstruct(sf);
   Ptr<MpTcpSubflow> master(subflow, true);
+
+
 
   // the master is always a new socket, hence we should register it
   bool result = m_tcp->AddSocket(master);
@@ -1585,9 +1663,11 @@ TcpSocketBase::UpgradeToMeta()
   // I don't want the destructor to be called in that moment
 //  delete temp[];
   MpTcpSocketBase* meta = new (this) MpTcpSocketBase(*master);
+  // update attributes with default
+//  CompleteConstruct(meta);
   meta->SetTcp(master->m_tcp);
   meta->SetNode(master->GetNode());
-
+//InitLocalISN
   // we add it to tcp so that it can be freed and used for token lookup
 
 //  MpTcpSocketBase* meta = new (this) MpTcpSocketBase();
@@ -1604,44 +1684,6 @@ TcpSocketBase::UpgradeToMeta()
   return master;
 //    return 0;
 }
-
-
-//int
-//TcpSocketBase::ProcessOptionMpTcpSynSent(const Ptr<const TcpOption> option)
-//{
-//  NS_LOG_DEBUG(option);
-//  Ptr<const TcpOptionMpTcpCapable> mpc = DynamicCast<const TcpOptionMpTcpCapable>(option);
-//
-//  if(mpc)
-//  {
-//    NS_LOG_UNCOND("found MP_CAPABLE");
-//    return 1;
-//  }
-//  return 0;
-//}
-
-//int
-//TcpSocketBase::ProcessOptionMpTcpEstablished(const Ptr<const TcpOption> option)
-//{
-//    NS_LOG_FUNCTION(this << "Does nothing");
-//}
-
-
-
-//int
-//TcpSocketBase::ProcessTcpOptionsLastAck(const TcpHeader& header)
-//{
-//  NS_LOG_FUNCTION (this << header);
-//}
-//
-//int
-//TcpSocketBase::ProcessTcpOptionsClosing(const TcpHeader& header)
-//{
-//  NS_LOG_FUNCTION (this << header);
-//
-//  return 0;
-//}
-//
 
 
 int
@@ -1795,11 +1837,94 @@ TcpSocketBase::ProcessTcpOptionsListen(const TcpHeader& header)
 }
 #endif
 
+/*****************************
+BEGIN TRACING system (to remove after tests ?)
+*****************************/
+void
+TcpSocketBase::SetupTracing(std::string prefix)
+{
+    if(IsTracingEnabled())
+        return;
+
+    //  f.open(filename, std::ofstream::out | std::ofstream::trunc);
+    m_tracePrefix = prefix;
+
+    //  prefix = m_tracePrefix + "/meta";
+//    TcpTraceHelper traceHelper;
+    // TODO move out to
+    TcpTraceHelper::SetupSocketTracing(this, m_tracePrefix);
+
+    /** **/
+}
+
+
+bool
+TcpSocketBase::IsTracingEnabled() const
+{
+    //
+    return !m_tracePrefix.empty();
+}
+
+void 
+TcpSocketBase::InitLocalISN() 
+{
+    SequenceNumber32 isn(0);
+     if(!m_nullIsn)
+      {
+        NS_LOG_INFO("Generating Initial Sequence Number");
+        isn = rand();
+      }
+    InitLocalISN(isn);
+}
+
+void 
+TcpSocketBase::InitLocalISN(const SequenceNumber32& localIsn)
+{
+    
+//    SequenceNumber32 localIsn;
+// TODO replace m_nullIsn by a attribute
+//  	RandomVariable
+
+    NS_LOG_INFO("Setting local ISN to" << localIsn);
+    // TODO check it was not initialized already ?
+//    m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
+    m_nextTxSequence = localIsn;
+    m_firstTxUnack = m_nextTxSequence;
+    m_highTxMark = m_nextTxSequence;
+    m_txBuffer->SetHeadSequence (m_nextTxSequence);
+    m_localISN = m_nextTxSequence;
+}
+
+void 
+TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn) 
+{
+    NS_LOG_INFO("Setting peer ISN=" << peerIsn);
+    // TODO check it was not initialized already ?
+    m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
+    m_peerISN = peerIsn;
+}
 //int
 //TcpSocketBase::ProcessTcpOptionsSynRcvd(const TcpHeader& header)
 //{
 //    return 1;
 //}
+SequenceNumber32 
+TcpSocketBase::GetPeerIsn(void) const
+{
+    // TODO check it's connected 
+//    NS_ASSERT(m_connected);
+    return m_peerISN;
+}
+
+
+
+SequenceNumber32 
+TcpSocketBase::GetLocalIsn(void) const
+{
+    // TODO check it's connected 
+//    NS_ASSERT(m_connected);
+    return m_localISN;
+}
 
 
 /* Received a packet upon SYN_SENT */
@@ -1807,7 +1932,8 @@ void
 TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
-
+uint64_t idsn;
+uint32_t localToken;
   // Extract the flags. PSH and URG are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
 
@@ -1829,7 +1955,8 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       NS_LOG_INFO ("SYN_SENT -> SYN_RCVD");
       m_state = SYN_RCVD;
       m_cnCount = m_cnRetries;
-      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+//      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+      InitPeerISN(tcpHeader.GetSequenceNumber ());
       SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
     }
   else if (tcpflags == (TcpHeader::SYN | TcpHeader::ACK)
@@ -1842,8 +1969,21 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
         // SendRst?
         // TODO save endpoint
 //        if(m_endpoint != 0)
+        Ipv4EndPoint* endPoint = m_endPoint;
+        Ptr<NetDevice> boundDev = m_boundnetdevice;
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
+        // master = first subflow
         Ptr<MpTcpSubflow> master = UpgradeToMeta();
+
+        GenerateTokenForKey( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
+        SequenceNumber32 sidsn( (uint32_t) idsn);
+        
+        NS_LOG_DEBUG("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
+        InitLocalISN(sidsn);
+//              // HACK matt otherwise the new subflow sends the packet on the wroing interface
+        master->m_boundnetdevice = boundDev;
+        master->m_endPoint = endPoint;
+
         NS_LOG_DEBUG("MATT2 end of upgrade" << this << " "<< GetInstanceTypeId());
 //        bool result = m_tcp->AddSocket(master);
 //        NS_ASSERT(result);
@@ -1856,7 +1996,8 @@ TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
       m_connected = true;
       m_retxEvent.Cancel ();
-      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+      InitPeerISN(tcpHeader.GetSequenceNumber ());
+//      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
       m_highTxMark = ++m_nextTxSequence;
       m_txBuffer->SetHeadSequence (m_nextTxSequence);
       m_firstTxUnack = m_nextTxSequence;
@@ -1905,6 +2046,7 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       m_connected = true;
       m_retxEvent.Cancel ();
       m_highTxMark = ++m_nextTxSequence;
+//      SetTxHead()
       m_txBuffer->SetHeadSequence (m_nextTxSequence);
       m_firstTxUnack = m_nextTxSequence;
 
@@ -1946,7 +2088,8 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
     }
   else if (tcpflags == TcpHeader::SYN)
     { // Probably the peer lost my SYN+ACK
-      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
+      InitPeerISN(tcpHeader.GetSequenceNumber ());
+//      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
       SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
     }
   else if (tcpflags == (TcpHeader::FIN | TcpHeader::ACK))
@@ -2525,6 +2668,15 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
                                     InetSocketAddress::ConvertFrom (toAddress).GetPort (),
                                     InetSocketAddress::ConvertFrom (fromAddress).GetIpv4 (),
                                     InetSocketAddress::ConvertFrom (fromAddress).GetPort ());
+
+      Ptr<NetDevice> dev = MapIpToInterface(InetSocketAddress::ConvertFrom (toAddress).GetIpv4 ());
+      if(dev) {
+        NS_LOG_UNCOND("device found; binding to it");
+        m_endPoint->BindToNetDevice(dev);
+        m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+      }
+
+      /* la il faut chercher */
       m_endPoint6 = 0;
       NS_ASSERT(m_endPoint);
     }
@@ -2549,7 +2701,12 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   m_cnCount = m_cnRetries;
   SetupCallback ();
   // Set the sequence number and send SYN+ACK
-  m_rxBuffer->SetNextRxSequence (h.GetSequenceNumber () + SequenceNumber32 (1));
+  InitLocalISN();
+  InitPeerISN(h.GetSequenceNumber ());
+//  if(IsTracingEnabled()) {
+//    SetupTracingIfEnabled();
+//  }
+//  m_rxBuffer->SetNextRxSequence ( + SequenceNumber32 (1));
 
   SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
 }
@@ -3188,8 +3345,9 @@ TcpSocketBase::GetRcvBufSize (void) const
 void
 TcpSocketBase::SetSegSize (uint32_t size)
 {
+  NS_ABORT_MSG_UNLESS ( (m_state == CLOSED) || (m_tcb->m_segmentSize == size), "Cannot change segment size dynamically.");
   m_tcb->m_segmentSize = size;
-  NS_ABORT_MSG_UNLESS (m_state == CLOSED, "Cannot change segment size dynamically.");
+  
 }
 
 uint32_t
@@ -3396,23 +3554,13 @@ TcpSocketBase::GenerateUniqueMpTcpKey()
 //  NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
 //  uint64_t idsn = 0;
 //  /**
-//
 //  /!\ seq nb must be 64 bits for mptcp but that would mean rewriting lots of code so
-//
 //  TODO add a SetInitialSeqNb member into TcpSocketBase
 //  **/
-//  if(m_nullIsn)
-//  {
-//    m_nextTxSequence = (uint32_t)0;
-//  }
-//  else
-//  {
-//    m_nextTxSequence = (uint32_t)idsn;
-//  }
-//
+
 ////  SetTxHead(m_nextTxSequence);
-//  m_firstTxUnack = m_nextTxSequence;
-//  m_highTxMark = m_nextTxSequence;
+//  m_txBuffer->SetHeadSequence(m_nextTxSequence);
+//  InitLocalISN(m_nextTxSequence);
 
   return localKey;
 }
@@ -3423,12 +3571,12 @@ TcpSocketBase::AddMpTcpOptions (TcpHeader& header)
 {
     NS_LOG_FUNCTION(this);
     // If key not genereated yet
-    if (m_mptcpLocalKey == 0)
-    {
-      // for the sake of simplicity, we generate a key even if unused
-      GenerateUniqueMpTcpKey();
-      NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
-    }
+//    if (m_mptcpLocalKey == 0)
+//    {
+//      // for the sake of simplicity, we generate a key even if unused
+//      GenerateUniqueMpTcpKey();
+//      NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
+//    }
 
     if((header.GetFlags () == TcpHeader::SYN))
     {
@@ -3525,6 +3673,7 @@ TcpSocketBase::ProcessOptionWScale (const Ptr<const TcpOption> option)
                  static_cast<int> (m_rcvScaleFactor));
 }
 
+// TODO this should be a static function with params maxBufferSize
 uint8_t
 TcpSocketBase::CalculateWScale () const
 {
@@ -3710,7 +3859,7 @@ TcpSocketBase::UpdateAckState (TcpSocketState::TcpAckState_t oldValue,
 void
 TcpSocketBase::SetCongestionControlAlgorithm (Ptr<TcpCongestionOps> algo)
 {
-  NS_LOG_FUNCTION (this << algo);
+  NS_LOG_FUNCTION (this << algo << algo->GetInstanceTypeId());
   m_congestionControl = algo;
 }
 

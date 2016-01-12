@@ -127,7 +127,7 @@ TcpRxBuffer::IncNextRxSequence ()
   NS_LOG_FUNCTION (this);
   // Increment nextRxSeq is valid only if we don't have any data buffered,
   // this is supposed to be called only during the three-way handshake
-  NS_ASSERT (m_size == 0);
+  NS_ASSERT (m_size == (uint32_t)0);
   m_nextRxSeq++;
 }
 
@@ -153,7 +153,9 @@ TcpRxBuffer::SetFinSequence (const SequenceNumber32& s)
 
   m_gotFin = true;
   m_finSeq = s;
-  if (m_nextRxSeq == m_finSeq) ++m_nextRxSeq;
+  if (m_nextRxSeq == m_finSeq) {
+    ++m_nextRxSeq;
+  }
 }
 
 bool

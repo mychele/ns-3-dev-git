@@ -26,8 +26,12 @@
 
 NS_LOG_COMPONENT_DEFINE("MpTcpSchedulerFastestRTT");
 
+
+
 namespace ns3
 {
+
+NS_OBJECT_ENSURE_REGISTERED (MpTcpSchedulerFastestRTT);
 
 TypeId
 MpTcpSchedulerFastestRTT::GetTypeId (void)

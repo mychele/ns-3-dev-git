@@ -155,8 +155,12 @@ TcpTraceHelper::SetupSocketTracing(Ptr<TcpSocketBase> sock, const std::string pr
   NS_ASSERT(sock->TraceConnect ("State", "State", MakeBoundCallback(&dumpTcpState, streamStates) ));
 //  Ptr<MpTcpSocketBase> sock2 = DynamicCast<MpTcpSocketBase>(sock);
 //  Ptr<TcpTxBuffer> txBuffer( &sock->m_txBuffer);
-  NS_ASSERT(sock->TraceConnect ("HighestRxAck", "HighestRxAck", MakeBoundCallback(&dumpSequence32, streamRxNext) ));
+  
+  
+  // HighestRxAck is not in sync with RxBuffer nextRxSequence, hence useless + it is not used in MPTCP stacks
+//  NS_ASSERT(sock->TraceConnect ("HighestRxAck", "HighestRxAck", MakeBoundCallback(&dumpSequence32, streamRxNext) ));
 //  HighestRxSequence
+  NS_ASSERT(sock->m_rxBuffer->TraceConnect ("NextRxSequence", "NextRxSequence", MakeBoundCallback(&dumpUint32, streamRxNext) ));
   NS_ASSERT(sock->m_rxBuffer->TraceConnect ("RxTotal", "RxTotal", MakeBoundCallback(&dumpUint32, streamRxTotal) ));
   NS_ASSERT(sock->m_rxBuffer->TraceConnect ("RxAvailable", "RxAvailable", MakeBoundCallback(&dumpUint32, streamRxAvailable) ));
 
