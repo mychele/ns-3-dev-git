@@ -240,7 +240,7 @@ Ipv4BindToNetDeviceTest::Ipv4BindToNetDeviceTest ()
 
 void Ipv4BindToNetDeviceTest::ReceivePkt (Ptr<Socket> socket)
 {
-  NS_LOG_DEBUG ("Recv cb");
+  NS_LOG_DEBUG ("Recv cb from " << socket->GetInstanceTypeId().GetName());
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
@@ -268,8 +268,8 @@ Ipv4BindToNetDeviceTest::OnConnection (Ptr<Socket> socket
 //                                       , const ns3::Address&
                                        )
 {
-    NS_LOG_DEBUG ("Send connection");
-    int ret = socket->Send(Create<Packet> (123));
+    NS_LOG_INFO ("Send connection");
+    int ret = socket->Send (Create<Packet> (123));
     NS_TEST_EXPECT_MSG_EQ ( ret, 0, "Could not send packet");
 }
 
@@ -374,11 +374,11 @@ Ipv4BindToNetDeviceTest::DoRun (void)
   // Create the TCP sockets
   Ptr<SocketFactory> tcpRxSocketFactory = rxNode->GetObject<TcpSocketFactory> ();
   Ptr<Socket> tcpRxSocket = tcpRxSocketFactory->CreateSocket ();
-  NS_TEST_EXPECT_MSG_EQ (tcpRxSocket->Bind (InetSocketAddress (receiverIP[0], 1234)), 0, "Successful call to Bind.");
+  NS_TEST_EXPECT_MSG_EQ (tcpRxSocket->Bind (InetSocketAddress (receiverIP[1], 1234)), 0, "Successful call to Bind.");
   // Must call BindToNetDevice() after Bind()
   tcpRxSocket->SetRecvCallback (MakeCallback (&Ipv4BindToNetDeviceTest::ReceivePkt, this));
 
-  Ptr<SocketFactory> tcpTxSocketFactory = txNode->GetObject<UdpSocketFactory> ();
+  Ptr<SocketFactory> tcpTxSocketFactory = txNode->GetObject<TcpSocketFactory> ();
 //  Ptr<TcpSocket> tcpTxSocket = DynamicCast<TcpSocket>(tcpTxSocketFactory->CreateSocket () );
   Ptr<Socket> tcpTxSocket = tcpTxSocketFactory->CreateSocket ();
 //  tcpTxSocket->SetAllowBroadcast (true);
@@ -426,25 +426,27 @@ Ipv4BindToNetDeviceTest::DoRun (void)
   m_receivedPacket = 0;
 
   // ------ Now the TCP tests ------------
-  
+  // ERROR == No route found for forwarding packet.  Drop. 
+  // Launched via ./waf --run test-runner --command-template="gdb -ex 'run --suite=ipv4-forwarding --verbose' --args %s"
+
   // Test that data is successful when RxNode binds to rxDev1 and TxNode binds
   // to txDev1
-  NS_LOG_DEBUG ("Bind test case 1");
+  NS_LOG_DEBUG ("TCP Bind test case 1");
   InetSocketAddress serverAddr (receiverIP[1], 1234 );
   InetSocketAddress senderAddr (senderIP[1],   4321 );
 
 //  tcpRxSocket->BindToNetDevice (rxDev1);
 //  tcpTxSocket->BindToNetDevice (txDev1);
   // MATT bind must be automatic, without any custom call to BindToNetDevice
-  NS_TEST_EXPECT_MSG_EQ (tcpTxSocket->Bind (senderAddr), "" );
+//  NS_TEST_EXPECT_MSG_EQ (tcpTxSocket->Bind (senderAddr), 0, "TCP bind failed" );
 //  tcpRxSocket->SetAcceptCallback( MakeNullCallback<bool, Ptr<Socket>, const ns3::Address& > (),
 //                                 MakeCallback(&Ipv4BindToNetDeviceTest::OnConnection, this) );
 
-  tcpTxSocket->SetConnectCallback ( MakeCallback(&Ipv4BindToNetDeviceTest::OnConnection, this),
+  tcpTxSocket->SetConnectCallback ( MakeCallback (&Ipv4BindToNetDeviceTest::OnConnection, this),
                                    MakeNullCallback<void, Ptr<Socket> > ()
                                   );
 
-  tcpTxSocket->Connect( serverAddr );
+  NS_TEST_EXPECT_MSG_EQ (tcpTxSocket->Connect ( serverAddr ), 0 , "Connect failed");
 
   //! Make sure packet can only travel through channel2, which should be the logical path
   channel1->BlackList(txDev1, rxDev1);

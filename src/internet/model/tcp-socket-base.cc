@@ -476,7 +476,7 @@ TcpSocketBase::GetNode (void) const
 }
 
 Ptr<NetDevice>
-TcpSocketBase::MapIpToInterface(Ipv4Address addr) const
+TcpSocketBase::MapIpToInterface (Ipv4Address addr) const
 {
     NS_LOG_DEBUG(addr);
       Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
@@ -564,11 +564,11 @@ TcpSocketBase::Bind (const Address &address)
           return -1;
         }
 
-      Ptr<NetDevice> dev = MapIpToInterface(m_endPoint->GetLocalAddress());
+      Ptr<NetDevice> dev = MapIpToInterface (m_endPoint->GetLocalAddress());
 
       if(dev) {
-                m_endPoint->BindToNetDevice(dev);
-                m_boundnetdevice = m_endPoint->GetBoundNetDevice();
+        m_endPoint->BindToNetDevice (dev);
+        m_boundnetdevice = m_endPoint->GetBoundNetDevice ();
       }
       #if 0
       Ptr<Ipv4> ipv4client = m_node->GetObject<Ipv4>();
