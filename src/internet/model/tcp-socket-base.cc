@@ -1284,6 +1284,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       // Do nothing
       break;
     case CLOSED:
+      NS_LOG_WARN ("Received packet while being closed");
       // Send RST if the incoming packet is not a RST
       if ((tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG)) != TcpHeader::RST)
         { // Since m_endPoint is not configured yet, we cannot use SendRST here

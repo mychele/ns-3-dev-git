@@ -41,6 +41,7 @@
 #include "ns3/ipv4-static-routing.h"
 #include "ns3/tcp-socket.h"
 #include "ns3/ipv4-address.h"
+#include "ns3/internet-module.h"  //TODO remove along with PopulateRoutingTables
 
 #include <string>
 #include <limits>
@@ -225,6 +226,8 @@ class Ipv4BindToNetDeviceTest : public TestCase
   void OnConnection (Ptr<Socket> socket
 //                     , const ns3::Address&
                      );
+  void 
+  HandleAccept (Ptr<Socket> s, const Address& from);
 
 public:
   virtual void DoRun (void);
@@ -236,6 +239,8 @@ public:
 Ipv4BindToNetDeviceTest::Ipv4BindToNetDeviceTest ()
   : TestCase ("Test that Socket::BindToNetDevice () works")
 {
+//protected:
+
 }
 
 void Ipv4BindToNetDeviceTest::ReceivePkt (Ptr<Socket> socket)
@@ -243,7 +248,9 @@ void Ipv4BindToNetDeviceTest::ReceivePkt (Ptr<Socket> socket)
   NS_LOG_DEBUG ("Recv cb from " << socket->GetInstanceTypeId().GetName());
   uint32_t availableData;
   availableData = socket->GetRxAvailable ();
+//  NS_LOG_UNCOND (" available data " << availableData);
   m_receivedPacket = socket->Recv (std::numeric_limits<uint32_t>::max (), 0);
+  NS_LOG_UNCOND (" m_receivedPacket=" << m_receivedPacket);
   NS_ASSERT (availableData == m_receivedPacket->GetSize ());
 }
 
@@ -269,8 +276,18 @@ Ipv4BindToNetDeviceTest::OnConnection (Ptr<Socket> socket
                                        )
 {
     NS_LOG_INFO ("Send connection");
-    int ret = socket->Send (Create<Packet> (123));
-    NS_TEST_EXPECT_MSG_EQ ( ret, 0, "Could not send packet");
+    Simulator::Schedule (Seconds (0), &TcpSocketBase::Send, DynamicCast<TcpSocketBase>(socket), Create<Packet> (123), 0);
+//    int ret = socket->Send (Create<Packet> (123));
+//    NS_TEST_EXPECT_MSG_EQ ( ret, 0, "Could not send packet" << ret);
+}
+
+void 
+Ipv4BindToNetDeviceTest::HandleAccept (Ptr<Socket> s, const Address& from)
+{
+  NS_LOG_FUNCTION (this << s << from);
+  s->SetRecvCallback (MakeCallback (&Ipv4BindToNetDeviceTest::ReceivePkt, this));
+//  s->SetRecvCallback (MakeCallback (&PacketSink::HandleRead, this));
+//  m_socketList.push_back (s);
 }
 
 void
@@ -299,6 +316,7 @@ Ipv4BindToNetDeviceTest::DoRun (void)
 
   // Receiver Node
   Ptr<Node> rxNode = CreateObject<Node> ();
+  NS_LOG_UNCOND ("rxNode" << rxNode->GetSystemId());
   AddInternetStack (rxNode);
   Ptr<SimpleNetDevice> rxDev1;
   Ptr<SimpleNetDevice> rxDev2;
@@ -371,17 +389,7 @@ Ipv4BindToNetDeviceTest::DoRun (void)
   Ptr<Socket> udpTxSocket = udpTxSocketFactory->CreateSocket ();
   udpTxSocket->SetAllowBroadcast (true);
 
-  // Create the TCP sockets
-  Ptr<SocketFactory> tcpRxSocketFactory = rxNode->GetObject<TcpSocketFactory> ();
-  Ptr<Socket> tcpRxSocket = tcpRxSocketFactory->CreateSocket ();
-  NS_TEST_EXPECT_MSG_EQ (tcpRxSocket->Bind (InetSocketAddress (receiverIP[1], 1234)), 0, "Successful call to Bind.");
-  // Must call BindToNetDevice() after Bind()
-  tcpRxSocket->SetRecvCallback (MakeCallback (&Ipv4BindToNetDeviceTest::ReceivePkt, this));
-
-  Ptr<SocketFactory> tcpTxSocketFactory = txNode->GetObject<TcpSocketFactory> ();
-//  Ptr<TcpSocket> tcpTxSocket = DynamicCast<TcpSocket>(tcpTxSocketFactory->CreateSocket () );
-  Ptr<Socket> tcpTxSocket = tcpTxSocketFactory->CreateSocket ();
-//  tcpTxSocket->SetAllowBroadcast (true);
+  
 
   // ------ Now the UDP tests ------------
 
@@ -425,9 +433,36 @@ Ipv4BindToNetDeviceTest::DoRun (void)
   NS_TEST_EXPECT_MSG_EQ (m_receivedPacket, 0, "No received packet");
   m_receivedPacket = 0;
 
+
   // ------ Now the TCP tests ------------
   // ERROR == No route found for forwarding packet.  Drop. 
   // Launched via ./waf --run test-runner --command-template="gdb -ex 'run --suite=ipv4-forwarding --verbose' --args %s"
+
+    
+  // Create the TCP sockets
+  /////////
+  Ptr<SocketFactory> tcpRxSocketFactory = rxNode->GetObject<TcpSocketFactory> ();
+  Ptr<Socket> tcpRxSocket = tcpRxSocketFactory->CreateSocket ();
+  NS_TEST_EXPECT_MSG_EQ (tcpRxSocket->Bind (InetSocketAddress (receiverIP[1], 1234)), 0, "Successful call to Bind.");
+  // Must call BindToNetDevice() after Bind()
+//  Callback<Ptr, const Address&>connectionRequest, Callback, Ptr, const Address&>newConnectionCreated
+  tcpRxSocket->SetAcceptCallback( MakeNullCallback<bool, Ptr<Socket>, const Address &> (),
+    MakeCallback (&Ipv4BindToNetDeviceTest::HandleAccept, this));
+
+//  (MakeCallback (&Ipv4BindToNetDeviceTest::ReceivePkt, this));
+  tcpRxSocket->SetRecvCallback (MakeCallback (&Ipv4BindToNetDeviceTest::ReceivePkt, this));
+  tcpRxSocket->Listen ();
+  Ptr<SocketFactory> tcpTxSocketFactory = txNode->GetObject<TcpSocketFactory> ();
+//  Ptr<TcpSocket> tcpTxSocket = DynamicCast<TcpSocket>(tcpTxSocketFactory->CreateSocket () );
+  Ptr<Socket> tcpTxSocket = tcpTxSocketFactory->CreateSocket ();
+//  tcpTxSocket->SetAllowBroadcast (true);
+
+
+  // Create router nodes, initialize routing database and set up the routing
+  // tables in the nodes.  We excuse the bridge nodes from having to serve as
+  // routers, since they don't even have internet stacks on them.
+  //
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   // Test that data is successful when RxNode binds to rxDev1 and TxNode binds
   // to txDev1
@@ -438,7 +473,7 @@ Ipv4BindToNetDeviceTest::DoRun (void)
 //  tcpRxSocket->BindToNetDevice (rxDev1);
 //  tcpTxSocket->BindToNetDevice (txDev1);
   // MATT bind must be automatic, without any custom call to BindToNetDevice
-//  NS_TEST_EXPECT_MSG_EQ (tcpTxSocket->Bind (senderAddr), 0, "TCP bind failed" );
+  NS_TEST_EXPECT_MSG_EQ (tcpTxSocket->Bind (senderAddr), 0, "TCP bind failed" );
 //  tcpRxSocket->SetAcceptCallback( MakeNullCallback<bool, Ptr<Socket>, const ns3::Address& > (),
 //                                 MakeCallback(&Ipv4BindToNetDeviceTest::OnConnection, this) );
 
@@ -454,6 +489,7 @@ Ipv4BindToNetDeviceTest::DoRun (void)
 //  SendData (tcpTxSocket, "10.0.0.2", 123);  // 123 is the expected Send() return value
 
   Simulator::Run ();
+  std::cout << "End of test";
   NS_TEST_EXPECT_MSG_NE (m_receivedPacket, 0, "A packet should have been received");
 //  NS_TEST_EXPECT_MSG_EQ (m_receivedPacket->GetSize (), 123, "Correctly bound NetDevices");
   m_receivedPacket = 0;
