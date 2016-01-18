@@ -36,7 +36,7 @@ PointToPointChannel::GetTypeId (void)
     .SetParent<Channel> ()
     .SetGroupName ("PointToPoint")
     .AddConstructor<PointToPointChannel> ()
-    .AddAttribute ("ForwardDelay", "Transmission delay through the channel in one direction",
+    .AddAttribute ("Delay", "Transmission delay through the channel in one direction",
                    TimeValue (Seconds (0)),
                    MakeTimeAccessor (&PointToPointChannel::m_forwardDelay),
                    MakeTimeChecker ())

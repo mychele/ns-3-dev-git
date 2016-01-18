@@ -38,10 +38,9 @@ Inspired by clknetsim
 class Clock : public Object
 {
 public:
-    typedef Callback<void, double, double> FrequencyCallback;
-
-
-    typedef Callback<void, double, double> TimeStepCallback;
+    typedef Callback<void> FrequencyCallback;
+//    typedef Callback<void, double, double> FrequencyCallback;
+//    typedef Callback<void, double, double> TimeStepCallback;
 
     static TypeId GetTypeId (void);
     virtual TypeId
@@ -67,13 +66,15 @@ public:
 
     /**
      *
-    **/
-    virtual int AdjTime(Time delta, Time *olddelta) = 0;
+     */
+    virtual int InjectOffset (Time delta) = 0 ;
+    
+//    virtual int AdjTime (Time delta, Time *olddelta) = 0;
 
     virtual void SetFrequencyChangeCallback(FrequencyCallback);
 
     //! TODO
-    virtual void SettimeStepCallback( TimeStepCallback );
+//    virtual void SettimeStepCallback( TimeStepCallback );
 
 
     void DoDispose();
@@ -86,7 +87,7 @@ private:
     // Set total frequency as a TraceSource ?
     // or as DeviceAdditionListenerList, ie if several classes
     // want to get notified ?
-    TimeStepCallback m_onTimeStep;
+//    TimeStepCallback m_onTimeStep;
     FrequencyCallback m_onNewFrequency;
 
 

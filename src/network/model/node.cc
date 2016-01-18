@@ -140,6 +140,7 @@ Node::Construct (void)
 
 }
 
+// TODO could be removed
 void
 Node::SetClock (Ptr<Clock> clock)
 {
@@ -204,28 +205,39 @@ Node::GetId (void) const
 }
 
 Time
-Node::GetLocalTime(void) const
+Node::GetLocalTime (void) const
 {
   NS_LOG_FUNCTION (this);
-  Ptr<Clock> clock = GetObject<Clock>();
-  if(clock) {
-    return clock->GetTime();
-  }
-  return Simulator::Now();
+  NS_ASSERT_MSG (m_clock, "Node must have a proper clock");  
+//  Ptr<Clock> clock = GetObject<Clock>();
+//  if(clock) {
+    return m_clock->GetTime();
+//  }
+//  return Simulator::Now();
 //  return m_clock;
 }
 
 
 EventId
-Node::GetNextEvent() const
+Node::GetNextEvent () const
 {
     return m_nextEvent.first;
 }
 
 EventId
-Node::GetNextEventSim() const
+Node::GetNextEventSim () const
 {
     return m_nextEvent.second;
+}
+
+
+int 
+Node::InjectOffset (Time delta)
+{
+    NS_LOG_FUNCTION (this);
+    NS_ASSERT_MSG (m_clock, "Node must have a proper clock");
+    NS_FATAL_ERROR ("Not implemented");
+//    m_clock->LocalToAbsTime ()
 }
 
 /*
@@ -235,7 +247,7 @@ TODO add overload for
 */
 void
 //Node::SwapNextEvent(Event newNextEvent)
-Node::SwapNextEvent(
+Node::SwapNextEvent (
 
 // Mm un eventId
                     EventId localEvent
@@ -248,10 +260,10 @@ Node::SwapNextEvent(
   // Do the conversion eventSimTime <<
   Time eventSimTime;
 //    Time eventSimTime;
-  NS_ASSERT(clock->LocalTimeToAbsTime( Time(localEvent.GetTs()), eventSimTime) );
+  NS_ASSERT(clock->LocalTimeToAbsTime ( Time(localEvent.GetTs()), eventSimTime) );
 
   // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
-  if(GetNextEvent().IsRunning())
+  if (GetNextEvent().IsRunning())
   {
     // TODO check that it does not destory the EventImpl* ?
     // otherwise one would need to play with refCount or CopyObject
@@ -262,6 +274,49 @@ Node::SwapNextEvent(
 
   EventId simEventId = Simulator::Schedule( eventSimTime - Simulator::Now(), localEvent.PeekEventImpl());
   m_nextEvent = std::make_pair(localEvent, simEventId);
+}
+
+
+/*
+ Called on clock update. Should update time of last registered event
+ */
+//double oldFreq, double newFreq
+void
+Node::RefreshEvents ()
+{
+//  NS_LOG_DEBUG ("Should now refresh event expiration times " << oldFreq << "/" << newFreq);
+    
+  // If an event was registered
+  if (GetNextEvent().IsRunning())
+  {
+      
+  }
+  
+  
+  
+  
+  
+//    Loop through all events whose context is this node ID
+#if 0
+    int nextArray = (m_currentActiveEventsArray  + 1) %2;
+
+    // Look for all events belonging to this node
+    // And add a matching offset
+    for(std::list<EventId>::iterator i = m_events[ m_currentActiveEventsArray ].begin();
+        i != m_events[ m_currentActiveEventsArray ].end();
+        ++i
+    )
+    {
+        //! TODO en fait on ne le détruit pas mais on le cancel !
+//        Simulator::Cancel(*i);
+        i->Cancel();
+//        Time absTimeElapsed = i->GetTs() - Simulator::Now();
+
+
+        Simulator::Schedule()
+        m_events[ nextArray ].push_back(event);
+    }
+#endif
 }
 
 // On frequency change
@@ -313,7 +368,7 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
      if(nodeEventId.GetTs() < GetNextEvent().GetTs()){
 //     if(nodeEventId < GetNextEvent()){
         // TODO we should swap next events
-        SwapNextEvent( nodeEventId);
+        SwapNextEvent (nodeEventId);
         return nodeEventId;
      }
   }
@@ -321,7 +376,7 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
   else
   {
     // Fix that
-    SwapNextEvent( nodeEventId);
+    SwapNextEvent (nodeEventId);
 //    EventId simEventId = Simulator::Schedule(eventSimTime - Simulator::Now, event);
 //    std::make_pair(nodeEventId,simEventId);
   }
@@ -372,51 +427,6 @@ Node::Cancel (const EventId &id)
 //        m_events
     }
 }
-
-void
-Node::RefreshEvents(double oldFreq, double newFreq)
-{
-    NS_LOG_DEBUG("Should now refresh event expiration times " << oldFreq << "/" << newFreq);
-//    Loop through all events whose context is this node ID
-#if 0
-    int nextArray = (m_currentActiveEventsArray  + 1) %2;
-
-    // Look for all events belonging to this node
-    // And add a matching offset
-    for(std::list<EventId>::iterator i = m_events[ m_currentActiveEventsArray ].begin();
-        i != m_events[ m_currentActiveEventsArray ].end();
-        ++i
-    )
-    {
-        //! TODO en fait on ne le détruit pas mais on le cancel !
-//        Simulator::Cancel(*i);
-        i->Cancel();
-//        Time absTimeElapsed = i->GetTs() - Simulator::Now();
-
-
-        Simulator::Schedule()
-        m_events[ nextArray ].push_back(event);
-    }
-#endif
-}
-
-
-//Time
-//Node::GetTrueTime(void) const
-//{
-//  NS_LOG_FUNCTION (this);
-//
-//}
-
-//void
-//Node::SetClock(Ptr<Clock> clock)
-//{
-//  //!
-//  NS_LOG_FUNCTION (this << clock);
-//  NS_ASSERT(clock);
-//
-//  m_clock = clock;
-//}
 
 
 uint32_t

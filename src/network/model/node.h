@@ -77,16 +77,14 @@ public:
   /**
    * \returns
    */
-  Time GetLocalTime(void) const;
+  Time GetLocalTime (void) const;
 
-  /**
-   * \returns
-   */
-//  Time GetTrueTime(void) const;
+    /**
+     * Called by adjtimex
+     * return 0 if successful
+     */
+    virtual int InjectOffset (Time delta);
 
-
-//  Clock GetClock() const;
-//  void SetClock(Ptr<Clock> clock);
 
   /**
    * \returns the unique id of this node.
@@ -246,8 +244,8 @@ public:
 //  virtual Time Now (EventImpl *event);
 
   /**
-  EventImpl will have a time local
-  **/
+   * EventImpl will have a time local
+  */
 
 
   // Does remove make sense ?
@@ -255,7 +253,11 @@ public:
   virtual void Cancel (const EventId &id);
 
   void SetScheduler (ObjectFactory schedulerFactory);
-  void RefreshEvents(double oldFreq, double newFreq);
+
+  /**
+   * Callback called whenever clock is updated (get rid of paramaters)
+   */
+  virtual void RefreshEvents ();
 
   /**
    * \returns true if checksums are enabled, false otherwise.
@@ -272,7 +274,10 @@ protected:
   virtual void DoDispose (void);
   virtual void DoInitialize (void);
 
-  virtual void SwapNextEvent(
+  /**
+   * Replace last registered event with a new one that should happen before current
+   */
+  virtual void SwapNextEvent (
 //                    Time eventSimTime,
                     EventId localEvent
 //                    EventImpl* newNextEvent

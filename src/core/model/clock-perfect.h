@@ -73,26 +73,26 @@ public:
     ClockPerfect ();
     virtual ~ClockPerfect ();
 
-    virtual Time GetTime() ;
-    virtual int SetTime(Time);
+    virtual Time GetTime () ;
+    virtual int SetTime (Time);
 
-		virtual int AdjTime(Time delta, Time *olddelta);
+    virtual int AdjTime (Time delta, Time *olddelta);
 
     // Maybe the simulator should define a rawFrequency too
-    virtual double GetRawFrequency() const;
+    virtual double GetRawFrequency () const;
 
     /**
     Adds ss_slew
     if frequency can change, make it mutable
     \warn
      */
-    virtual double GetTotalFrequency() const;
+    virtual double GetTotalFrequency () const;
 
     /**
      * Ideally we would pass a frequency generator that adds some noise
      * but for now we stick to simple
      */
-    bool SetRawFrequency(double freq);
+    bool SetRawFrequency (double freq);
 
 //    GetMaxFrequency()
 //    SetMaxFrequency()
@@ -104,29 +104,31 @@ public:
      * Ideally we should be able to pass a distribution/random generator
      */
 //    virtual void SetMaxRandomOffset(double);
-    virtual void ResetSingleShotParameters();
+    virtual void ResetSingleShotParameters ();
 
 //    virtual void SetPrecision(Time);
 //    virtual Time GetPrecision(Time);
 
     // Will call Node
-    int RefreshEvents();
+//    int RefreshEvents();
 
     /**
     \param t time at which ss offset compensation should finish
     \return true if singleshot offset compensation is running
     */
-    bool
-    AbsTimeLimitOfSSOffsetCompensation(Time& t);
+//    bool
+//    AbsTimeLimitOfSSOffsetCompensation(Time& t);
 
-
+    
+    virtual int InjectOffset (Time delta) ;
+    
     /**
      LocalTime must be >
 
      May be merged with the next one
     */
     bool
-    LocalTimeToAbsTime(Time localTime, Time &absTime);
+    LocalTimeToAbsTime (Time localTime, Time &absTime);
 
     /**
      * \param duration convert duration from abs duration to local duration
@@ -135,20 +137,21 @@ public:
     */
 //    Time AbsToLocal(Time , bool oldParameters = false);
     bool
-    AbsTimeToLocalTime(Time absTime, Time& localTime);
+    AbsTimeToLocalTime (Time absTime, Time& localTime);
 
     /**
      * Conversion is composed of 2 phases; one with SS frequency,
      * one whithout
      */
     // Rename into SimulatorToNodeDuration ?
-    bool LocalToAbsDuration(Time localDuration, Time& absDuration);
-    Time AbsToLocalDuration(Time absDuration);
+    bool LocalToAbsDuration (Time localDuration, Time& absDuration);
+    Time AbsToLocalDuration (Time absDuration);
 //    bool LocalToAbsDuration(Time localDuration, Time& absDuration);
-    Time GetLastTimeUpdateLocal() const;
-    Time GetLastTimeUpdateSim() const;
+    Time GetLastTimeUpdateLocal () const;
+    Time GetLastTimeUpdateSim () const;
 
 protected:
+    // TODO move that to clock.h
     TracedValue<std::pair<Time,Time> > m_timeOfLastUpdate;	//!< local/abs
 
 private:
@@ -158,7 +161,7 @@ private:
     Time m_ss_offset;  //!< SingleShot offset
 
 //    ClockParameters parameters[2];  //!< old and new parameters (use std::swap)
-	void UpdateTime();
+	void UpdateTime ();
 
 	// TODO swhould be a traced Value so that node can Trace
 	// node should be made friend then
