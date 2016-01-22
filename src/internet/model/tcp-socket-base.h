@@ -961,7 +961,7 @@ protected:
   /**
    *
    */
-  virtual bool IsTcpOptionAllowed(uint8_t  kind) const;
+  virtual bool IsTcpOptionAllowed (uint8_t  kind) const;
 
   /**
    *

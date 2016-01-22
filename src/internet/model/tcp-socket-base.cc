@@ -1687,7 +1687,7 @@ TcpSocketBase::UpgradeToMeta()
 
 
 int
-TcpSocketBase::ProcessTcpOptions(const TcpHeader& header)
+TcpSocketBase::ProcessTcpOptions (const TcpHeader& header)
 {
   NS_LOG_FUNCTION (this << header);
 
@@ -1710,7 +1710,7 @@ TcpSocketBase::ProcessTcpOptions(const TcpHeader& header)
         case TcpOption::MPTCP:
             //! this will interrupt option processing but this function will be scheduled again
             //! thus some options may be processed twice, it should not trigger errors
-            if(ProcessOptionMpTcp(option) != 0)
+            if(ProcessOptionMpTcp (option) != 0)
             {
                 return 1;   //Means
             }
@@ -1780,8 +1780,9 @@ TcpSocketBase::ProcessTcpOptions(const TcpHeader& header)
   return 0;
 }
 //#endif
+// N'est jamais appelé ?
 int
-TcpSocketBase::ProcessTcpOptionsListen(const TcpHeader& header)
+TcpSocketBase::ProcessTcpOptionsListen (const TcpHeader& header)
 {
   NS_LOG_FUNCTION (this << header);
 
@@ -1792,7 +1793,7 @@ TcpSocketBase::ProcessTcpOptionsListen(const TcpHeader& header)
   {
       //!
       Ptr<const TcpOption> option = *it;
-      if (!IsTcpOptionAllowed( option->GetKind()))
+      if (!IsTcpOptionAllowed ( option->GetKind()))
         continue;
 
       switch(option->GetKind())
@@ -2065,7 +2066,7 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // Remove to get the behaviour of old NS-3 code.
       m_delAckCount = m_delAckMaxCount;
 
-      ProcessTcpOptions(tcpHeader);
+      ProcessTcpOptions (tcpHeader);
 //      if(){
 //        return;
 //      }
@@ -2221,7 +2222,7 @@ TcpSocketBase::ProcessClosing (Ptr<Packet> packet, const TcpHeader& tcpHeader)
     {
       if (tcpHeader.GetSequenceNumber () == m_rxBuffer->NextRxSequence ())
         { // This ACK corresponds to the FIN sent
-          ProcessTcpOptions(tcpHeader);
+          ProcessTcpOptions (tcpHeader);
           TimeWait ();
         }
     }
@@ -3494,7 +3495,7 @@ TcpSocketBase::ReadOptions (const TcpHeader& header)
 //
 //}
 bool
-TcpSocketBase::IsTcpOptionAllowed(uint8_t kind) const
+TcpSocketBase::IsTcpOptionAllowed (uint8_t kind) const
 {
     NS_LOG_FUNCTION(this << (int)kind);
 
@@ -3593,14 +3594,14 @@ TcpSocketBase::AddOptions (TcpHeader& header)
   NS_LOG_FUNCTION (this << header);
 
   //GetState()
-  if(IsTcpOptionAllowed(TcpOption::MPTCP))
+  if(IsTcpOptionAllowed (TcpOption::MPTCP))
   {
     NS_LOG_DEBUG("MPTCP enabled");
     AddMpTcpOptions(header);
   }
 
   // The window scaling option is set only on SYN packets
-  if (IsTcpOptionAllowed(TcpOption::WINSCALE) && (header.GetFlags () & TcpHeader::SYN))
+  if (IsTcpOptionAllowed (TcpOption::WINSCALE) && (header.GetFlags () & TcpHeader::SYN))
     {
       AddOptionWScale (header);
     }
