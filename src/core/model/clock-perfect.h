@@ -68,7 +68,7 @@ class ClockPerfect : public Clock
 
 public:
 
-		static TypeId GetTypeId (void);
+    static TypeId GetTypeId (void);
 
     ClockPerfect ();
     virtual ~ClockPerfect ();
