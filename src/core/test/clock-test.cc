@@ -69,11 +69,12 @@ public:
   typedef std::map<Time, ClockTestParameters > TestEvents;
 
   ClockRawFrequencyTestCase(double rawFrequency1, ClockRawFrequencyTestCase::TestEvents );
-  virtual ~ClockRawFrequencyTestCase() {}
+  virtual ~ClockRawFrequencyTestCase () {}
   virtual void DoSetup (void);
   virtual void DoRun (void);
 
-  virtual void OnNewFrequency(double oldFreq, double newFreq);
+//  virtual void OnNewFrequency(double oldFreq, double newFreq);
+  virtual void OnNewFrequency ();
 //  virtual void OnTimeStep();
 
 protected:
@@ -86,27 +87,28 @@ protected:
 };
 
 
-ClockRawFrequencyTestCase::ClockRawFrequencyTestCase(
+ClockRawFrequencyTestCase::ClockRawFrequencyTestCase (
     double rawFrequency,
     ClockRawFrequencyTestCase::TestEvents  tests
     )
-    : TestCase("Clock frequency"),
-    m_frequency(rawFrequency),
-    m_tests(tests),
-    m_nb_frequency_change(0)
+    : TestCase ("Clock frequency"),
+    m_frequency (rawFrequency),
+    m_tests (tests),
+    m_nb_frequency_change (0)
 {
-    NS_LOG_FUNCTION(this);
+    NS_LOG_FUNCTION (this);
 }
 
 
-void ClockRawFrequencyTestCase::OnNewFrequency(double oldFreq, double newFreq)
+//void ClockRawFrequencyTestCase::OnNewFrequency (double oldFreq, double newFreq)
+void ClockRawFrequencyTestCase::OnNewFrequency ()
 {
-    std::cout << "New frequency=" << newFreq << " (replacing " << oldFreq << ")" << std::endl;
+//    std::cout << "New frequency=" << newFreq << " (replacing " << oldFreq << ")" << std::endl;
     std::cout << "  Clock time=" << m_clock->GetLastTimeUpdateLocal() << std::endl;
     std::cout << "  Recorded Simu time=" << m_clock->GetLastTimeUpdateSim()
         << "(compare with " << Simulator::Now() << ")" <<std::endl;
 
-    NS_TEST_ASSERT_MSG_EQ(m_clock->GetLastTimeUpdateSim(), Simulator::Now(), "Should be equal" );
+    NS_TEST_ASSERT_MSG_EQ (m_clock->GetLastTimeUpdateSim(), Simulator::Now(), "Should be equal" );
     m_nb_frequency_change++;
 }
 
@@ -114,7 +116,7 @@ void
 ClockRawFrequencyTestCase::DoSetup (void)
 {
     m_clock = CreateObject<ClockPerfect>();
-    NS_ASSERT(m_clock->SetRawFrequency(m_frequency));
+    NS_ASSERT (m_clock->SetRawFrequency(m_frequency));
 
 }
 

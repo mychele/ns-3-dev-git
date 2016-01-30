@@ -66,7 +66,7 @@ Clock::GetInstanceTypeId (void) const
 //Clock::SettimeStepCallback( TimeStepCallback )
 //{
 //
-//    NS_FATAL_ERROR("NOT implemented");
+//    NS_FATAL_ERROR ("NOT implemented");
 //}
 
 void
@@ -88,18 +88,20 @@ Clock::SetFrequencyChangeCallback (FrequencyCallback frequencyCb)
 
 // Used to be NotifyNewFrequency
 void
-Clock::NotifyNewParameters (double oldFreq, double newFreq)
+Clock::NotifyNewParameters ()
 {
   NS_LOG_FUNCTION (this);
   if (!m_onNewFrequency.IsNull ())
     {
-      m_onNewFrequency (oldFreq, newFreq);
+//      m_onNewFrequency (oldFreq, newFreq);
+      m_onNewFrequency ();
     }
 }
 
 void
 Clock::DoDispose ()
 {
-    m_onNewFrequency = MakeNullCallback<void, double, double > ();
+//    m_onNewFrequency = MakeNullCallback<void, double, double > ();
+    m_onNewFrequency = MakeNullCallback<void> ();
 }
 }

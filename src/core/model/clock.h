@@ -63,10 +63,8 @@ class Time;
 class Clock : public Object
 {
 public:
-    /**
-     * 
-     */
-    typedef Callback<void, double, double> FrequencyCallback;
+    typedef Callback<void> FrequencyCallback;
+//    typedef Callback<void, double, double> FrequencyCallback;
 //    typedef Callback<void, double, double> TimeStepCallback;
 
     static TypeId GetTypeId (void);
@@ -92,12 +90,15 @@ public:
 //    virtual int SetTime (Time) = 0;
 
     /**
-     * Only used by DCE ? remove or move to DCE
+     *
      */
-//    virtual int AdjTime(Time delta, Time *olddelta) = 0;
+    virtual int InjectOffset (Time delta) = 0 ;
+    
+//    virtual int AdjTime (Time delta, Time *olddelta) = 0;
 
-    // TODO merge and update the too ?
-    virtual void SetFrequencyChangeCallback (FrequencyCallback);
+    virtual void SetFrequencyChangeCallback(FrequencyCallback);
+
+    //! TODO
 //    virtual void SettimeStepCallback( TimeStepCallback );
 
 
@@ -121,7 +122,7 @@ protected:
      *
      * \return False if could not convert because localTime predates last update
      */
-    virtual bool LocalTimeToSimulatorTime(Time absTime, Time *localTime) = 0;
+    virtual bool SimulatorTimeToLocalTime(Time absTime, Time *localTime) = 0;
     
     /**
      * Notifies the node it should reschedule scheduled events to correct their scheduled time
@@ -134,7 +135,6 @@ private:
 
     // or as DeviceAdditionListenerList, ie if several classes
     // want to get notified ?
-    // Merge the two ?
 //    TimeStepCallback m_onTimeStep;
     FrequencyCallback m_onNewFrequency;
 };

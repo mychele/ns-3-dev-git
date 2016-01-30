@@ -102,7 +102,7 @@ public:
                      Ptr<const AttributeValue> initialValue,
                      Ptr<const AttributeAccessor> spec,
                      Ptr<const AttributeChecker> checker);
-  void SetAttributeInitialValue(uint16_t uid,
+  void SetAttributeInitialValue (uint16_t uid,
                                 uint32_t i,
                                 Ptr<const AttributeValue> initialValue);
   uint32_t GetAttributeN (uint16_t uid) const;
@@ -437,7 +437,7 @@ IidManager::AddAttribute (uint16_t uid,
   information->attributes.push_back (info);
 }
 void 
-IidManager::SetAttributeInitialValue(uint16_t uid,
+IidManager::SetAttributeInitialValue (uint16_t uid,
                                      uint32_t i,
                                      Ptr<const AttributeValue> initialValue)
 {
@@ -751,7 +751,7 @@ TypeId::AddAttribute (std::string name,
 }
 
 bool 
-TypeId::SetAttributeInitialValue(uint32_t i, 
+TypeId::SetAttributeInitialValue (uint32_t i, 
                                  Ptr<const AttributeValue> initialValue)
 {
   NS_LOG_FUNCTION (this << i << initialValue);

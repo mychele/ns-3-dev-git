@@ -300,7 +300,7 @@ public:
    * \param initialValue the new initial value to use for this attribute.
    * \returns true if the call was successfuly, false otherwise.
    */
-  bool SetAttributeInitialValue(uint32_t i, 
+  bool SetAttributeInitialValue (uint32_t i, 
                                 Ptr<const AttributeValue> initialValue);
 
   /**

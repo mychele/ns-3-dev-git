@@ -18,7 +18,7 @@
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 #define NS_LOG_APPEND_CONTEXT \
-  if (m_node) { std::clog << m_node->GetWallTime() << " [node " << m_node->GetId () << "] "; }
+  if (m_node) { std::clog << m_node->GetLocalTime() << " [node " << m_node->GetId () << "] "; }
 
 #include "ns3/log.h"
 #include "ns3/node.h"

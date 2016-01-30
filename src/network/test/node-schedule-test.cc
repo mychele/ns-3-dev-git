@@ -206,7 +206,7 @@ NodeEventsTestCase::ChangeRawFrequency(double newFreq)
 //    Time expectedNodeTime = m_milestones[i].first ;
 //    Time expectedSimTime = m_milestones[i].second ;
 //
-//    NS_TEST_EXPECT_MSG_EQ( expectedNodeTime, m_node->GetWallTime(), "Wrong local time" );
+//    NS_TEST_EXPECT_MSG_EQ( expectedNodeTime, m_node->GetLocalTime(), "Wrong local time" );
 //    NS_TEST_EXPECT_MSG_EQ( expectedSimTime, Simulator::Now(), "Wrong absolute time" );
 //}
 
@@ -354,7 +354,7 @@ NodeEventsTestCase::GenericEvent (Time expectedSimTime, Time expectedNodeTime, i
     std::cout << "Event with uid="  << uid << std::endl;
     std::cout << " Expected at "  << expectedSimTime << "/" << expectedNodeTime << "(sim/node)" << std::endl;
 
-    NS_TEST_EXPECT_MSG_EQ( expectedNodeTime, m_node->GetWallTime(), "Wrong local time" );
+    NS_TEST_EXPECT_MSG_EQ( expectedNodeTime, m_node->GetLocalTime(), "Wrong local time" );
     NS_TEST_EXPECT_MSG_EQ( expectedSimTime, Simulator::Now(), "Wrong absolute time" );
     m_executed++;
 }

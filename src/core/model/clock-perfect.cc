@@ -60,21 +60,21 @@ ClockPerfect::GetTypeId (void)
 
 
 //0.5ms per second
-    .AddAttribute ("MaxSlewRate",
-                    "Max slew rate",
-                    UintegerValue(500),
-                    MakeUintegerAccessor (&ClockPerfect::m_maxSlewRate),
-                    MakeUintegerChecker<uint16_t> ())
-    .AddAttribute ("MaxFrequency",
-                    "Max frequency",
-                    DoubleValue(500),
-                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
-                    MakeDoubleChecker<double>())
-		.AddAttribute ("MinFrequency",
-                    "Min frequency",
-                    DoubleValue(500),
-                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
-                    MakeDoubleChecker<double>())
+//    .AddAttribute ("MaxSlewRate",
+//                    "Max slew rate",
+//                    UintegerValue(500),
+//                    MakeUintegerAccessor (&ClockPerfect::m_maxSlewRate),
+//                    MakeUintegerChecker<uint16_t> ())
+//    .AddAttribute ("MaxFrequency",
+//                    "Max frequency",
+//                    DoubleValue(500),
+//                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
+//                    MakeDoubleChecker<double>())
+//    .AddAttribute ("MinFrequency",
+//                    "Min frequency",
+//                    DoubleValue(500),
+//                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
+//                    MakeDoubleChecker<double>())
 
 //    .AddAttribute("FrequencyGenerator")
 //                   CallbackValue (),
@@ -100,11 +100,11 @@ ClockPerfect::ClockPerfect ()
         m_ss_slew(0),
         m_rawFrequency(1.)
 {
-	NS_LOG_FUNCTION(this);
-	m_timeOfLastUpdate.Set(std::make_pair(Simulator::Now(),Simulator::Now()) );
+    NS_LOG_FUNCTION(this);
+    m_timeOfLastUpdate.Set (std::make_pair(Simulator::Now(), Simulator::Now()) );
 //	GetLastTimeUpdateLocal()= Simulator::Now();
 //	m_lastUpdateAbsTime= Simulator::Now();
-	NS_LOG_UNCOND("Creating node at abs time"
+    NS_LOG_UNCOND("Creating node at abs time"
                << GetLastTimeUpdateSim()
                );
 
@@ -115,7 +115,7 @@ ClockPerfect::ClockPerfect ()
 
 ClockPerfect::~ClockPerfect ()
 {
-	NS_LOG_FUNCTION(this);
+    NS_LOG_FUNCTION(this);
 }
 
 
@@ -144,18 +144,18 @@ ClockPerfect::SetRawFrequency(double freq)
 //	}
     NS_ASSERT(freq > 0);
     NS_LOG_INFO("New frequency=" << freq);
-	double oldFreq = m_rawFrequency;
+    double oldFreq = m_rawFrequency;
 
 
 
-	// Move to a private function UpdateTime ?
-	// Can't use
-	Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
+    // Move to a private function UpdateTime ?
+    // Can't use
+    Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
     m_timeOfLastUpdate = std::make_pair( currentTime, Simulator::Now() );
     m_rawFrequency = freq;
 
-	NotifyNewFrequency(oldFreq, m_rawFrequency);
-	return true;
+//    NotifyNewFrequency(oldFreq, m_rawFrequency);
+    return true;
 }
 
 Time
@@ -175,7 +175,7 @@ ClockPerfect::GetLastTimeUpdateSim() const
 void
 ClockPerfect::UpdateTime()
 {
-	// For now support only adjtime
+    // For now support only adjtime
 }
 
 Time
@@ -186,7 +186,7 @@ ClockPerfect::GetTime()
     // TODO display both separately
 //    Time res = Simulator::Now();
     Time res = GetLastTimeUpdateLocal() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
-    NS_LOG_DEBUG("PerfectTime=" << res);
+    NS_LOG_DEBUG ("PerfectTime=" << res);
 //    res += Time(m_gen->GetValue());
 //    NS_LOG_UNCOND("Time after random (" << m_gen->GetMin() << ", " << m_gen->GetMax() << " offset =" << res);
     return res;
@@ -196,7 +196,7 @@ int
 ClockPerfect::SetTime(Time)
 {
     //! Noop, do nothing
-    NS_FATAL_ERROR ("SetTime has no meaning for the perfect clock");
+    NS_LOG_WARN("SetTime has no meaning for the perfect clock");
     return -1;
 }
 
@@ -216,22 +216,22 @@ ClockPerfect::ResetSingleShotParameters()
     m_ssOffsetCompletion.Cancel();
 
 //    double oldFrequency =
-    NotifyNewFrequency(GetTotalFrequency(), GetRawFrequency());
+//    NotifyNewFrequency(GetTotalFrequency(), GetRawFrequency());
 }
 
 
 //
-bool
-ClockPerfect::AbsTimeLimitOfSSOffsetCompensation(Time& t)
-{
-    //!
-    if(m_ssOffsetCompletion.IsExpired()){
-        return false;
-    }
-
-    t = Time(m_ssOffsetCompletion.GetTs());
-    return true;
-}
+//bool
+//ClockPerfect::AbsTimeLimitOfSSOffsetCompensation (Time& t)
+//{
+//    //!
+//    if(m_ssOffsetCompletion.IsExpired()){
+//        return false;
+//    }
+//
+//    t = Time(m_ssOffsetCompletion.GetTs());
+//    return true;
+//}
 
 
 //Time
@@ -249,8 +249,8 @@ ClockPerfect::SimulatorTimeToLocalTime (Time absTime, Time *localTime)
 
     NS_ASSERT_MSG(absTime >= GetLastTimeUpdateSim(), "Can't convert to a time in the past");
 
-    localTime = AbsToLocalDuration( absTime - GetLastTimeUpdateSim());
-    localTime += GetLastTimeUpdateLocal() ;
+    *localTime = AbsToLocalDuration( absTime - GetLastTimeUpdateSim());
+    *localTime += GetLastTimeUpdateLocal() ;
     return true;
 }
 
@@ -271,23 +271,29 @@ ClockPerfect::LocalTimeToSimulatorTime (Time localTime, Time *absTime)
 
     // Returns
     LocalToAbsDuration (localTime - GetLastTimeUpdateLocal(), absTime);
-    absTime += GetLastTimeUpdateSim();
+    *absTime += GetLastTimeUpdateSim();
     return true;
 }
 
 // Ok
 bool
 //ClockPerfect::LocalDurationToAbsDuration(Time duration, Time& absDuration)
-ClockPerfect::LocalToAbsDuration (Time localDuration, Time& absDuration)
+ClockPerfect::LocalToAbsDuration (Time localDuration, Time *absDuration)
 {
     NS_LOG_FUNCTION(localDuration);
 //
 //    NS_ASSERT_MSG(localStart > GetLastTimeUpdateLocal(), "We can't remember the frequency back then");
 
-    absDuration = localDuration * GetTotalFrequency();
+    *absDuration = localDuration * GetTotalFrequency();
     return true;
 }
 
+int 
+ClockPerfect::InjectOffset (Time delta) 
+{
+    //
+    m_timeOfLastUpdate.Set (std::make_pair( GetTime () + delta, Simulator::Now()) );
+}
 
 double
 ClockPerfect::GetTotalFrequency () const
@@ -347,7 +353,7 @@ ClockPerfect::LocalToAbsDuration(Time localStart, Time localDuration, Time& absD
 TODO here we should schedule an element that resets ss_offset and ss_slew.
 */
 int
-ClockPerfect::AdjTime(Time delta, Time *olddelta)
+ClockPerfect::AdjTime (Time delta, Time *olddelta)
 {
 	NS_LOG_INFO("Adjtime called");
 //    frequency
