@@ -79,11 +79,16 @@ public:
    */
   Time GetLocalTime (void) const;
 
-    /**
-     * Called by adjtimex
-     * return 0 if successful
-     */
-    virtual int InjectOffset (Time delta);
+  /** 
+   *
+   */
+  Ptr<Clock> GetClock ();
+
+  /**
+   * Called by adjtimex
+   * return 0 if successful
+   */
+  virtual int InjectOffset (Time delta);
 
 
   /**

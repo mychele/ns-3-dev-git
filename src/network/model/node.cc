@@ -155,6 +155,12 @@ Node::SetClock (Ptr<Clock> clock)
     }
 }
 
+Ptr<Clock> 
+Node::GetClock ()
+{
+  return m_clock;
+}
+
 void
 Node::NotifyNewAggregate ()
 {

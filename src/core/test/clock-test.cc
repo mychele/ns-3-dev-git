@@ -108,7 +108,7 @@ void ClockRawFrequencyTestCase::OnNewFrequency ()
     std::cout << "  Recorded Simu time=" << m_clock->GetLastTimeUpdateSim()
         << "(compare with " << Simulator::Now() << ")" <<std::endl;
 
-    NS_TEST_ASSERT_MSG_EQ (m_clock->GetLastTimeUpdateSim(), Simulator::Now(), "Should be equal" );
+    NS_TEST_ASSERT_MSG_EQ (m_clock->GetLastTimeUpdateSim (), Simulator::Now(), "Should be equal" );
     m_nb_frequency_change++;
 }
 
@@ -143,8 +143,8 @@ ClockRawFrequencyTestCase::DoRun (void)
 
             std::cout << "New event " << params.action << " at time " << simTime << std::endl;
 
-            Simulator::Schedule( simTime - Simulator::Now(), &FakeEvent);
-            Simulator::Run();
+            Simulator::Schedule ( simTime - Simulator::Now(), &FakeEvent);
+            Simulator::Run ();
 
             switch(params.action)
             {
@@ -154,11 +154,11 @@ ClockRawFrequencyTestCase::DoRun (void)
                     const Time nodeTime = params.value;
 
                     NS_LOG_INFO("Checking Local -> Absolute");
-                    NS_TEST_EXPECT_MSG_EQ(m_clock->GetTime(), nodeTime, "Clock returns wrong result");
+                    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime(), nodeTime, "Clock returns wrong result");
 
                     NS_LOG_INFO("Checking Absolute -> Local");
-                    NS_TEST_EXPECT_MSG_EQ(m_clock->AbsTimeToLocalTime(simTime, result), true, "Could not compute" );
-                    NS_TEST_EXPECT_MSG_EQ(result, nodeTime, "test");
+                    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime (simTime, &result), true, "Could not compute" );
+                    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
                 }
                 break;
             case ChangeFrequency:
@@ -167,14 +167,14 @@ ClockRawFrequencyTestCase::DoRun (void)
                 break;
             case ChangeOffset:
             default:
-                NS_FATAL_ERROR("Unhandled action");
+                NS_FATAL_ERROR ("Unhandled action");
 
             }
         }
 
 
 
-    NS_TEST_EXPECT_MSG_EQ(m_nb_frequency_change, nbFreqChanges, "The frequency change callback has not always been called");
+    NS_TEST_EXPECT_MSG_EQ (m_nb_frequency_change, nbFreqChanges, "The frequency change callback has not always been called");
 
 };
 

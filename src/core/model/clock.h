@@ -77,7 +77,7 @@ public:
 //	 TIME_BAD  5 /* clock not synchronized */
 //}
     Clock ();
-    virtual ~Clock () {};
+    virtual ~Clock ();
 
     /**
      * \return Local time
@@ -104,8 +104,12 @@ public:
 
     void DoDispose();
 
-protected:
+    /**
+     *
+     */
+    virtual Time LocalTimeToSimulatorTime();
 
+protected:
     /**
      * Converts local time to simulator time
      * \param localTime The local time we want to convert into simulator time
@@ -123,7 +127,8 @@ protected:
      * \return False if could not convert because localTime predates last update
      */
     virtual bool SimulatorTimeToLocalTime(Time absTime, Time *localTime) = 0;
-    
+
+protected:
     /**
      * Notifies the node it should reschedule scheduled events to correct their scheduled time
      *

@@ -8,7 +8,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See theŔ
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
@@ -19,6 +19,7 @@
  */
 #include "clock.h"
 #include "ns3/log.h"
+#include "ns3/nstime.h"
 
 
 namespace ns3 {
@@ -54,11 +55,33 @@ Clock::GetTypeId (void)
 }
 
 
+Clock::Clock ()
+{
+    
+}
+
+
+Clock::~Clock ()
+{
+    
+}
+
+
 TypeId
 Clock::GetInstanceTypeId (void) const
 {
 //	NS_LOG_FUNCTION (this);
 	return GetTypeId();
+}
+
+Time 
+Clock::LocalTimeToSimulatorTime ()
+{
+    //!
+    Time t;
+    bool ok = LocalTimeToSimulatorTime (GetTime(), &t);
+    NS_ASSERT(ok);
+    return t;
 }
 
 
