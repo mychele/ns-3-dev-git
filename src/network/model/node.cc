@@ -402,6 +402,13 @@ Node::ScheduleNow (EventImpl *event)
 }
 
 void
+Node::Remove (const EventId &id)
+{
+    //!
+    Cancel (id);
+}
+
+void
 Node::Cancel (const EventId &id)
 {
     //

@@ -105,9 +105,9 @@ public:
     void DoDispose();
 
     /**
-     *
+     * Convert current local time to simulator time
      */
-    virtual Time LocalTimeToSimulatorTime();
+    virtual Time LocalTimeToSimulatorTime ();
 
 protected:
     /**

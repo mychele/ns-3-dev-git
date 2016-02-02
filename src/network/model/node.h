@@ -272,6 +272,9 @@ public:
   // virtual void Remove (const EventId &id);
   virtual void Cancel (const EventId &id);
 
+  // Implemented as a cancel
+  virtual void Remove (const EventId &id);
+
   void SetScheduler (ObjectFactory schedulerFactory);
 
   /**
