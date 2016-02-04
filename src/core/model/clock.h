@@ -96,7 +96,7 @@ public:
     
 //    virtual int AdjTime (Time delta, Time *olddelta) = 0;
 
-    virtual void SetFrequencyChangeCallback(FrequencyCallback);
+    virtual void SetFrequencyChangeCallback (FrequencyCallback);
 
     //! TODO
 //    virtual void SettimeStepCallback( TimeStepCallback );

@@ -856,6 +856,9 @@ TypeId::LookupTraceSourceByName (std::string name) const
         }
       nextTid = tid.GetParent ();
     } while (nextTid != tid);
+
+  NS_LOG_WARN ("Could not find source [" << name << "]. "
+               << "Did you confound Attribute and TraceSource ?");
   return 0;
 }
 

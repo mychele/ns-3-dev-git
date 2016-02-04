@@ -29,31 +29,31 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("ClockTest");
 
-enum TestStep {
-CheckTime,
-ChangeFrequency,
-ChangeOffset
-};
-
-struct ClockTestParameters {
-
-ClockTestParameters( double freq ) :
-    action(ChangeFrequency),
-    frequency(freq)
-{
-}
-
-ClockTestParameters( Time t ) :
-    action(CheckTime),
-    value(t)
-{
-}
-
-TestStep action;
-double frequency;
-Time value;
-
-};
+//enum TestStep {
+//CheckTime,
+//ChangeFrequency,
+//ChangeOffset
+//};
+//
+//struct ClockTestParameters {
+//
+//ClockTestParameters( double freq ) :
+//    action(ChangeFrequency),
+//    frequency(freq)
+//{
+//}
+//
+//ClockTestParameters( Time t ) :
+//    action(CheckTime),
+//    value(t)
+//{
+//}
+//
+//TestStep action;
+//double frequency;
+//Time value;
+//
+//};
 
 
 void FakeEvent()
@@ -61,47 +61,62 @@ void FakeEvent()
     std::cout << "Simulator time advanced to " << Simulator::Now() << std::endl;
 }
 
+/** 
+ *
+ */
 class ClockRawFrequencyTestCase : public TestCase
 {
 public:
 //  typedef std::map<Time,Time> LocalToAbsTimeList;
   /* Absolute time */
-  typedef std::map<Time, ClockTestParameters > TestEvents;
-
-  ClockRawFrequencyTestCase(double rawFrequency1, ClockRawFrequencyTestCase::TestEvents );
-  virtual ~ClockRawFrequencyTestCase () {}
+//  typedef std::map<Time, ClockTestParameters > TestEvents;
+//, ClockRawFrequencyTestCase::TestEvents
+  ClockRawFrequencyTestCase(double rawFrequency1 );
+  virtual ~ClockRawFrequencyTestCase () {};
+  
   virtual void DoSetup (void);
   virtual void DoRun (void);
 
 //  virtual void OnNewFrequency(double oldFreq, double newFreq);
-  virtual void OnNewFrequency ();
+  virtual void OnNewFrequency (double oldFreq, double newFreq);
 //  virtual void OnTimeStep();
 
+
+  virtual void CheckTime (Time absTime, Time localTime);
+  virtual void ChangeFrequency (Time absTime, double newFrequency);
+  virtual void InjectOffset (Time absTime, Time offset);
 protected:
+  void ScheduledTimeCheck ( Time localTime);
+  void ScheduledFrequencyChange ( double newFrequency);
+  void ScheduledOffset ( Time offset);
 
-  double m_frequency;
-  Ptr<ClockPerfect> m_clock;
+  double m_frequency;           /**!<  */
+  Ptr<ClockPerfect> m_clock;    /**!<  */
 
-  const TestEvents  m_tests;
-  int m_nb_frequency_change;
+//  TestEvents  m_tests;
+  int m_notifiedFrequencyChanges;    /**!< Check frequency was changed often enough */
+  int m_expectedFrequencyChange;    /**!< Check frequency was changed often enough */
 };
 
 
 ClockRawFrequencyTestCase::ClockRawFrequencyTestCase (
-    double rawFrequency,
-    ClockRawFrequencyTestCase::TestEvents  tests
+    double rawFrequency
+//    ,
+//    ClockRawFrequencyTestCase::TestEvents  tests
     )
     : TestCase ("Clock frequency"),
     m_frequency (rawFrequency),
-    m_tests (tests),
-    m_nb_frequency_change (0)
+//    m_tests (tests),
+    m_notifiedFrequencyChanges (0),
+    m_expectedFrequencyChange (0)
 {
     NS_LOG_FUNCTION (this);
 }
 
 
 //void ClockRawFrequencyTestCase::OnNewFrequency (double oldFreq, double newFreq)
-void ClockRawFrequencyTestCase::OnNewFrequency ()
+void 
+ClockRawFrequencyTestCase::OnNewFrequency (double oldFreq, double newFreq)
 {
 //    std::cout << "New frequency=" << newFreq << " (replacing " << oldFreq << ")" << std::endl;
     std::cout << "  Clock time=" << m_clock->GetLastTimeUpdateLocal() << std::endl;
@@ -109,16 +124,96 @@ void ClockRawFrequencyTestCase::OnNewFrequency ()
         << "(compare with " << Simulator::Now() << ")" <<std::endl;
 
     NS_TEST_ASSERT_MSG_EQ (m_clock->GetLastTimeUpdateSim (), Simulator::Now(), "Should be equal" );
-    m_nb_frequency_change++;
+    m_notifiedFrequencyChanges++;
 }
 
+  
+void 
+ClockRawFrequencyTestCase::ScheduledTimeCheck (Time localTime)
+{
+    std::cout << "Checking Local -> Absolute" << std::endl;
+    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime(), localTime, "Clock returns wrong result");
+
+//    NS_LOG_INFO ("Checking Absolute -> Local");
+//    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime ( Simulator::Now(), &result), true, "Could not compute" );
+//    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
+
+}
+
+
+void 
+ClockRawFrequencyTestCase::ScheduledFrequencyChange (double newFreq)
+{
+//    NS_LOG_INFO ("Checking Local -> Absolute");
+//    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime(), localTime, "Clock returns wrong result");
+    std::cout << "Setting frequency to " << newFreq << std::endl;
+    NS_TEST_EXPECT_MSG_EQ (m_clock->SetRawFrequency (newFreq), true, "Could not set frequency");
+//    NS_LOG_INFO ("Checking Absolute -> Local");
+//    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime ( Simulator::Now(), &result), true, "Could not compute" );
+//    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
+
+}
+
+void 
+ClockRawFrequencyTestCase::ScheduledOffset (Time offset)
+{
+    m_clock->InjectOffset (offset);
+//    NS_LOG_INFO ("Checking Local -> Absolute");
+//    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime(), localTime, "Clock returns wrong result");
+//    NS_TEST_ASSERT (m_clock->SetRawFrequency (newFreq));
+//    NS_LOG_INFO ("Checking Absolute -> Local");
+//    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime ( Simulator::Now(), &result), true, "Could not compute" );
+//    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
+
+}
+
+void 
+ClockRawFrequencyTestCase::CheckTime (Time absTime, Time localTime)
+{
+    Simulator::Schedule (absTime, &ClockRawFrequencyTestCase::ScheduledTimeCheck, this, localTime );
+}
+
+void 
+ClockRawFrequencyTestCase::ChangeFrequency (Time absTime, double newFrequency)
+{
+    m_expectedFrequencyChange++;
+    Simulator::Schedule (absTime, &ClockRawFrequencyTestCase::ScheduledFrequencyChange, this, newFrequency);
+}
+
+
+
+void 
+ClockRawFrequencyTestCase::InjectOffset (Time absTime, Time offset) 
+{
+    Simulator::Schedule (absTime, &ClockRawFrequencyTestCase::ScheduledOffset, this, offset);
+}
+  
+
+// TODO passer en virtual ?
 void
 ClockRawFrequencyTestCase::DoSetup (void)
 {
+    std::cout << "Setup" << std::endl;
     m_clock = CreateObject<ClockPerfect>();
     NS_ASSERT (m_clock->SetRawFrequency(m_frequency));
+//    m_clock->SetFrequencyChangeCallback( MakeCallback(&ClockRawFrequencyTestCase::OnNewFrequency, this));
 
+    //
+    NS_ASSERT (m_clock->TraceConnectWithoutContext ("RawFrequency", 
+        MakeCallback ( &ClockRawFrequencyTestCase::OnNewFrequency, this) 
+        ) );
+
+//    CheckTime (Time(2), Time(1));
+//    CheckTime (Time(4), Time(2));
+//    ChangeFrequency (Time(6), 1.0);
+//    CheckTime (Time(7), Time(4));
+    
+//    tests.insert( std::make_pair(Time(2), ClockTestParameters () ) );
+//    tests.insert( std::make_pair(Time(4), ClockTestParameters (Time(2)) ) );
+//    tests.insert( std::make_pair(Time(6), ClockTestParameters (1.0) ) );
+//    tests.insert( std::make_pair(Time(7), ClockTestParameters (Time(4)) ) );
 }
+
 
 
 void
@@ -128,53 +223,53 @@ ClockRawFrequencyTestCase::DoRun (void)
 
     NS_TEST_ASSERT_MSG_EQ(m_clock->GetRawFrequency(), m_frequency, "Wrong raw frequency");
 
-    m_clock->SetFrequencyChangeCallback( MakeCallback(&ClockRawFrequencyTestCase::OnNewFrequency, this));
+//    m_clock->SetFrequencyChangeCallback( MakeCallback(&ClockRawFrequencyTestCase::OnNewFrequency, this));
 
+//
+//    int nbFreqChanges = 0;
+//
+//    for(TestEvents::const_iterator i(m_tests.begin());
+//        i != m_tests.end();
+//        ++i
+//        )
+//        {
+//            Time simTime = i->first;
+//            const ClockTestParameters& params = i->second;
+//
+//            std::cout << "New event " << params.action << " at time " << simTime << std::endl;
+//
+//            Simulator::Schedule ( simTime - Simulator::Now(), &FakeEvent);
+//            Simulator::Run ();
+//
+//            switch(params.action)
+//            {
+//            case CheckTime:
+//                {
+//                    Time result;
+//                    const Time nodeTime = params.value;
+//
+//                    NS_LOG_INFO("Checking Local -> Absolute");
+//                    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime(), nodeTime, "Clock returns wrong result");
+//
+//                    NS_LOG_INFO("Checking Absolute -> Local");
+//                    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime (simTime, &result), true, "Could not compute" );
+//                    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
+//                }
+//                break;
+//            case ChangeFrequency:
+//                nbFreqChanges++;
+//                NS_ASSERT(m_clock->SetRawFrequency(params.frequency));
+//                break;
+//            case ChangeOffset:
+//            default:
+//                NS_FATAL_ERROR ("Unhandled action");
+//
+//            }
+//        }
 
-    int nbFreqChanges = 0;
+    Simulator::Run ();
 
-    for(TestEvents::const_iterator i(m_tests.begin());
-        i != m_tests.end();
-        ++i
-        )
-        {
-            Time simTime = i->first;
-            const ClockTestParameters& params = i->second;
-
-            std::cout << "New event " << params.action << " at time " << simTime << std::endl;
-
-            Simulator::Schedule ( simTime - Simulator::Now(), &FakeEvent);
-            Simulator::Run ();
-
-            switch(params.action)
-            {
-            case CheckTime:
-                {
-                    Time result;
-                    const Time nodeTime = params.value;
-
-                    NS_LOG_INFO("Checking Local -> Absolute");
-                    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime(), nodeTime, "Clock returns wrong result");
-
-                    NS_LOG_INFO("Checking Absolute -> Local");
-                    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime (simTime, &result), true, "Could not compute" );
-                    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
-                }
-                break;
-            case ChangeFrequency:
-                nbFreqChanges++;
-                NS_ASSERT(m_clock->SetRawFrequency(params.frequency));
-                break;
-            case ChangeOffset:
-            default:
-                NS_FATAL_ERROR ("Unhandled action");
-
-            }
-        }
-
-
-
-    NS_TEST_EXPECT_MSG_EQ (m_nb_frequency_change, nbFreqChanges, "The frequency change callback has not always been called");
+    NS_TEST_EXPECT_MSG_EQ (m_notifiedFrequencyChanges, m_expectedFrequencyChange, "The frequency change callback has not always been called");
 
 };
 
@@ -215,16 +310,17 @@ public:
     : TestSuite ("clock")
   {
 
-    ClockRawFrequencyTestCase::TestEvents tests;
+//    ClockRawFrequencyTestCase::TestEvents tests;
 
-    tests.insert( std::make_pair(Time(2), ClockTestParameters (Time(1)) ) );
-    tests.insert( std::make_pair(Time(4), ClockTestParameters (Time(2)) ) );
-    tests.insert( std::make_pair(Time(6), ClockTestParameters (1.0) ) );
-    tests.insert( std::make_pair(Time(7), ClockTestParameters (Time(4)) ) );
-
+    // TODO lui passer la clock ?
+    ClockRawFrequencyTestCase *test0 = new ClockRawFrequencyTestCase (2.0);
+    test0->CheckTime (Time(2), Time(1));
+    test0->CheckTime (Time(4), Time(2));
+    test0->ChangeFrequency (Time(6), 1.0);
+//    test0->CheckTime (Time(7), Time(4));
 
     // Node's time goes twice faster than simulation time
-    AddTestCase (new ClockRawFrequencyTestCase (2.0, tests), TestCase::QUICK);
+    AddTestCase ( test0, TestCase::QUICK);
 
     // First clear the map, then add new tests
 //    test.clear();

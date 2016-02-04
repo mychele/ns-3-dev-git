@@ -56,6 +56,23 @@ ClockPerfect::GetTypeId (void)
 //                     MakeTraceSourceAccessor (&ClockPerfect::m_slew),
 //                     "ns3::Packet::TracedCallback")
 
+// TODO support tracing pair or use 2 different Time variables 
+// there are 2 accessors GetLast
+//    .AddTraceSource ("LastUpdate", 
+//                     "toto",
+//                     MakeTimeAccessor
+//                     MakeTraceSourceAccessor (&ClockPerfect::m_timeOfLastUpdate),
+//                     "ns3::Time::TracedCallback”
+//                     )
+    .AddTraceSource ("RawFrequency",
+                    "frequency",
+//                    DoubleValue(1),
+                     MakeTraceSourceAccessor (&ClockPerfect::m_rawFrequency)
+//                    MakeDoubleAccessor (&ClockPerfect::m_rawFrequency),
+//                    MakeDoubleChecker<double>()
+                     )
+
+
 	// TODO define MinFreq/MaxFreq ?
 
 
@@ -70,11 +87,7 @@ ClockPerfect::GetTypeId (void)
 //                    DoubleValue(500),
 //                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
 //                    MakeDoubleChecker<double>())
-//    .AddAttribute ("MinFrequency",
-//                    "Min frequency",
-//                    DoubleValue(500),
-//                    MakeDoubleAccessor (&ClockPerfect::m_maxSlewRate),
-//                    MakeDoubleChecker<double>())
+
 
 //    .AddAttribute("FrequencyGenerator")
 //                   CallbackValue (),
@@ -87,6 +100,13 @@ ClockPerfect::GetTypeId (void)
   ;
   return tid;
 }
+
+TypeId
+ClockPerfect::GetInstanceTypeId () const
+{
+  return GetTypeId ();
+}
+
 
 
 ClockPerfect::ClockPerfect ()
@@ -131,7 +151,7 @@ int RefreshEvents();
 
 
 bool
-ClockPerfect::SetRawFrequency(double freq)
+ClockPerfect::SetRawFrequency (double freq)
 {
 
     // TODO update after checking
@@ -143,7 +163,7 @@ ClockPerfect::SetRawFrequency(double freq)
 //        return false;
 //	}
     NS_ASSERT(freq > 0);
-    NS_LOG_INFO("New frequency=" << freq);
+    NS_LOG_INFO ("New frequency=" << freq << " oldFreq=" << m_rawFrequency);
     double oldFreq = m_rawFrequency;
 
 
@@ -151,6 +171,7 @@ ClockPerfect::SetRawFrequency(double freq)
     // Move to a private function UpdateTime ?
     // Can't use
     Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
+//    Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
     m_timeOfLastUpdate = std::make_pair( currentTime, Simulator::Now() );
     m_rawFrequency = freq;
 
@@ -159,24 +180,24 @@ ClockPerfect::SetRawFrequency(double freq)
 }
 
 Time
-ClockPerfect::GetLastTimeUpdateLocal() const
+ClockPerfect::GetLastTimeUpdateLocal () const
 {
     //!
     return m_timeOfLastUpdate.Get().first;
 }
 
 Time
-ClockPerfect::GetLastTimeUpdateSim() const
+ClockPerfect::GetLastTimeUpdateSim () const
 {
     //!
     return m_timeOfLastUpdate.Get().second;
 }
 
-void
-ClockPerfect::UpdateTime()
-{
-    // For now support only adjtime
-}
+//void
+//ClockPerfect::UpdateTime ()
+//{
+//    // For now support only adjtime
+//}
 
 Time
 ClockPerfect::GetTime()
@@ -185,11 +206,14 @@ ClockPerfect::GetTime()
 
     // TODO display both separately
 //    Time res = Simulator::Now();
-    Time res = GetLastTimeUpdateLocal() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
-    NS_LOG_DEBUG ("PerfectTime=" << res);
+    Time result;
+    result = GetLastTimeUpdateLocal ();
+    result += AbsToLocalDuration (Simulator::Now() - GetLastTimeUpdateSim());
+    NS_LOG_DEBUG ("PerfectTime=" << result);
+    // TODO update m_last ?
 //    res += Time(m_gen->GetValue());
 //    NS_LOG_UNCOND("Time after random (" << m_gen->GetMin() << ", " << m_gen->GetMax() << " offset =" << res);
-    return res;
+    return result;
 }
 
 int
@@ -304,11 +328,11 @@ ClockPerfect::GetTotalFrequency () const
 
 //, Time& localDuration
 Time
-ClockPerfect::AbsToLocalDuration(Time absDuration)
+ClockPerfect::AbsToLocalDuration (Time absDuration)
 {
-    NS_LOG_FUNCTION(absDuration);
+    NS_LOG_FUNCTION (absDuration);
     Time localDuration = absDuration / GetTotalFrequency();
-    NS_LOG_DEBUG( absDuration << "/" << GetTotalFrequency() << " =" << localDuration << " (localDuration)");
+    NS_LOG_DEBUG ( absDuration << "/" << GetTotalFrequency() << " =" << localDuration << " (localDuration)");
     return localDuration;
 }
 

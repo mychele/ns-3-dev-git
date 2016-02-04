@@ -74,6 +74,9 @@ public:
     ClockPerfect ();
     virtual ~ClockPerfect ();
 
+    virtual TypeId GetInstanceTypeId () const;
+
+
     virtual Time GetTime () ;
     virtual int SetTime (Time);
 
@@ -144,7 +147,7 @@ public:
      * Conversion is composed of 2 phases; one with SS frequency,
      * one whithout
      */
-    // Rename into SimulatorToNodeDuration ?
+    // Rename into SimulatorToLocalDuration ?
     bool LocalToAbsDuration (Time localDuration, Time* absDuration);
     Time AbsToLocalDuration (Time absDuration);
 //    bool LocalToAbsDuration(Time localDuration, Time& absDuration);
@@ -153,7 +156,10 @@ public:
 
 protected:
     // TODO move that to clock.h
-    TracedValue<std::pair<Time,Time> > m_timeOfLastUpdate;	//!< local/abs
+    /**
+     * local/abs
+     */
+    TracedValue<std::pair<Time,Time> > m_timeOfLastUpdate;
 
 private:
 
@@ -162,13 +168,13 @@ private:
     Time m_ss_offset;  //!< SingleShot offset
 
 //    ClockParameters parameters[2];  //!< old and new parameters (use std::swap)
-	void UpdateTime ();
+//	void UpdateTime ();
 
 	// TODO swhould be a traced Value so that node can Trace
 	// node should be made friend then
 	TracedValue<double> m_rawFrequency;  //!< m_node should connect to it
-	double m_maxFrequency;
-	double m_minFrequency;
+//	double m_maxFrequency;
+//	double m_minFrequency;
 
 	int m_maxSlewRate;	//!< cap frequency change
 

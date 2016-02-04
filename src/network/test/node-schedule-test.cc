@@ -432,10 +432,15 @@ public:
     ObjectFactory factory;
     factory.SetTypeId (ListScheduler::GetTypeId ());
 //    NodeEventsTestCase::LocalToAbsTimeList checks;
+    
+    // a vector of TestEvent
+    // TODO remove
     NodeEventsTestCase::TestParameters tests;
 //    tests.push_back( TestEvent(Time(1),) );
+    // schedule event
     tests.push_back( TestEvent(Time(1), Time(1), 0) );
     tests.push_back( TestEvent(Time(2), Time(2), 1) );
+    // CancelEvent
     tests.push_back( TestEvent(Time(3), 1) );
     // Schedule a, cancel a
     // Schedule b,

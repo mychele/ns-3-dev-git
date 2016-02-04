@@ -266,7 +266,8 @@ Node::SwapNextEvent (
   // Do the conversion eventSimTime <<
   Time eventSimTime;
 //    Time eventSimTime;
-  NS_ASSERT(clock->LocalTimeToSimulatorTime ( Time(localEvent.GetTs()), &eventSimTime) );
+  bool res = clock->LocalTimeToSimulatorTime ( Time (localEvent.GetTs()), &eventSimTime);
+  NS_ASSERT_MSG ( res, "WOOT" );
 
   // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
   if (GetNextEvent().IsRunning())
