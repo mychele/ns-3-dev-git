@@ -232,7 +232,7 @@ public:
 
   // C++11 quick & dirty hacks
   template<typename ... Types>
-  EventId Schedule(Time const &timeOffset, Types... rest)
+  EventId Schedule (Time const &timeOffset, Types... rest)
   {
       // That's basically what does Simulator::DoSchedule
       return DoSchedule( timeOffset, MakeEvent( (rest)...));
@@ -243,7 +243,7 @@ public:
 
   // TODO fix tabs
   template<typename ... Types>
-  EventId ScheduleNow(Types... rest)
+  EventId ScheduleNow (Types... rest)
   {
 
       EventId event = DoSchedule(Time(0), rest...);
@@ -251,18 +251,25 @@ public:
       return event;
   }
 
+  /**
+   * Once event finishes, the next event in line must be scheduled,
+   * hence we need some kind of wrapper to schedule the next local event
+   */
   EventId DoSchedule (Time const &time, EventImpl *event);
+
+  void ExecOnNode (EventImpl* event);
 
   /** 
    * return local next event
+   * TODO renommer e
    */
-  EventId GetNextEvent() const;
+  EventId GetNextEvent () const;
 
   /**
    * TODO rename to Simulator ?
    * \return EventId under which is registered the local next event in the Simulator.
    */
-  EventId GetNextEventSim() const;
+  EventId GetNextEventSim () const;
 
   /**
    * EventImpl will have a time local
@@ -295,11 +302,13 @@ protected:
   /**
    * Replace last registered event with a new one that should happen before current
    */
-  virtual void SwapNextEvent (
+  virtual void EnqueueEvent (
 //                    Time eventSimTime,
                     EventId localEvent
 //                    EventImpl* newNextEvent
                     );
+
+  virtual void ScheduleNextEventOnSimulator ();
 private:
 
   /**

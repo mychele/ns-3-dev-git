@@ -58,12 +58,10 @@ ClockPerfect::GetTypeId (void)
 
 // TODO support tracing pair or use 2 different Time variables 
 // there are 2 accessors GetLast
-//    .AddTraceSource ("LastUpdate", 
-//                     "toto",
-//                     MakeTimeAccessor
-//                     MakeTraceSourceAccessor (&ClockPerfect::m_timeOfLastUpdate),
-//                     "ns3::Time::TracedCallback”
-//                     )
+    .AddTraceSource ("LastUpdate", 
+                     "toto",
+                     MakeTraceSourceAccessor (&ClockPerfect::m_timeOfLastUpdate)
+                     )
     .AddTraceSource ("RawFrequency",
                     "frequency",
 //                    DoubleValue(1),
@@ -285,7 +283,7 @@ bool
 ClockPerfect::LocalTimeToSimulatorTime (Time localTime, Time *absTime)
 {
     NS_LOG_FUNCTION(localTime);
-    NS_ASSERT_MSG(localTime >= GetLastTimeUpdateLocal(), "Can't convert to a time in the past");
+    NS_ASSERT_MSG (localTime >= GetLastTimeUpdateLocal(), "Can't convert to a time in the past");
 //    if(localTime < GetLastTimeUpdateLocal()) {
 //        NS_LOG_WARN("Requested time in the past " << localTime << " < " << GetLastTimeUpdateLocal());
 //        return false;
@@ -308,7 +306,7 @@ ClockPerfect::LocalToAbsDuration (Time localDuration, Time *absDuration)
 //
 //    NS_ASSERT_MSG(localStart > GetLastTimeUpdateLocal(), "We can't remember the frequency back then");
 
-    *absDuration = localDuration * GetTotalFrequency();
+    *absDuration = localDuration / GetTotalFrequency();
     return true;
 }
 
@@ -331,8 +329,8 @@ Time
 ClockPerfect::AbsToLocalDuration (Time absDuration)
 {
     NS_LOG_FUNCTION (absDuration);
-    Time localDuration = absDuration / GetTotalFrequency();
-    NS_LOG_DEBUG ( absDuration << "/" << GetTotalFrequency() << " =" << localDuration << " (localDuration)");
+    Time localDuration = absDuration * GetTotalFrequency();
+//    NS_LOG_DEBUG ( absDuration << "/" << GetTotalFrequency() << " =" << localDuration << " (localDuration)");
     return localDuration;
 }
 

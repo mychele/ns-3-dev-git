@@ -74,6 +74,9 @@ public:
   ClockRawFrequencyTestCase(double rawFrequency1 );
   virtual ~ClockRawFrequencyTestCase () {};
   
+  /**
+   * From DoSetup, use a mix of CheckTime/ChangeFrequency/InjectOffset
+   */
   virtual void DoSetup (void);
   virtual void DoRun (void);
 
@@ -81,11 +84,16 @@ public:
   virtual void OnNewFrequency (double oldFreq, double newFreq);
 //  virtual void OnTimeStep();
 
-
+protected:
   virtual void CheckTime (Time absTime, Time localTime);
   virtual void ChangeFrequency (Time absTime, double newFrequency);
+
+  // Not implemented yet
   virtual void InjectOffset (Time absTime, Time offset);
-protected:
+
+  void SetupClock (void);
+
+private:
   void ScheduledTimeCheck ( Time localTime);
   void ScheduledFrequencyChange ( double newFrequency);
   void ScheduledOffset ( Time offset);
@@ -189,11 +197,10 @@ ClockRawFrequencyTestCase::InjectOffset (Time absTime, Time offset)
 }
   
 
-// TODO passer en virtual ?
 void
-ClockRawFrequencyTestCase::DoSetup (void)
+ClockRawFrequencyTestCase::SetupClock (void)
 {
-    std::cout << "Setup" << std::endl;
+    
     m_clock = CreateObject<ClockPerfect>();
     NS_ASSERT (m_clock->SetRawFrequency(m_frequency));
 //    m_clock->SetFrequencyChangeCallback( MakeCallback(&ClockRawFrequencyTestCase::OnNewFrequency, this));
@@ -203,15 +210,24 @@ ClockRawFrequencyTestCase::DoSetup (void)
         MakeCallback ( &ClockRawFrequencyTestCase::OnNewFrequency, this) 
         ) );
 
-//    CheckTime (Time(2), Time(1));
-//    CheckTime (Time(4), Time(2));
-//    ChangeFrequency (Time(6), 1.0);
-//    CheckTime (Time(7), Time(4));
-    
-//    tests.insert( std::make_pair(Time(2), ClockTestParameters () ) );
-//    tests.insert( std::make_pair(Time(4), ClockTestParameters (Time(2)) ) );
-//    tests.insert( std::make_pair(Time(6), ClockTestParameters (1.0) ) );
-//    tests.insert( std::make_pair(Time(7), ClockTestParameters (Time(4)) ) );
+}
+
+// TODO passer en virtual ?
+void
+ClockRawFrequencyTestCase::DoSetup (void)
+{
+    std::cout << "Setup" << std::endl;
+
+    // Check that at simulator time AbsoluteTime, local time is RelativeTime
+    // hence when the simulator time is 2 
+    CheckTime (Time(2), Time(1));
+    CheckTime (Time(4), Time(2));
+    // at simulator time 6, node time should be 3
+    CheckTime (Time(6), Time(3));
+    // Hence we change frequency so that clocks elapse at the same frequency
+    ChangeFrequency (Time(6), 1.0);
+    // 1 second elapsed since syntonization between simulator and node clock
+    CheckTime (Time(7), Time(4));
 }
 
 
@@ -313,15 +329,25 @@ public:
 //    ClockRawFrequencyTestCase::TestEvents tests;
 
     // TODO lui passer la clock ?
-    ClockRawFrequencyTestCase *test0 = new ClockRawFrequencyTestCase (2.0);
-    test0->CheckTime (Time(2), Time(1));
-    test0->CheckTime (Time(4), Time(2));
-    test0->ChangeFrequency (Time(6), 1.0);
-//    test0->CheckTime (Time(7), Time(4));
+    {
 
-    // Node's time goes twice faster than simulation time
-    AddTestCase ( test0, TestCase::QUICK);
+        // Node clock is twice as slow as simulator's,
+        ClockRawFrequencyTestCase *test0 = new ClockRawFrequencyTestCase (0.5);
 
+//        test0->ChangeFrequency (Time(6), 1.0);
+
+    //    test0->CheckTime (Time(7), Time(4));
+
+        // Node's time goes twice faster than simulation time
+        AddTestCase ( test0, TestCase::QUICK);
+    }
+    
+    {
+//        ClockRawFrequencyTestCase *test1 = new ClockRawFrequencyTestCase (1.0);
+//        test1->CheckTime (Time(1), Time(1));
+//        test1->CheckTime (Time(2), Time(2));
+//        test1->ChangeFrequency (Time(3), 2.0);
+    }
     // First clear the map, then add new tests
 //    test.clear();
 //    AddTestCase (new ClockRawFrequencyTestCase (0.5, tests), TestCase::QUICK);

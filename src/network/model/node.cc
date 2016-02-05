@@ -81,6 +81,11 @@ Node::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&Node::m_sid),
                    MakeUintegerChecker<uint32_t> ())
+    // MATT
+    .AddTraceSource ("ScheduledEvent", 
+                     "toto",
+                     MakeTraceSourceAccessor (&Node::m_nextEvent)
+                     )
 //    .AddAttribute("SchedulerType",
 //                  "The object class to use as the scheduler implementation",
 //                  TypeIdValue (MapScheduler::GetTypeId ()),
@@ -129,7 +134,7 @@ Node::Construct (void)
   // In all cases
   // When one get aggregated, the node should register a few callbacks
   Ptr<Clock> clock = CreateObject<ClockPerfect>();
-  AggregateObject(clock);
+  AggregateObject (clock);
 //  clock->m_last
 
 //  TimeStepCallback
@@ -246,42 +251,6 @@ Node::InjectOffset (Time delta)
 //    m_clock->LocalToAbsTime ()
 }
 
-/*
-Used to update absolute time of
-, EventImpl *event
-TODO add overload for
-*/
-void
-//Node::SwapNextEvent(Event newNextEvent)
-Node::SwapNextEvent (
-
-// Mm un eventId
-                    EventId localEvent
-//                    EventImpl* newNextEvent
-                    )
-{
-  NS_LOG_DEBUG(&localEvent);
-
-  Ptr<ClockPerfect> clock = GetObject<ClockPerfect>();
-  // Do the conversion eventSimTime <<
-  Time eventSimTime;
-//    Time eventSimTime;
-  bool res = clock->LocalTimeToSimulatorTime ( Time (localEvent.GetTs()), &eventSimTime);
-  NS_ASSERT_MSG ( res, "WOOT" );
-
-  // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
-  if (GetNextEvent().IsRunning())
-  {
-    // TODO check that it does not destory the EventImpl* ?
-    // otherwise one would need to play with refCount or CopyObject
-    Simulator::Cancel( GetNextEventSim() );
-
-//    eventSimTime- Schedule::Now(),
-  }
-
-  EventId simEventId = Simulator::Schedule( eventSimTime - Simulator::Now(), localEvent.PeekEventImpl());
-  m_nextEvent = std::make_pair(localEvent, simEventId);
-}
 
 
 /*
@@ -299,42 +268,115 @@ Node::RefreshEvents ()
       
   }
   
-  
-  
-  
-  
-//    Loop through all events whose context is this node ID
-#if 0
-    int nextArray = (m_currentActiveEventsArray  + 1) %2;
-
-    // Look for all events belonging to this node
-    // And add a matching offset
-    for(std::list<EventId>::iterator i = m_events[ m_currentActiveEventsArray ].begin();
-        i != m_events[ m_currentActiveEventsArray ].end();
-        ++i
-    )
-    {
-        //! TODO en fait on ne le détruit pas mais on le cancel !
-//        Simulator::Cancel(*i);
-        i->Cancel();
-//        Time absTimeElapsed = i->GetTs() - Simulator::Now();
-
-
-        Simulator::Schedule()
-        m_events[ nextArray ].push_back(event);
-    }
-#endif
 }
 
-// On frequency change
-//UpdateNextEvent()
+/*
+Used to update absolute time of
+, EventImpl *event
+TODO add overload for
 
-//PushEventToSimulator()
+*/
+//void
+//Node::EnqueueEvent (
+//                    EventId localEvent
+//                    )
 //{
+//  NS_LOG_DEBUG(&localEvent);
 //
+//  Ptr<ClockPerfect> clock = GetObject<ClockPerfect>();
+//  // Do the conversion eventSimTime <<
+//  Time eventSimTime;
+////    Time eventSimTime;
+//  bool res = clock->LocalTimeToSimulatorTime ( Time (localEvent.GetTs()), &eventSimTime);
+//  NS_ASSERT_MSG ( res, "WOOT" );
+//
+//  // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
+//  if (GetNextEvent ().IsRunning())
+//  {
+//    // TODO check that it does not destory the EventImpl* ?
+//    // otherwise one would need to play with refCount or CopyObject
+//    Simulator::Cancel (GetNextEventSim());
+//
+////    eventSimTime- Schedule::Now(),
+//  }
+//
+//  EventId simEventId = Simulator::Schedule ( eventSimTime - Simulator::Now(), localEvent.PeekEventImpl());
+//  m_nextEvent = std::make_pair (localEvent, simEventId);
 //}
 
-//
+
+/**
+it must check if there is an event already scheduled in main:
+- if there isn't, it calls Simulator::Schedule
+- If there is:
+   > if the new event happens before then:
+   cancel the matching EventId in Simulator
+   > Simulator::Schedule
+- otherwise
+ */
+void
+Node::ScheduleNextEventOnSimulator (
+                    )
+{
+  // TODO add times
+  NS_LOG_DEBUG ();
+
+//  &localEvent
+  EventId localEvent
+  Ptr<ClockPerfect> clock = m_clock; //GetObject<ClockPerfect>();
+  // Do the conversion eventSimTime <<
+  Time eventSimTime;
+  bool nextEvent = false;
+  
+  if (GetNextEvent ().IsRunning ())
+  {
+
+    // if the newly scheduled event should be scheduled before
+    if(nodeEventId.GetTs () < GetNextEvent ().GetTs ())
+    {
+        // we should cancel 
+        GetNextEventSim ().Cancel ();
+        nextEvent = true;
+     }
+  }
+  else {
+    nextEvent = true;
+  }
+
+  // if we are not the next event=, abort here,
+  if (!nextEvent)
+    return;
+
+//    Time eventSimTime;
+  bool res = clock->LocalTimeToSimulatorTime ( Time (localEvent.GetTs()), &eventSimTime);
+  NS_ASSERT_MSG ( res, "WOOT" );
+
+  // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
+  if (GetNextEvent ().IsRunning ())
+  {
+    // TODO check that it does not destory the EventImpl* ?
+    // otherwise one would need to play with refCount or CopyObject
+    Simulator::Cancel (GetNextEventSim());
+
+//    eventSimTime- Schedule::Now(),
+  }
+
+  EventId simEventId = Simulator::Schedule ( 
+                          eventSimTime - Simulator::Now(), 
+                          &Node::ExecOnNode, this, localEvent.PeekEventImpl());
+  m_nextEvent = std::make_pair (localEvent, simEventId);
+}
+
+void 
+Node::ExecOnNode (EventImpl* event)
+{
+  NS_LOG_DEBUG (event);
+  NS_ASSERT (event);
+  event->Invoke ();
+  // TODO mark event as finisehd ?
+  
+}
+
 EventId
 Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 {
@@ -346,7 +388,7 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
   Time eventLocalTime = localTime + timeOffset;
 
 
-//  NS_ASSERT (eventLocalTime.IsPositive ());
+  NS_ASSERT (eventLocalTime.IsPositive ());
 //  NS_ASSERT (eventLocalTime >= localTime);
 
   // In all cases I insert the event
@@ -357,41 +399,22 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 //  ev.key.m_uid = Simulator::GetImplementation()->GetFreeUid();
   newEvent.key.m_uid = m_localUid;
   m_localUid++;
-//  m_unscheduledEvents++;
+  // TODO check that m_localUid did not wrap
+  // m_unscheduledEvents++;
   m_events->Insert (newEvent);
-  EventId nodeEventId( event, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
 
+  
+  EventId nodeEventId (event, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
 
+   ScheduleNextEventOnSimulator ();
+//  EnqueueEvent (nodeEventId);
 /* TODO quand on l'insère on doit se demander si :
   - il y a un nextEvent (isRunning ?
   - si oui comparer les clés Scheduler::EventKey pour maj ou pas le m_next
   */
   // Hack
-  if(GetNextEvent().IsRunning())
-  {
 
-
-     // if the newly scheduled event should be scheduled before
-     if(nodeEventId.GetTs() < GetNextEvent().GetTs()){
-//     if(nodeEventId < GetNextEvent()){
-        // TODO we should swap next events
-        SwapNextEvent (nodeEventId);
-        return nodeEventId;
-     }
-  }
   // if no valid nextEvent, we setup the new one
-  else
-  {
-    // Fix that
-    SwapNextEvent (nodeEventId);
-//    EventId simEventId = Simulator::Schedule(eventSimTime - Simulator::Now, event);
-//    std::make_pair(nodeEventId,simEventId);
-  }
-
-  // otherwise
-//  Event = m_events->PeekNext()
-
-
   return nodeEventId;
 }
 
@@ -406,40 +429,46 @@ void
 Node::Remove (const EventId &id)
 {
     //!
+    NS_FATAL_ERROR ("not implemented yet");
     Cancel (id);
 }
 
 void
-Node::Cancel (const EventId &id)
+Node::Cancel (const EventId &localId)
 {
-    //
-//    NS_FATAL_ERROR("Not implemented yet");
-    // If already in simulator list
-    if(id == GetNextEvent()) {
+  NS_LOG_DEBUG (id);
 
-        // not sure that's good
-        id.PeekEventImpl()->Cancel();
-        Simulator::Cancel(m_nextEvent.second);
-        Scheduler::Event newEvent = m_events->PeekNext();
-//        EventId nodeNext,
-        EventId nodeEventId( newEvent.impl, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
+  
+  // If already in simulator list
+  if (localId == GetNextEvent()) 
+  {
+//    NS_LOG_DEBUG ("Event was the next");
+      // not sure that's good
+      localId.PeekEventImpl()->Cancel();
+      Simulator::Cancel (m_nextEvent.second);
 
-        SwapNextEvent(nodeEventId);
-        // et la on doit insérer le prochain pour le remplacer
-    }
-    else {
+      // we need to schedule the next valid event
+      Scheduler::Event newEvent = m_events->PeekNext ();
+  //        EventId nodeNext,
+      EventId nodeEventId ( newEvent.impl, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
 
-      // Version de DefaultSimulator
-      // ====
-//      if (!IsExpired (id))
-// TODO may need some more checks
-      if (!id.PeekEventImpl ()->IsCancelled ())
-        {
-          id.PeekEventImpl ()->Cancel ();
-        }
-        // ====
-//        m_events
-    }
+      // Scheduler::Event
+      EnqueueEvent (nodeEventId);
+      // et la on doit insérer le prochain pour le remplacer
+  }
+  // not schedulet in main Simulator yet, hence, just skip it
+  else
+  {
+
+    // Version de DefaultSimulator
+    // ====
+  //      if (!IsExpired (id))
+  // TODO may need some more checks
+    if (!localId.PeekEventImpl ()->IsCancelled ())
+      {
+        localId.PeekEventImpl ()->Cancel ();
+      }
+  }
 }
 
 

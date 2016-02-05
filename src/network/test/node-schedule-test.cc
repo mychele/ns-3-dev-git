@@ -34,6 +34,9 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("TestNodeScheduling");
 
 
+
+static ObjectFactory schedulerFactory;
+
 /**
 TODO
 -should be able to pass a clock
@@ -59,117 +62,69 @@ CancelEvent
 
 
 
-struct TestEvent
-{
-
-TestEvent( Time _simTime, double freq ) :
-    simTime(_simTime),
-    action(ChangeFrequency),
-    frequency(freq),
-    eventUid(-1)
-{
-}
-
-// ScheduleEvent constructor
-TestEvent( Time _simTime, Time nodeTime, int uid ) :
-    simTime(_simTime),
-    action( ScheduleEvent),
-    value(nodeTime),
-    eventUid(uid)
-{
-}
-
-// CancelEvent constructor
-TestEvent( Time _simTime, int uid ) :
-    simTime(_simTime),
-    action(CancelEvent),
-    value(0),
-    eventUid(uid)
-{
-}
-
-Time simTime;
-TestStep action;
-double frequency;
-Time value;
-int eventUid;
-};
-
-
 /**
 In this test everything is scheduled and tests are executed during or after Simulator::Run
+Deals with a single node
 **/
-static const int NB_EVENTS = 4;
+
 class NodeEventsTestCase : public TestCase
 {
 public:
-//  typedef std::vector< std::pair<Time,Time> > LocalToAbsTimeList;
-  typedef std::vector< TestEvent > TestParameters;
 
   // TODO pouvoir passer plusieurs horloges
-  NodeEventsTestCase (ObjectFactory schedulerFactory, double clockRawFrequency, TestParameters);
+  NodeEventsTestCase (ObjectFactory schedulerFactory);
 
 
-
-
-  // These function change
-  void ChangeRawFrequency(double newFreq);
+  void ChangeRawFrequency (double newFreq);
 //  void GenericEvent (int a);
-  void GenericEvent (Time expectedSimTime, Time expectedNodeTime, int uid);
-//  void EventB (int b);
-//  void EventC (int c);
-//  void EventD (int d);
-//  void Eventfoo0 (void);
-//  uint64_t NowUs (void);
-//  void destroy (void);
+  void GenericEvent (Time expectedSimTime, Time expectedNodeTime
+//                     , int uid
+                     );
+//    virtual void CancelEvent (Time absTime);
+//  void CheckTime (Time absTime, double newFreq);    
+    
+    // TODO later
+//    virtual void RemoveEvent (Time absTime);
+protected:
 
-
-
-
-//   m_idC;
-//  bool m_destroy;
-//  EventId m_destroyId;
   ObjectFactory m_schedulerFactory;
 
-protected:
-    // Rename to CommonToAllEvents
-//  void GenericChecks(int i);
-//  Time GetSchedule(int i);
 
-private:
+  void SetupNode (Ptr<Node> node, double frequency);
+  
+
   virtual void DoSetup (void);
   virtual void DoRun (void);
-
+//private:
   // True
 //  bool m_executed[NB_EVENTS];  //!<
   std::map<int, EventId > m_eventIds; //!< Map test uid, EventId
   Ptr<Node> m_node;     //!< Node
   Ptr<ClockPerfect> m_clock;    //!< clock aggregated to the node (for convenience)
   double m_clockRawFrequency;   //!<
-  const TestParameters m_tests;       //!<
   int m_executed;   //!< number of scheduled and run events
+  int m_expectedEventNumber;   //!< number of scheduled and run events
 };
 
 
 
 NodeEventsTestCase::NodeEventsTestCase (
-    ObjectFactory schedulerFactory,
-    double clockRawFrequency,
-    TestParameters tests
+    ObjectFactory schedulerFactory
+//    TestParameters tests
     )
   : TestCase ("Check that basic event handling is working with " +
               schedulerFactory.GetTypeId ().GetName ()),
     m_schedulerFactory (schedulerFactory),
-    m_clockRawFrequency(clockRawFrequency),
-    m_tests(tests)
+    m_clockRawFrequency (1.0),
+    m_expectedEventNumber (0)
+//    m_tests(tests)
 {
 //    NS_LOG_FUNCTION
 }
 
 void
-NodeEventsTestCase::DoSetup (void)
+NodeEventsTestCase::SetupNode (Ptr<Node> node, double frequency)
 {
-
     // TODO should be able to set the clock
 //    Ptr<ClockPerfect> clock = CreateObject<ClockPerfect>();
     m_node = CreateObject<Node>();
@@ -177,27 +132,32 @@ NodeEventsTestCase::DoSetup (void)
     //!
     m_clock = m_node->GetObject<ClockPerfect>();
 //    Ptr<ClockPerfect> clock = m_node->GetObject<ClockPerfect>();
-    NS_ASSERT(m_clock->SetRawFrequency(m_clockRawFrequency));
-    // TODO set scheduler
+    NS_ASSERT (m_clock->SetRawFrequency (frequency));
+}
 
-    // By default no event is marked as executed
-//    memset(m_executed, false, sizeof(m_executed));
+
+
+void
+NodeEventsTestCase::DoSetup (void)
+{
+    SetupNode (m_node, m_clockRawFrequency);
+
+    // Schedule in local time
+    EventId eventA = m_node->Schedule (Time(1), 
+            &NodeEventsTestCase::GenericEvent, this, Time (1), Time (1));
+    EventId eventB = m_node->Schedule ( Time(2), 
+            &NodeEventsTestCase::GenericEvent, this, Time (2), Time (2) );
 }
 
 void
-NodeEventsTestCase::ChangeRawFrequency(double newFreq)
+NodeEventsTestCase::ChangeRawFrequency (double newFreq)
 {
     //!
     std::cout << "Changed frequency to " << newFreq << std::endl;
     m_clock->SetRawFrequency(newFreq);
 }
 
-//Time
-//NodeEventsTestCase::GetSchedule(int i)
-//{
-//    NS_ASSERT( i >= 0 && i < m_milestones.size());
-//    return m_milestones[i].first;
-//}
+
 
 //void
 //NodeEventsTestCase::GenericChecks(int i)
@@ -215,11 +175,7 @@ void
 NodeEventsTestCase::DoRun (void)
 {
 
-//  NS_TEST_EXPECT_MSG_EQ (m_a, false, "Wrong setup");
-//  NS_TEST_EXPECT_MSG_EQ (m_b, false, "Wrong setup");
-//  NS_TEST_EXPECT_MSG_EQ (m_c, false, "Wrong setup");
-//  NS_TEST_EXPECT_MSG_EQ (m_d, false, "Wrong setup");
-
+    #if 0
     int nb_scheduledEvents = 0;
 
     for(TestParameters::const_iterator i(m_tests.begin());
@@ -289,11 +245,12 @@ NodeEventsTestCase::DoRun (void)
 
 
     }
+    #endif
 
     Simulator::Run();
 
 
-    NS_TEST_EXPECT_MSG_EQ (m_executed, nb_scheduledEvents, "Number of scheduled-cancelled events != number of executed.");
+    NS_TEST_EXPECT_MSG_EQ (m_executed, m_expectedEventNumber, "Number of scheduled-cancelled events != number of executed.");
 
 //  Simulator::SetScheduler (m_schedulerFactory);
 
@@ -348,67 +305,50 @@ NodeEventsTestCase::DoRun (void)
 }
 
 void
-NodeEventsTestCase::GenericEvent (Time expectedSimTime, Time expectedNodeTime, int uid)
+NodeEventsTestCase::GenericEvent (Time expectedSimTime, Time expectedNodeTime
+//                            , int uid
+                            )
 {
 //  GenericChecks(0);
-    std::cout << "Event with uid="  << uid << std::endl;
+//    std::cout << "Event with uid="  << uid << std::endl;
     std::cout << " Expected at "  << expectedSimTime << "/" << expectedNodeTime << "(sim/node)" << std::endl;
 
-    NS_TEST_EXPECT_MSG_EQ( expectedNodeTime, m_node->GetLocalTime(), "Wrong local time" );
-    NS_TEST_EXPECT_MSG_EQ( expectedSimTime, Simulator::Now(), "Wrong absolute time" );
+    NS_TEST_EXPECT_MSG_EQ (expectedNodeTime, m_node->GetLocalTime(), "Wrong local time" );
+    NS_TEST_EXPECT_MSG_EQ (expectedSimTime, Simulator::Now(), "Wrong absolute time" );
     m_executed++;
 }
 
-//void
-//NodeEventsTestCase::EventB (int b)
-//{
-//    GenericChecks(1);
-////  if (b != 2 || NowUs () != 11)
-////    {
-////      m_b = false;
-////    }
-////  else
-////    {
-////      m_b = true;
-////    }
-////  Simulator::Remove (m_idC);
-////  Simulator::Schedule (MicroSeconds (10), &NodeEventsTestCase::EventD, this, 4);
-//}
-//
-//void
-//NodeEventsTestCase::EventC (int c)
-//{
-//  m_c = false;
-//}
-//
-//void
-//NodeEventsTestCase::EventD (int d)
-//{
-////  if (d != 4 || NowUs () != (11+10))
-////    {
-////      m_d = false;
-////    }
-////  else
-////    {
-////      m_d = true;
-////    }
-//}
-//
-//void
-//NodeEventsTestCase::Eventfoo0 (void)
-//{
-//    //!
-//}
 
 
 /**
 At some point the clock wil lchange frequency
 **/
-//class NodeChangeClockEventsTestCase : public NodeEventsTestCase
-//{
-//    //!
-//    NodeChangeClockEventsTestCase
-//};
+class NodeChangeClockEventsTestCase : public NodeEventsTestCase
+{
+public:
+    NodeChangeClockEventsTestCase (ObjectFactory schedulerFactory);
+protected:
+    virtual void DoSetup (void);
+};
+
+
+NodeChangeClockEventsTestCase::NodeChangeClockEventsTestCase (ObjectFactory schedulerFactory)
+    : NodeEventsTestCase (schedulerFactory)
+    {
+        //!
+    }
+
+void
+NodeChangeClockEventsTestCase::DoSetup (void)
+{
+    SetupNode (m_node, m_clockRawFrequency);
+
+    // Schedule in local time
+    EventId eventA = m_node->Schedule (Time(1), 
+            &NodeEventsTestCase::GenericEvent, this, Time (1), Time (1));
+    EventId eventB = m_node->Schedule ( Time(2), 
+            &NodeEventsTestCase::GenericEvent, this, Time (2), Time (2) );
+}
 
 /*
 Idea of this test is :
@@ -421,44 +361,35 @@ Idea of this test is :
 
 #endif
 
+
+
+
+
+
+/**
+ *
+ */
 class NodeClockTestSuite : public TestSuite
 {
 public:
   NodeClockTestSuite ()
     : TestSuite ("node-scheduling")
   {
-//          m_clock = CreateObject<ClockPerfect>();
 
     ObjectFactory factory;
     factory.SetTypeId (ListScheduler::GetTypeId ());
-//    NodeEventsTestCase::LocalToAbsTimeList checks;
-    
-    // a vector of TestEvent
-    // TODO remove
-    NodeEventsTestCase::TestParameters tests;
-//    tests.push_back( TestEvent(Time(1),) );
-    // schedule event
-    tests.push_back( TestEvent(Time(1), Time(1), 0) );
-    tests.push_back( TestEvent(Time(2), Time(2), 1) );
-    // CancelEvent
-    tests.push_back( TestEvent(Time(3), 1) );
+
     // Schedule a, cancel a
     // Schedule b,
-//    checks.push_back(std::make_pair( Time(1), Time(1) ));
-//    checks.push_back(std::make_pair( Time(2), Time(2) ));
-//    checks.push_back(std::make_pair( Time(3), Time(3) ));
 
-    AddTestCase (new NodeEventsTestCase (factory, 1.0, tests), TestCase::QUICK);
+    // Node clock is the same as Simulator's
+    AddTestCase (new NodeEventsTestCase (factory), TestCase::QUICK);
 
 
     /// Node clock twice faster than sim time
     /////////////////////////////////////////////////////
-//    tests.clear();
-//    checks.push_back(std::make_pair( Time(1), Time(2) ));
-//    checks.push_back(std::make_pair( Time(2), Time(4) ));
-//    checks.push_back(std::make_pair( Time(3), Time(6) ));
-//
-//    AddTestCase (new NodeEventsTestCase (factory, 2.0, checks), TestCase::QUICK);
+
+//    AddTestCase (new NodeChangeClockEventsTestCase (factory), TestCase::QUICK);
 
   }
 } g_nodeSchedulingTestSuite;
