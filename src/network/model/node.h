@@ -277,7 +277,9 @@ public:
 
   // Does remove make sense ?
   // virtual void Remove (const EventId &id);
-  virtual void Cancel (const EventId &id);
+  
+//  virtual void Cancel (const EventId &id);
+  virtual void Cancel (EventId &id);
 
   // Implemented as a cancel
   virtual void Remove (const EventId &id);
@@ -302,13 +304,14 @@ protected:
   /**
    * Replace last registered event with a new one that should happen before current
    */
-  virtual void EnqueueEvent (
-//                    Time eventSimTime,
-                    EventId localEvent
-//                    EventImpl* newNextEvent
-                    );
+//  virtual void EnqueueEvent (
+////                    Time eventSimTime,
+//                    EventId localEvent
+////                    EventImpl* newNextEvent
+//                    );
 
   virtual void ScheduleNextEventOnSimulator ();
+
 private:
 
   /**

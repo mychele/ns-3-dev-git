@@ -82,10 +82,10 @@ Node::GetTypeId (void)
                    MakeUintegerAccessor (&Node::m_sid),
                    MakeUintegerChecker<uint32_t> ())
     // MATT
-    .AddTraceSource ("ScheduledEvent", 
-                     "toto",
-                     MakeTraceSourceAccessor (&Node::m_nextEvent)
-                     )
+//    .AddTraceSource ("ScheduledEvent", 
+//                     "toto",
+//                     MakeTraceSourceAccessor (&Node::m_nextEvent)
+//                     )
 //    .AddAttribute("SchedulerType",
 //                  "The object class to use as the scheduler implementation",
 //                  TypeIdValue (MapScheduler::GetTypeId ()),
@@ -228,7 +228,6 @@ Node::GetLocalTime (void) const
 //  return m_clock;
 }
 
-
 EventId
 Node::GetNextEvent () const
 {
@@ -313,58 +312,89 @@ it must check if there is an event already scheduled in main:
    cancel the matching EventId in Simulator
    > Simulator::Schedule
 - otherwise
+TODO return bool to know if it's finished ?
+
+Also the simulator should
  */
 void
 Node::ScheduleNextEventOnSimulator (
                     )
 {
   // TODO add times
-  NS_LOG_DEBUG ();
+  NS_LOG_DEBUG ("toto");
 
 //  &localEvent
-  EventId localEvent
-  Ptr<ClockPerfect> clock = m_clock; //GetObject<ClockPerfect>();
+//  EventId localEvent
+// TODO ideally should be replaced with a simple Clock
+  Ptr<ClockPerfect> clock = GetObject<ClockPerfect>();
+
+
   // Do the conversion eventSimTime <<
   Time eventSimTime;
-  bool nextEvent = false;
-  
-  if (GetNextEvent ().IsRunning ())
-  {
 
+  /**
+   * \returns a pointer to the next earliest event. The caller
+   *      takes ownership of the returned pointer.
+   *
+   * This method cannot be invoked if the list is empty.
+   */
+  Scheduler::Event nextEvent = m_events->PeekNext ();
+  
+  EventId nodeEventId ( nextEvent.impl, nextEvent.key.m_ts, nextEvent.key.m_context, nextEvent.key.m_uid);
+  bool enqueueNextEvent = false;   //!< if set to true, means
+
+  //!
+  if (GetNextEventSim ().IsRunning ())
+  {
+    NS_LOG_DEBUG ( "An event is already scheduled" );
+    
     // if the newly scheduled event should be scheduled before
-    if(nodeEventId.GetTs () < GetNextEvent ().GetTs ())
+    if( nodeEventId.GetTs () < GetNextEvent ().GetTs ())
     {
-        // we should cancel 
+        NS_LOG_DEBUG ( "There exists an event to be scheduled before " );
+        // we should cancel the running one
         GetNextEventSim ().Cancel ();
-        nextEvent = true;
+//        Simulator::Cancel (GetNextEventSim ());
+        enqueueNextEvent = true;
+     }
+     else {
+        NS_LOG_DEBUG ( "" );
      }
   }
-  else {
-    nextEvent = true;
+  else 
+  {
+    NS_LOG_DEBUG ( "No event scheduled yet" );
+    enqueueNextEvent = true;
   }
 
   // if we are not the next event=, abort here,
-  if (!nextEvent)
+  if (!enqueueNextEvent) {
+    NS_LOG_DEBUG ( "No event to queue" );
     return;
-
-//    Time eventSimTime;
-  bool res = clock->LocalTimeToSimulatorTime ( Time (localEvent.GetTs()), &eventSimTime);
-  NS_ASSERT_MSG ( res, "WOOT" );
-
-  // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
-  if (GetNextEvent ().IsRunning ())
-  {
-    // TODO check that it does not destory the EventImpl* ?
-    // otherwise one would need to play with refCount or CopyObject
-    Simulator::Cancel (GetNextEventSim());
-
-//    eventSimTime- Schedule::Now(),
   }
 
+  
+
+//    Time eventSimTime;
+  // we need to schedule
+  bool res = clock->LocalTimeToSimulatorTime ( Time (nodeEventId.GetTs()), &eventSimTime);
+  NS_ASSERT_MSG ( res, "Could not compute timelapse" );
+
+//  // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
+//  if (GetNextEvent ().IsRunning ())
+//  {
+//    // TODO check that it does not destory the EventImpl* ?
+//    // otherwise one would need to play with refCount or CopyObject
+//    Simulator::Cancel (GetNextEventSim());
+//
+////    eventSimTime- Schedule::Now(),
+//  }
+
+  NS_LOG_DEBUG ( "Enqueuing event to Simulator in " << eventSimTime - Simulator::Now() );
   EventId simEventId = Simulator::Schedule ( 
                           eventSimTime - Simulator::Now(), 
-                          &Node::ExecOnNode, this, localEvent.PeekEventImpl());
-  m_nextEvent = std::make_pair (localEvent, simEventId);
+                          &Node::ExecOnNode, this, nodeEventId.PeekEventImpl());
+  m_nextEvent = std::make_pair (nodeEventId, simEventId);
 }
 
 void 
@@ -373,8 +403,10 @@ Node::ExecOnNode (EventImpl* event)
   NS_LOG_DEBUG (event);
   NS_ASSERT (event);
   event->Invoke ();
+  event->Unref ();
   // TODO mark event as finisehd ?
-  
+  // Now that it's finished, check if we need to add another one
+  ScheduleNextEventOnSimulator ();
 }
 
 EventId
@@ -430,15 +462,18 @@ Node::Remove (const EventId &id)
 {
     //!
     NS_FATAL_ERROR ("not implemented yet");
-    Cancel (id);
+//    Cancel (id);
 }
 
+//const
 void
-Node::Cancel (const EventId &localId)
+Node::Cancel (EventId &localId)
 {
-  NS_LOG_DEBUG (id);
+  NS_LOG_DEBUG (localId.GetUid());
 
-  
+  localId.Cancel ();
+  ScheduleNextEventOnSimulator ();
+  #if 0
   // If already in simulator list
   if (localId == GetNextEvent()) 
   {
@@ -448,12 +483,13 @@ Node::Cancel (const EventId &localId)
       Simulator::Cancel (m_nextEvent.second);
 
       // we need to schedule the next valid event
-      Scheduler::Event newEvent = m_events->PeekNext ();
+//      Scheduler::Event newEvent = m_events->PeekNext ();
   //        EventId nodeNext,
-      EventId nodeEventId ( newEvent.impl, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
+//      EventId nodeEventId ( newEvent.impl, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
 
       // Scheduler::Event
-      EnqueueEvent (nodeEventId);
+//      EnqueueEvent (nodeEventId);
+      ScheduleNextEventOnSimulator ();
       // et la on doit insérer le prochain pour le remplacer
   }
   // not schedulet in main Simulator yet, hence, just skip it
@@ -469,6 +505,7 @@ Node::Cancel (const EventId &localId)
         localId.PeekEventImpl ()->Cancel ();
       }
   }
+  #endif
 }
 
 
