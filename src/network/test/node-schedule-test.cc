@@ -162,9 +162,9 @@ NodeEventsTestCase::DoSetup (void)
     SetupNode (m_node, m_clockRawFrequency);
 
     // Schedule in local time
-    EventId eventA = m_node->Schedule (Time(1), 
-            &NodeEventsTestCase::GenericEvent, this, 
-            Time (1), Time (1));
+//    EventId eventA = m_node->Schedule (Time(1), 
+//            &NodeEventsTestCase::GenericEvent, this, 
+//            Time (1), Time (1));
             
     EventId a = ScheduleEvent ( Time (1), Time (1) );
     EventId b = ScheduleEvent ( Time (2), Time (2) );
@@ -203,78 +203,6 @@ NodeEventsTestCase::ChangeRawFrequency (double newFreq)
 void
 NodeEventsTestCase::DoRun (void)
 {
-
-    #if 0
-    int nb_scheduledEvents = 0;
-
-    for(TestParameters::const_iterator i(m_tests.begin());
-        i != m_tests.end();
-        ++i
-        )
-    {
-
-        const TestEvent& params = *i;
-        Time simTime = params.simTime;
-
-        std::cout << "New event " << params.action << " at time " << simTime << std::endl;
-
-        switch (params.action)
-        {
-            case ScheduleEvent:
-                {
-
-
-                NS_ASSERT_MSG(params.eventUid >= 0, "Assign positive ids");
-                EventId id = m_node->Schedule ( params.simTime, &NodeEventsTestCase::GenericEvent, this, simTime, params.value, params.eventUid);
-                // TODO check event IDs differ
-//                for(TestEvents::const_iterator i(m_tests.begin());
-//                    j != m_tests.end();
-//                    ++j
-//                    )
-//                {
-//                    NS_ASSERT_MSG( j->second.uid != params.eventUid, "Assign different uids");
-//                }
-                NS_ASSERT_MSG( m_eventIds.find(params.eventUid) == m_eventIds.end(), "Assign different uids");
-
-                m_eventIds.insert( std::make_pair(params.eventUid, id));
-                nb_scheduledEvents++;
-                }
-                break;
-
-            case CancelEvent:
-                {
-
-                    NS_ASSERT_MSG(params.eventUid >= 0, "Assign positive ids");
-                    std::map<int, EventId >::iterator it = m_eventIds.find(params.eventUid);
-                    NS_ASSERT_MSG( it != m_eventIds.cend(), "Trying to cancel a non-existing/unregistered event.");
-                    EventId ev = it->second;
-
-
-                    NS_TEST_EXPECT_MSG_EQ (!ev.IsExpired (), true, "");
-                    m_node->Cancel (ev);
-                    NS_TEST_EXPECT_MSG_EQ (ev.IsExpired (), true, "");
-
-                    nb_scheduledEvents--;
-                }
-                break;
-
-            case ChangeFrequency:
-//                nbFreqChanges++;
-                {
-
-
-                Simulator::Schedule( simTime -Simulator::Now(), &NodeEventsTestCase::ChangeRawFrequency, this, params.frequency);
-                }
-                break;
-
-            case ChangeOffset:
-            default:
-                NS_FATAL_ERROR("Unhandled action");
-        }
-
-
-    }
-    #endif
 
     Simulator::Run();
 

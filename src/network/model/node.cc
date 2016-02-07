@@ -412,7 +412,8 @@ Node::ExecOnNode ()
 //  
   Scheduler::Event next = m_events->RemoveNext();
   NS_ASSERT (next.key.m_ts >= Simulator::Now());
-  
+  NS_LOG_DEBUG (next.key.m_uid);
+
   next.impl->Invoke ();
   next.impl->Unref ();
   // TODO mark event as finisehd ?
@@ -502,6 +503,7 @@ Node::IsExpired (const EventId &id) const
 //        }
 //      return true;
 //    }
+  NS_LOG_FUNCTION_NOARGS ();
 
   Time localTs = GetLocalTime();
   if (id.PeekEventImpl () == 0 ||
@@ -527,30 +529,13 @@ Node::Cancel (EventId &localId)
 
   if (!IsExpired (localId))
     {
+      NS_LOG_DEBUG ("Cancelling the implementation");
       localId.PeekEventImpl ()->Cancel ();
     }
 
 //  localId.Cancel ();
   ScheduleNextEventOnSimulator ();
-  #if 0
-  // If already in simulator list
-  if (localId == GetNextEvent()) 
-  {
-//    NS_LOG_DEBUG ("Event was the next");
-      // not sure that's good
-      localId.PeekEventImpl()->Cancel();
-      Simulator::Cancel (m_nextEvent.second);
-
-      // we need to schedule the next valid event
-//      Scheduler::Event newEvent = m_events->PeekNext ();
-  //        EventId nodeNext,
-//      EventId nodeEventId ( newEvent.impl, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
-
-      // Scheduler::Event
-//      EnqueueEvent (nodeEventId);
-      ScheduleNextEventOnSimulator ();
-      // et la on doit insérer le prochain pour le remplacer
-  }
+#if 0
   // not schedulet in main Simulator yet, hence, just skip it
   else
   {
