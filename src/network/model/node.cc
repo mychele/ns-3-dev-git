@@ -444,12 +444,14 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 //  ev.key.m_uid = Simulator::GetImplementation()->GetFreeUid();
   newEvent.key.m_uid = m_localUid;
   m_localUid++;
+  
   // TODO check that m_localUid did not wrap
   // m_unscheduledEvents++;
   m_events->Insert (newEvent);
 
 
   EventId nodeEventId (event, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
+  nodeEventId.m_node = this;
 
    ScheduleNextEventOnSimulator ();
 //  EnqueueEvent (nodeEventId);
@@ -478,13 +480,57 @@ Node::Remove (const EventId &id)
 //    Cancel (id);
 }
 
+bool
+Node::IsExpired (const EventId &id) const
+{
+  // Uid == 2 => destroy event. Not implemented in node stuff yet so
+  // just forget about it
+//  if (id.GetUid () == 2)
+//    {
+//      if (id.PeekEventImpl () == 0 ||
+//          id.PeekEventImpl ()->IsCancelled ())
+//        {
+//          return true;
+//        }
+//      // destroy events.
+//      for (DestroyEvents::const_iterator i = m_destroyEvents.begin (); i != m_destroyEvents.end (); i++)
+//        {
+//          if (*i == id)
+//            {
+//              return false;
+//            }
+//        }
+//      return true;
+//    }
+
+  Time localTs = GetLocalTime();
+  if (id.PeekEventImpl () == 0 ||
+      id.GetTs () < localTs ||
+      (id.GetTs () == localTs && id.GetUid () <= m_localUid) ||
+      id.PeekEventImpl ()->IsCancelled ()
+      )
+    {
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
+
+
 //const
 void
 Node::Cancel (EventId &localId)
 {
-  NS_LOG_DEBUG (localId.GetUid());
+  NS_LOG_FUNCTION (localId.GetUid());
 
-  localId.Cancel ();
+  if (!IsExpired (localId))
+    {
+      localId.PeekEventImpl ()->Cancel ();
+    }
+
+//  localId.Cancel ();
   ScheduleNextEventOnSimulator ();
   #if 0
   // If already in simulator list

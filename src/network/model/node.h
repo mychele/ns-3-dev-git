@@ -289,6 +289,7 @@ public:
 
   // Implemented as a cancel
   virtual void Remove (const EventId &id);
+  virtual bool IsExpired (const EventId &id) const;
 
   void SetScheduler (ObjectFactory schedulerFactory);
 

@@ -21,6 +21,7 @@
 #include "simulator.h"
 #include "event-impl.h"
 #include "log.h"
+#include "ns3/node.h"
 
 /**
  * \file
@@ -36,16 +37,24 @@ EventId::EventId ()
   : m_eventImpl (0),
     m_ts (0),
     m_context (0),
-    m_uid (0)
+    m_uid (0),
+    m_node (0)
 {
   NS_LOG_FUNCTION (this);
+}
+
+EventId::~EventId ()
+{
+    
+    
 }
 
 EventId::EventId (const Ptr<EventImpl> &impl, uint64_t ts, uint32_t context, uint32_t uid)
   : m_eventImpl (impl),
     m_ts (ts),
     m_context (context),
-    m_uid (uid)
+    m_uid (uid),
+    m_node (0)
 {
   NS_LOG_FUNCTION (this << impl << ts << context << uid);
 }
@@ -53,12 +62,18 @@ void
 EventId::Cancel (void)
 {
   NS_LOG_FUNCTION (this);
+  if (m_node) {
+    return m_node->Cancel (*this);
+  }
   Simulator::Cancel (*this);
 }
 bool
 EventId::IsExpired (void) const
 {
   NS_LOG_FUNCTION (this);
+  if (m_node) {
+    return m_node->IsExpired (*this);
+  }
   return Simulator::IsExpired (*this);
 }
 bool

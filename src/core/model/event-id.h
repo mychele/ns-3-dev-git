@@ -32,6 +32,7 @@
 
 namespace ns3 {
 
+class Node;
 class EventImpl;
 
 /**
@@ -54,6 +55,7 @@ class EventId {
 public:
   /** Default constructor. This EventId does nothing. */
   EventId ();
+  ~EventId ();
   /**
    * Construct a real event.
    *
@@ -63,6 +65,7 @@ public:
    * \param [in] uid The unique id for this EventId.
    */
   EventId (const Ptr<EventImpl> &impl, uint64_t ts, uint32_t context, uint32_t uid);
+
   /**
    * This method is syntactic sugar for the ns3::Simulator::Cancel
    * method.
@@ -96,6 +99,8 @@ public:
   /** \return The unique id. */
   uint32_t GetUid (void) const;
   /**@}*/
+
+  Node* m_node;     /**< node that owns this event. Might be null if pure-simulator event */
 
 private:
   /**

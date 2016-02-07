@@ -77,10 +77,12 @@ public:
 
   void ChangeRawFrequency (double newFreq);
 //  void GenericEvent (int a);
+  EventId ScheduleEvent (Time expectedSimTime, Time expectedNodeTime);
   void GenericEvent (Time expectedSimTime, Time expectedNodeTime
 //                     , int uid
                      );
-//    virtual void CancelEvent (Time absTime);
+
+  virtual void CancelEvent (EventId id, Time absTime);
 //  void CheckTime (Time absTime, double newFreq);    
     
     // TODO later
@@ -98,7 +100,7 @@ protected:
 //private:
   // True
 //  bool m_executed[NB_EVENTS];  //!<
-  std::map<int, EventId > m_eventIds; //!< Map test uid, EventId
+//  std::map<int, EventId > m_eventIds; //!< Map test uid, EventId
   Ptr<Node> m_node;     //!< Node
   Ptr<ClockPerfect> m_clock;    //!< clock aggregated to the node (for convenience)
   double m_clockRawFrequency;   //!<
@@ -137,6 +139,23 @@ NodeEventsTestCase::SetupNode (Ptr<Node> node, double frequency)
 
 
 
+
+EventId
+NodeEventsTestCase::ScheduleEvent (Time expectedSimTime, Time expectedNodeTime)
+{
+    //!
+    return m_node->Schedule ( expectedSimTime, 
+            &NodeEventsTestCase::GenericEvent, this, 
+            expectedSimTime, expectedNodeTime );
+}
+
+void 
+NodeEventsTestCase::CancelEvent (EventId id, Time absTime)
+{
+    //!
+    m_node->Cancel (id);
+}
+
 void
 NodeEventsTestCase::DoSetup (void)
 {
@@ -144,9 +163,17 @@ NodeEventsTestCase::DoSetup (void)
 
     // Schedule in local time
     EventId eventA = m_node->Schedule (Time(1), 
-            &NodeEventsTestCase::GenericEvent, this, Time (1), Time (1));
-    EventId eventB = m_node->Schedule ( Time(2), 
-            &NodeEventsTestCase::GenericEvent, this, Time (2), Time (2) );
+            &NodeEventsTestCase::GenericEvent, this, 
+            Time (1), Time (1));
+            
+    EventId a = ScheduleEvent ( Time (1), Time (1) );
+    EventId b = ScheduleEvent ( Time (2), Time (2) );
+//    EventId eventB = m_node->Schedule ( Time(2), 
+//            &NodeEventsTestCase::GenericEvent, this, Time (2), Time (2) );
+    
+    EventId c = ScheduleEvent ( Time (4), Time (4) );
+    m_node->Cancel (c);
+//    CancelEvent (c);
 
     m_expectedEventNumber = 2;
 }
@@ -346,6 +373,7 @@ NodeChangeClockEventsTestCase::DoSetup (void)
     SetupNode (m_node, m_clockRawFrequency);
 
     // Schedule in local time
+    // expectedSimTime/
     EventId eventA = m_node->Schedule (Time(1), 
             &NodeEventsTestCase::GenericEvent, this, Time (1), Time (1));
     EventId eventB = m_node->Schedule ( Time(2), 
