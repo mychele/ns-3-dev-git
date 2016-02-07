@@ -156,7 +156,7 @@ Node::SetClock (Ptr<Clock> clock)
     {
         //!
       m_clock = clock;
-      m_clock->SetFrequencyChangeCallback(MakeCallback(&Node::RefreshEvents, Ptr<Node> (this)));
+      m_clock->SetFrequencyChangeCallback (MakeCallback(&Node::RefreshEvents, Ptr<Node> (this)));
     }
 }
 
@@ -259,12 +259,26 @@ Node::InjectOffset (Time delta)
 void
 Node::RefreshEvents ()
 {
+  NS_LOG_FUNCTION ("Might need to reschedule top event");
 //  NS_LOG_DEBUG ("Should now refresh event expiration times " << oldFreq << "/" << newFreq);
-    
+
+  /* 
+  Recompute time of registered event and reschedule it into the simulator
+  */
   // If an event was registered
-  if (GetNextEvent().IsRunning())
+  if (GetNextEvent ().IsRunning ())
   {
-      
+    NS_LOG_DEBUG ("Event pending/registered in Simulator ! Recomputing the simulator time...");
+//    Time simTime;
+//    m_clock->LocalTimeToSimulatorTime(GetNextEvent ().GetTs(), &simTime);
+    
+    // TODO check, cancelling the implmentation may crash ?
+    GetNextEventSim().Cancel ();
+    ForceLocalEventIntoSimulator ( GetNextEvent());
+  }
+  else {
+    
+    NS_LOG_DEBUG ("No event pending/registered in Simulator.");
   }
   
 }
@@ -325,12 +339,11 @@ Node::ScheduleNextEventOnSimulator (
 
 //  &localEvent
 //  EventId localEvent
-// TODO ideally should be replaced with a simple Clock
-  Ptr<ClockPerfect> clock = GetObject<ClockPerfect>();
+
 
 
   // Do the conversion eventSimTime <<
-  Time eventSimTime;
+//  Time eventSimTime;
 
   /**
    * \returns a pointer to the next earliest event. The caller
@@ -378,9 +391,18 @@ Node::ScheduleNextEventOnSimulator (
     return;
   }
 
-  
+  ForceLocalEventIntoSimulator (nodeEventId);
+}
 
-//    Time eventSimTime;
+
+void 
+Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+  Time eventSimTime;
+// TODO ideally should be replaced with a simple Clock
+  Ptr<ClockPerfect> clock = GetObject<ClockPerfect>();
+
   // we need to schedule
   bool res = clock->LocalTimeToSimulatorTime ( Time (nodeEventId.GetTs()), &eventSimTime);
   NS_ASSERT_MSG ( res, "Could not compute timelapse" );

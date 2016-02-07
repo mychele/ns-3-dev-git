@@ -301,6 +301,11 @@ public:
 
 protected:
   /**
+   *
+   */
+  void ForceLocalEventIntoSimulator (EventId nodeEventId);
+
+  /**
    * The dispose method. Subclasses must override this method
    * and must chain up to it by calling Node::DoDispose at the
    * end of their own DoDispose method.

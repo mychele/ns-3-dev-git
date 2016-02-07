@@ -160,19 +160,21 @@ ClockPerfect::SetRawFrequency (double freq)
 ////		exit(1);
 //        return false;
 //	}
-    NS_ASSERT(freq > 0);
+    
     NS_LOG_INFO ("New frequency=" << freq << " oldFreq=" << m_rawFrequency);
+    NS_ASSERT(freq > 0);
     double oldFreq = m_rawFrequency;
 
 
 
     // Move to a private function UpdateTime ?
     // Can't use
-    Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
+    Time currentTime = GetLastTimeUpdateSim () + AbsToLocalDuration(Simulator::Now () - GetLastTimeUpdateSim ());
 //    Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
-    m_timeOfLastUpdate = std::make_pair( currentTime, Simulator::Now() );
+    m_timeOfLastUpdate = std::make_pair (currentTime, Simulator::Now() );
     m_rawFrequency = freq;
 
+    NotifyNewParameters ();
 //    NotifyNewFrequency(oldFreq, m_rawFrequency);
     return true;
 }
@@ -181,14 +183,14 @@ Time
 ClockPerfect::GetLastTimeUpdateLocal () const
 {
     //!
-    return m_timeOfLastUpdate.Get().first;
+    return m_timeOfLastUpdate.Get ().first;
 }
 
 Time
 ClockPerfect::GetLastTimeUpdateSim () const
 {
     //!
-    return m_timeOfLastUpdate.Get().second;
+    return m_timeOfLastUpdate.Get ().second;
 }
 
 //void
@@ -200,7 +202,7 @@ ClockPerfect::GetLastTimeUpdateSim () const
 Time
 ClockPerfect::GetTime()
 {
-    NS_LOG_FUNCTION(this);
+    NS_LOG_FUNCTION (this);
 
     // TODO display both separately
 //    Time res = Simulator::Now();
@@ -215,7 +217,7 @@ ClockPerfect::GetTime()
 }
 
 int
-ClockPerfect::SetTime(Time)
+ClockPerfect::SetTime (Time)
 {
     //! Noop, do nothing
     NS_LOG_WARN("SetTime has no meaning for the perfect clock");
@@ -223,14 +225,14 @@ ClockPerfect::SetTime(Time)
 }
 
 double
-ClockPerfect::GetRawFrequency() const
+ClockPerfect::GetRawFrequency () const
 {
     return m_rawFrequency;
 }
 
 
 void
-ClockPerfect::ResetSingleShotParameters()
+ClockPerfect::ResetSingleShotParameters ()
 {
     //!
     m_ss_slew = 0;
