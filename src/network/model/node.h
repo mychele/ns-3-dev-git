@@ -257,7 +257,13 @@ public:
    */
   EventId DoSchedule (Time const &time, EventImpl *event);
 
-  void ExecOnNode (EventImpl* event);
+  /**
+   * We need this wrapper function, in order to schedule on Simulator::
+   * the next event to come
+   * inspired by DefaultSimulatorImpl::ProcessOneEvent 
+   */
+//  void ExecOnNode (EventImpl* event);
+  void ExecOnNode ();
 
   /** 
    * return local next event

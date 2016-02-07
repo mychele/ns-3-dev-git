@@ -147,6 +147,8 @@ NodeEventsTestCase::DoSetup (void)
             &NodeEventsTestCase::GenericEvent, this, Time (1), Time (1));
     EventId eventB = m_node->Schedule ( Time(2), 
             &NodeEventsTestCase::GenericEvent, this, Time (2), Time (2) );
+
+    m_expectedEventNumber = 2;
 }
 
 void

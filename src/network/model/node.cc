@@ -321,7 +321,7 @@ Node::ScheduleNextEventOnSimulator (
                     )
 {
   // TODO add times
-  NS_LOG_DEBUG ("toto");
+  NS_LOG_FUNCTION ("toto");
 
 //  &localEvent
 //  EventId localEvent
@@ -338,6 +338,11 @@ Node::ScheduleNextEventOnSimulator (
    *
    * This method cannot be invoked if the list is empty.
    */
+   if (m_events->IsEmpty ()) 
+    {
+      NS_LOG_DEBUG ( "No event in queue. Stop here." );
+      return;
+    }
   Scheduler::Event nextEvent = m_events->PeekNext ();
   
   EventId nodeEventId ( nextEvent.impl, nextEvent.key.m_ts, nextEvent.key.m_context, nextEvent.key.m_uid);
@@ -346,19 +351,19 @@ Node::ScheduleNextEventOnSimulator (
   //!
   if (GetNextEventSim ().IsRunning ())
   {
-    NS_LOG_DEBUG ( "An event is already scheduled" );
+    NS_LOG_DEBUG ( "An event is already scheduled. at local Ts=" << GetNextEvent ().GetTs () );
     
     // if the newly scheduled event should be scheduled before
     if( nodeEventId.GetTs () < GetNextEvent ().GetTs ())
     {
-        NS_LOG_DEBUG ( "There exists an event to be scheduled before " );
+        NS_LOG_DEBUG ( "Replace current first event with a new one." );
         // we should cancel the running one
         GetNextEventSim ().Cancel ();
 //        Simulator::Cancel (GetNextEventSim ());
         enqueueNextEvent = true;
      }
      else {
-        NS_LOG_DEBUG ( "" );
+        NS_LOG_DEBUG ( "Currently scheduled happens first. Do nothing." );
      }
   }
   else 
@@ -369,7 +374,7 @@ Node::ScheduleNextEventOnSimulator (
 
   // if we are not the next event=, abort here,
   if (!enqueueNextEvent) {
-    NS_LOG_DEBUG ( "No event to queue" );
+    NS_LOG_DEBUG ( "Don't queue first" );
     return;
   }
 
@@ -393,17 +398,23 @@ Node::ScheduleNextEventOnSimulator (
   NS_LOG_DEBUG ( "Enqueuing event to Simulator in " << eventSimTime - Simulator::Now() );
   EventId simEventId = Simulator::Schedule ( 
                           eventSimTime - Simulator::Now(), 
-                          &Node::ExecOnNode, this, nodeEventId.PeekEventImpl());
+                          &Node::ExecOnNode, this
+//                          , nodeEventId.PeekEventImpl()
+                    );
   m_nextEvent = std::make_pair (nodeEventId, simEventId);
 }
 
 void 
-Node::ExecOnNode (EventImpl* event)
+Node::ExecOnNode ()
 {
-  NS_LOG_DEBUG (event);
-  NS_ASSERT (event);
-  event->Invoke ();
-  event->Unref ();
+  NS_LOG_FUNCTION ( Simulator::Now() );
+//  NS_ASSERT (event);
+//  
+  Scheduler::Event next = m_events->RemoveNext();
+  NS_ASSERT (next.key.m_ts >= Simulator::Now());
+  
+  next.impl->Invoke ();
+  next.impl->Unref ();
   // TODO mark event as finisehd ?
   // Now that it's finished, check if we need to add another one
   ScheduleNextEventOnSimulator ();
@@ -426,6 +437,8 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
   // In all cases I insert the event
   Scheduler::Event newEvent; // rename into newEvent
   newEvent.impl = event;
+  // TODO check time if we need to add sthg
+  NS_LOG_DEBUG ( "DoSchedule at localtime=" << eventLocalTime);
   newEvent.key.m_ts = (uint64_t) eventLocalTime.GetTimeStep ();
   newEvent.key.m_context = this->GetId();
 //  ev.key.m_uid = Simulator::GetImplementation()->GetFreeUid();
@@ -435,7 +448,7 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
   // m_unscheduledEvents++;
   m_events->Insert (newEvent);
 
-  
+
   EventId nodeEventId (event, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
 
    ScheduleNextEventOnSimulator ();
