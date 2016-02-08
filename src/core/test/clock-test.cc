@@ -220,6 +220,7 @@ void
 ClockRawFrequencyTestCase::DoSetup (void)
 {
     std::cout << "Setup" << std::endl;
+    SetupClock ();
 
     // Check that at simulator time AbsoluteTime, local time is RelativeTime
     // hence when the simulator time is 2 
@@ -240,7 +241,7 @@ ClockRawFrequencyTestCase::DoRun (void)
 {
 
 
-    NS_TEST_ASSERT_MSG_EQ (m_clock->GetRawFrequency (), m_frequency, "Wrong raw frequency");
+    NS_TEST_ASSERT_MSG_EQ (m_clock->GetRawFrequency (), m_frequency, "Wrong raw frequency. Did you call SetupClock ?");
 
 //    m_clock->SetFrequencyChangeCallback( MakeCallback(&ClockRawFrequencyTestCase::OnNewFrequency, this));
 
