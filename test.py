@@ -575,7 +575,10 @@ def sigint_hook(signal, frame):
 # and use that result.
 #
 def read_waf_config():
-    for line in open(".lock-waf_" + sys.platform + "_build", "rt"):
+    #  
+    lock_file = ".lock-waf_" + sys.platform + "_build"
+
+    for line in open(lock_file, "rt"):
         if line.startswith("top_dir ="):
             key, val = line.split('=')
             top_dir = eval(val.strip())
@@ -1007,6 +1010,23 @@ class worker_thread(threading.Thread):
 
                 self.output_queue.put(job)
 
+def list_tests(constrain=None):
+    if constrain:
+        path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --print-test-types --test-type=%s" % constrain)
+    else:
+        path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --print-test-types")
+    (rc, standard_out, standard_err, et) = run_job_synchronously(path_cmd, os.getcwd(), False, False)
+    if rc != 0:
+        # This is usually a sign that ns-3 crashed or exited uncleanly
+        print('test.py error:  test-runner return code returned {}'.format(rc))
+        print('To debug, try running {}\n'.format('\'./waf --run \"test-runner --print-test-name-list\"\''))
+        return
+    if isinstance(standard_out, bytes):
+        standard_out = standard_out.decode()
+    list_items = standard_out.split('\n')
+    list_items.sort()
+    return list_items
+
 #
 # This is the main function that does the work of interacting with the
 # test-runner itself.
@@ -1100,7 +1120,7 @@ def run_tests():
         ns3_runnable_programs = get_list_from_file(build_status_file, "ns3_runnable_programs")
         ns3_runnable_scripts = get_list_from_file(build_status_file, "ns3_runnable_scripts")
     else:
-        print('The build status file was not found.  You must do waf build before running test.py.', file=sys.stderr)
+        print('The build status file was not found. You must do waf build before running test.py.', file=sys.stderr)
         sys.exit(2)
 
     #
@@ -1170,24 +1190,25 @@ def run_tests():
     if options.kinds:
         path_cmd = os.path.join("utils", test_runner_name + " --print-test-type-list")
         (rc, standard_out, standard_err, et) = run_job_synchronously(path_cmd, os.getcwd(), False, False)
-        print(standard_out.decode())
+        print(standard_out)
 
     # TODO move that to a function
     if options.list:
-        if len(options.constrain):
-            path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --print-test-types --test-type=%s" % options.constrain)
-        else:
-            path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --print-test-types")
-        (rc, standard_out, standard_err, et) = run_job_synchronously(path_cmd, os.getcwd(), False, False)
-        if rc != 0:
-            # This is usually a sign that ns-3 crashed or exited uncleanly
-            print(('test.py error:  test-runner return code returned {}'.format(rc)))
-            print(('To debug, try running {}\n'.format('\'./waf --run \"test-runner --print-test-name-list\"\'')))
-            return
-        if isinstance(standard_out, bytes):
-            standard_out = standard_out.decode()
-        list_items = standard_out.split('\n')
-        list_items.sort()
+        # if len(options.constrain):
+            # path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --print-test-types --test-type=%s" % options.constrain)
+        # else:
+            # path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --print-test-types")
+        # (rc, standard_out, standard_err, et) = run_job_synchronously(path_cmd, os.getcwd(), False, False)
+        # if rc != 0:
+            # # This is usually a sign that ns-3 crashed or exited uncleanly
+            # print(('test.py error:  test-runner return code returned {}'.format(rc)))
+            # print(('To debug, try running {}\n'.format('\'./waf --run \"test-runner --print-test-name-list\"\'')))
+            # return
+        # if isinstance(standard_out, bytes):
+            # standard_out = standard_out.decode()
+        # list_items = standard_out.split('\n')
+        # list_items.sort()
+        list_items = list_tests(options.constrain)
         print("Test Type    Test Name")
         print("---------    ---------")
         for item in list_items:
