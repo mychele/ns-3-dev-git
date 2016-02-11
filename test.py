@@ -20,7 +20,7 @@ from __future__ import print_function
 import os
 import sys
 import time
-import optparse
+import argparse
 import subprocess
 import threading
 import signal
@@ -1172,6 +1172,7 @@ def run_tests():
         (rc, standard_out, standard_err, et) = run_job_synchronously(path_cmd, os.getcwd(), False, False)
         print(standard_out.decode())
 
+    # TODO move that to a function
     if options.list:
         if len(options.constrain):
             path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list --print-test-types --test-type=%s" % options.constrain)
@@ -1861,72 +1862,74 @@ def run_tests():
         return 1 # catchall for general errors
 
 def main(argv):
-    parser = optparse.OptionParser()
-    parser.add_option("-b", "--buildpath", action="store", type="string", dest="buildpath", default="",
+    parser = argparse.ArgumentParser(description='ns3 test helper')
+    parser.add_argument("-b", "--buildpath", action="store", type=str, dest="buildpath", default="",
                       metavar="BUILDPATH",
                       help="specify the path where ns-3 was built (defaults to the build directory for the current variant)")
 
-    parser.add_option("-c", "--constrain", action="store", type="string", dest="constrain", default="",
+    parser.add_argument("-c", "--constrain", action="store", choices=core_kinds + ["example"], dest="constrain", 
                       metavar="KIND",
                       help="constrain the test-runner by kind of test")
 
-    parser.add_option("-d", "--duration", action="store_true", dest="duration", default=False,
+    parser.add_argument("-d", "--duration", action="store_true", dest="duration", default=False,
                       help="print the duration of each test suite and example")
 
-    parser.add_option("-e", "--example", action="store", type="string", dest="example", default="",
+    parser.add_argument("-e", "--example", action="append", type=str, dest="example", default="",
                       metavar="EXAMPLE",
                       help="specify a single example to run (no relative path is needed)")
 
-    parser.add_option("-u", "--update-data", action="store_true", dest="update_data", default=False,
+    parser.add_argument("-u", "--update-data", action="store_true", dest="update_data", default=False,
                       help="If examples use reference data files, get them to re-generate them")
 
-    parser.add_option("-f", "--fullness", action="store", type="string", dest="fullness", default="QUICK",
+    parser.add_argument("-f", "--fullness", action="store", type=str, dest="fullness", default="QUICK",
                       metavar="FULLNESS",
                       help="choose the duration of tests to run: QUICK, EXTENSIVE, or TAKES_FOREVER, where EXTENSIVE includes QUICK and TAKES_FOREVER includes QUICK and EXTENSIVE (only QUICK tests are run by default)")
 
-    parser.add_option("-g", "--grind", action="store_true", dest="valgrind", default=False,
+    parser.add_argument("-g", "--grind", action="store_true", dest="valgrind", default=False,
                       help="run the test suites and examples using valgrind")
 
-    parser.add_option("-k", "--kinds", action="store_true", dest="kinds", default=False,
+    parser.add_argument("-k", "--kinds", action="store_true", dest="kinds", default=False,
                       help="print the kinds of tests available")
 
-    parser.add_option("-l", "--list", action="store_true", dest="list", default=False,
+    parser.add_argument("-l", "--list", action="store_true", dest="list", default=False,
                       help="print the list of known tests")
 
-    parser.add_option("-m", "--multiple", action="store_true", dest="multiple", default=False,
+    parser.add_argument("-m", "--multiple", action="store_true", dest="multiple", default=False,
                       help="report multiple failures from test suites and test cases")
 
-    parser.add_option("-n", "--nowaf", action="store_true", dest="nowaf", default=False,
+    parser.add_argument("-n", "--nowaf", action="store_true", dest="nowaf", default=False,
                       help="do not run waf before starting testing")
 
-    parser.add_option("-p", "--pyexample", action="store", type="string", dest="pyexample", default="",
+    parser.add_argument("-p", "--pyexample", action="store", type=str, dest="pyexample", default="",
                       metavar="PYEXAMPLE",
                       help="specify a single python example to run (with relative path)")
 
-    parser.add_option("-r", "--retain", action="store_true", dest="retain", default=False,
+    parser.add_argument("-r", "--retain", action="store_true", dest="retain", default=False,
                       help="retain all temporary files (which are normally deleted)")
 
-    parser.add_option("-s", "--suite", action="store", type="string", dest="suite", default="",
+    # TODO convert it to accumulator
+    parser.add_argument("-s", "--suite", action="append", type=str, dest="suite", default="",
                       metavar="TEST-SUITE",
-                      help="specify a single test suite to run")
+                      help="specify a test suite to run. Can appear several times")
 
-    parser.add_option("-t", "--text", action="store", type="string", dest="text", default="",
+    parser.add_argument("-t", "--text", action="store", type=str, dest="text", default="",
                       metavar="TEXT-FILE",
                       help="write detailed test results into TEXT-FILE.txt")
 
-    parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
+    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="print progress and informational messages")
 
-    parser.add_option("-w", "--web", "--html", action="store", type="string", dest="html", default="",
+    parser.add_argument("-w", "--web", "--html", action="store", type=str, dest="html", default="",
                       metavar="HTML-FILE",
                       help="write detailed test results into HTML-FILE.html")
 
-    parser.add_option("-x", "--xml", action="store", type="string", dest="xml", default="",
+    parser.add_argument("-x", "--xml", action="store", type=str, dest="xml", default="",
                       metavar="XML-FILE",
                       help="write detailed test results into XML-FILE.xml")
 
     global options
-    options = parser.parse_args()[0]
+    # TODO parse_known_args
+    options = parser.parse_args()
     signal.signal(signal.SIGINT, sigint_hook)
 
     return run_tests()
