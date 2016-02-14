@@ -1036,7 +1036,7 @@ def list_tests(test_runner_name, constrain=None):
 #
 def run_tests():
 
-    if options.verbose:
+    if options.debug:
         log.setLevel(logging.DEBUG)
     #
     # Pull some interesting configuration information out of waf, primarily
@@ -1896,7 +1896,7 @@ def main(argv):
     parser.add_argument("-u", "--update-data", action="store_true", dest="update_data", default=False,
                       help="If examples use reference data files, get them to re-generate them")
 
-    parser.add_option("-f", "--fullness", action="store", choice=["QUICK", "EXTENSIVE", "TAKES_FOREVER"], dest="fullness", default="QUICK",
+    parser.add_argument("-f", "--fullness", action="store", choices=["QUICK", "EXTENSIVE", "TAKES_FOREVER"], dest="fullness", default="QUICK",
                       metavar="FULLNESS",
                       help="choose the duration of tests to run: QUICK, EXTENSIVE, or TAKES_FOREVER, where EXTENSIVE includes QUICK and TAKES_FOREVER includes QUICK and EXTENSIVE (only QUICK tests are run by default)")
 
@@ -1931,7 +1931,10 @@ def main(argv):
                       metavar="TEXT-FILE",
                       help="write detailed test results into TEXT-FILE.txt")
 
-    parser.add_argument("-v", "--verbose", action="store_true", dest="verbose", default=False,
+    parser.add_argument("-D", "--debug", action="store_true", default=False,
+                      help="print progress and informational messages")
+
+    parser.add_argument("-v", "--verbose", action="store_true", default=False,
                       help="print progress and informational messages")
 
     parser.add_argument("-w", "--web", "--html", action="store", type=str, dest="html", default="",
