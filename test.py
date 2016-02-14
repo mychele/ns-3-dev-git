@@ -1037,7 +1037,7 @@ def list_tests(test_runner_name, constrain=None):
 def run_tests():
 
     if options.verbose:
-        log.setDebugLevel(logging.DEBUG)
+        log.setLevel(logging.DEBUG)
     #
     # Pull some interesting configuration information out of waf, primarily
     # so we can know where executables can be found, but also to tell us what
@@ -1402,17 +1402,14 @@ def run_tests():
             job.set_cwd(os.getcwd())
             job.set_basedir(os.getcwd())
             job.set_tempdir(testpy_output_dir)
-            if (options.multiple):
-                multiple = ""
-            else:
-                multiple = " --stop-on-failure"
-            if (len(options.fullness)):
-                fullness = options.fullness.upper()
-                fullness = " --fullness=%s" % fullness
-            else:
-                fullness = " --fullness=QUICK"
 
-            path_cmd = os.path.join("utils", test_runner_name + " --test-name=%s%s%s" % (test, multiple, fullness))
+            path_cmd = os.path.join("utils", test_runner_name)
+            path_cmd += " --test-name={name} {multiple} {fullness} {verbose}".format(
+                name=test,
+                multiple= "" if options.multiple else " --stop-on-failure",
+                fullness=options.fullness,
+                verbose="--verbose" if options.verbose else ""
+            )
 
             job.set_shell_command(path_cmd)
 
@@ -1899,7 +1896,7 @@ def main(argv):
     parser.add_argument("-u", "--update-data", action="store_true", dest="update_data", default=False,
                       help="If examples use reference data files, get them to re-generate them")
 
-    parser.add_argument("-f", "--fullness", action="store", type=str, dest="fullness", default="QUICK",
+    parser.add_option("-f", "--fullness", action="store", choice=["QUICK", "EXTENSIVE", "TAKES_FOREVER"], dest="fullness", default="QUICK",
                       metavar="FULLNESS",
                       help="choose the duration of tests to run: QUICK, EXTENSIVE, or TAKES_FOREVER, where EXTENSIVE includes QUICK and TAKES_FOREVER includes QUICK and EXTENSIVE (only QUICK tests are run by default)")
 
