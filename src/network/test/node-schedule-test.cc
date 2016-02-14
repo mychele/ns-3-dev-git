@@ -185,17 +185,21 @@ NodeEventsTestCase::DoSetup (void)
 {
     SetupNode (m_node, m_clockRawFrequency);
 
+//    1000000000.0ns/1
+    int64_t data = 1000000000;
+    double freq= 1;
+    NS_LOG_UNCOND (data/freq);
     // Schedule in local time
 //    EventId eventA = m_node->Schedule (Time(1), 
 //            &NodeEventsTestCase::GenericEvent, this, 
 //            Time (1), Time (1));
             
-    EventId a = ScheduleCheck ( Time (1), Time (1) );
-    EventId b = ScheduleCheck ( Time (2), Time (2) );
-//    EventId eventB = m_node->Schedule ( Time(2), 
-//            &NodeEventsTestCase::GenericEvent, this, Time (2), Time (2) );
+    EventId a = ScheduleCheck ( Seconds (1), Seconds (1) );
+    EventId b = ScheduleCheck ( Seconds (2), Seconds (2) );
+//    EventId eventB = m_node->Schedule ( Seconds(2), 
+//            &NodeEventsTestCase::GenericEvent, this, Seconds (2), Seconds (2) );
     
-    EventId c = ScheduleCheck ( Time (4), Time (4) );
+    EventId c = ScheduleCheck ( Seconds (4), Seconds (4) );
     m_node->Cancel (c);
 //    CancelEvent (c);
 
@@ -331,16 +335,20 @@ NodeChangeClockEventsTestCase::DoSetup (void)
 //            &NodeEventsTestCase::GenericEvent, this, 
 //            Time (1), Time (1));
             
-    EventId a = ScheduleCheck ( Time (1), Time (1) );
-    EventId b = ScheduleCheck ( Time (2), Time (2) );
+    EventId a = ScheduleCheck ( Seconds (1), Seconds (1) );
+    EventId b = ScheduleCheck ( Seconds (2), Seconds (2) );
     
-//    EventId eventB = m_node->Schedule ( Time(2), 
-//            &NodeEventsTestCase::GenericEvent, this, Time (2), Time (2) );
+//    EventId eventB = m_node->Schedule ( Seconds(2), 
+//            &NodeEventsTestCase::GenericEvent, this, Seconds (2), Seconds (2) );
     // At local time 3 (=> sim time = 3), time in the node should elapse twice faster
-    ScheduleNewClockFrequency(Time(3), 2);
-    ScheduleCheck(Time(4), Time (5));
+    ScheduleNewClockFrequency(Seconds(3), 2);
+    
+    // BE CAREFUL HERE, it fails GetResolution
+    // hence when 2 seconds elapsed in simulator time (From 3 to 5, then 1 second only should have 
+    // elapsed in the simulator time hence 3 +1 => 4
+    ScheduleCheck(Seconds(5), Seconds (4));
 
-//    EventId c = ScheduleCheck ( Time (4), Time (4) );
+//    EventId c = ScheduleCheck ( Seconds (4), Seconds (4) );
 //    m_node->Cancel (c);
 //    CancelEvent (c);
 
@@ -353,14 +361,50 @@ Idea of this test is :
 -schedule an event
 -change the clock at some point in time
 -check that the previous event is correctly re-scheduled when the clock frequency changed
-*/
-#if 0
 
-#endif
+At some point the clock wil lchange frequency
+**/
+class CheckForAutomaticRescheduling : public NodeEventsTestCase
+{
+public:
+    CheckForAutomaticRescheduling (ObjectFactory schedulerFactory);
+protected:
+    virtual void DoSetup (void);
+};
 
 
 
+void
+CheckForAutomaticRescheduling::DoSetup (void)
+{
+    SetupNode (m_node, m_clockRawFrequency);
 
+    // Schedule in local time
+//    EventId eventA = m_node->Schedule (Time(1), 
+//            &NodeEventsTestCase::GenericEvent, this, 
+//            Time (1), Time (1));
+            
+    EventId b = ScheduleCheck ( Seconds (2), Seconds (2) );
+    EventId a = ScheduleCheck ( Seconds (1), Seconds (1) );
+    
+    
+//    EventId eventB = m_node->Schedule ( Seconds(2), 
+//            &NodeEventsTestCase::GenericEvent, this, Seconds (2), Seconds (2) );
+    // At local time 3 (=> sim time = 3), time in the node should elapse twice faster
+    ScheduleNewClockFrequency(Seconds(3), 2);
+    ScheduleNewClockFrequency(Seconds(3), 2);
+    
+    // BE CAREFUL HERE, it fails GetResolution
+    // hence when 2 seconds elapsed in simulator time (From 3 to 5, then 1 second only should have 
+    // elapsed in the simulator time hence 3 +1 => 4
+    ScheduleCheck(Seconds(5), Seconds (4));
+
+//    EventId c = ScheduleCheck ( Seconds (4), Seconds (4) );
+//    m_node->Cancel (c);
+//    CancelEvent (c);
+
+    m_expectedEventNumber = 3;
+}
 
 
 /**

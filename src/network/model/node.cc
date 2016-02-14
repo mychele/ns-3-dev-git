@@ -381,7 +381,7 @@ Node::ScheduleNextEventOnSimulator (
   }
   else 
   {
-    NS_LOG_DEBUG ( "No event scheduled yet" );
+    NS_LOG_DEBUG ( "No event running in Simulator yet" );
     enqueueNextEvent = true;
   }
 

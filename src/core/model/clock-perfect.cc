@@ -162,7 +162,7 @@ ClockPerfect::SetRawFrequency (double freq)
 //	}
     
     NS_LOG_INFO ("New frequency=" << freq << " oldFreq=" << m_rawFrequency);
-    NS_ASSERT(freq > 0);
+    NS_ASSERT_MSG (freq > 0, "Can't set a negative frequency");
     double oldFreq = m_rawFrequency;
 
 
@@ -272,9 +272,10 @@ ClockPerfect::SimulatorTimeToLocalTime (Time absTime, Time *localTime)
     NS_LOG_FUNCTION(absTime);
 
     NS_ASSERT_MSG(absTime >= GetLastTimeUpdateSim(), "Can't convert to a time in the past");
-
-    *localTime = AbsToLocalDuration( absTime - GetLastTimeUpdateSim());
-    *localTime += GetLastTimeUpdateLocal() ;
+    Time localDuration;
+    localDuration = AbsToLocalDuration ( absTime - GetLastTimeUpdateSim());
+    *localTime = GetLastTimeUpdateLocal() + localDuration;
+    
     return true;
 }
 
@@ -284,18 +285,20 @@ ClockPerfect::SimulatorTimeToLocalTime (Time absTime, Time *localTime)
 bool
 ClockPerfect::LocalTimeToSimulatorTime (Time localTime, Time *absTime)
 {
-    NS_LOG_FUNCTION(localTime);
+    NS_LOG_FUNCTION (localTime);
     NS_ASSERT_MSG (localTime >= GetLastTimeUpdateLocal(), "Can't convert to a time in the past");
 //    if(localTime < GetLastTimeUpdateLocal()) {
 //        NS_LOG_WARN("Requested time in the past " << localTime << " < " << GetLastTimeUpdateLocal());
 //        return false;
 //    }
 
-//    NS_ASSERT()
-
+    Time absDuration;
     // Returns
-    LocalToAbsDuration (localTime - GetLastTimeUpdateLocal(), absTime);
-    *absTime += GetLastTimeUpdateSim();
+    LocalToAbsDuration (localTime - GetLastTimeUpdateLocal(), &absDuration);
+    
+    
+    *absTime = GetLastTimeUpdateSim () + absDuration;
+    NS_LOG_DEBUG ( *absTime << " (absTime) =" << GetLastTimeUpdateSim() << " (LastTimeUpdateSim) + " << absDuration << " (absDuration)");
     return true;
 }
 
@@ -304,18 +307,21 @@ bool
 //ClockPerfect::LocalDurationToAbsDuration(Time duration, Time& absDuration)
 ClockPerfect::LocalToAbsDuration (Time localDuration, Time *absDuration)
 {
-    NS_LOG_FUNCTION(localDuration);
+    NS_LOG_FUNCTION (localDuration);
 //
 //    NS_ASSERT_MSG(localStart > GetLastTimeUpdateLocal(), "We can't remember the frequency back then");
-
-    *absDuration = localDuration / GetTotalFrequency();
+    NS_LOG_DEBUG ( localDuration << "/" << GetTotalFrequency());
+    *absDuration = localDuration / GetTotalFrequency ();
+    NS_LOG_DEBUG ( *absDuration << " (absDuration)");
     return true;
 }
 
+
+// TODO should it be reflected in Simulator ? no 
 int 
 ClockPerfect::InjectOffset (Time delta) 
 {
-    //
+    // TODO refresh
     m_timeOfLastUpdate.Set (std::make_pair( GetTime () + delta, Simulator::Now()) );
 }
 
@@ -323,7 +329,7 @@ double
 ClockPerfect::GetTotalFrequency () const
 {
     //!
-    return m_ss_slew + m_rawFrequency;
+    return m_rawFrequency;
 }
 
 //, Time& localDuration

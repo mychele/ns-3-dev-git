@@ -172,6 +172,9 @@ private:
 
 	// TODO swhould be a traced Value so that node can Trace
 	// node should be made friend then
+	/**
+	 it's more of a drift
+	 */
 	TracedValue<double> m_rawFrequency;  //!< m_node should connect to it
 //	double m_maxFrequency;
 //	double m_minFrequency;

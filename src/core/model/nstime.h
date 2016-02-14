@@ -767,6 +767,7 @@ inline Time
 operator / (const Time & lhs, const T & rhs)
  {
    Time res = lhs;
+   NS_ASSERT_MSG ( ((res.m_data / rhs) != 0) || (res.m_data == 0), "Resolution too low for this computation");
    res.m_data /= rhs;
    return res;
  }

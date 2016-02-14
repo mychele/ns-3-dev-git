@@ -1362,7 +1362,7 @@ def run_tests():
             else:
                 fullness = " --fullness=QUICK"
 
-            path_cmd = os.path.join("utils", test_runner_name + " --test-name=%s%s%s" % (test, multiple, fullness))
+            path_cmd = os.path.join("utils", test_runner_name + " --test-name=%s%s%s --verbose" % (test, "", fullness))
 
             job.set_shell_command(path_cmd)
 

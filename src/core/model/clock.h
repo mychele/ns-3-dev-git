@@ -85,6 +85,21 @@ public:
     virtual Time GetTime () = 0;
 
     /**
+     * Skew correponds to the difference in time between destination and source
+     * when called
+     * TODO pass a Clock to it
+     difference between the readings of two clocks
+     */
+//    virtual Time GetSkew (Ptr<Clock>);
+    
+    /**
+     * difference in reading between a clock and a nominal
+     * perfect reference clock per unit of time of the reference clock
+     */
+//     typically 10 -6 seconds/second = 1 sec in 11.6 days
+//    GetDrift ();
+    
+    /**
      * reestablish later ?
      */
 //    virtual int SetTime (Time) = 0;
