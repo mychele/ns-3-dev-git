@@ -599,7 +599,7 @@ def read_waf_config():
         for item in interesting_config_items:
             if line.startswith(item):
                 exec(line, globals())
-                log.info("%s ==" % item, eval(item))
+                log.info("%s == %r" % (item, eval(item)))
 
 #
 # It seems pointless to fork a process to run waf to fork a process to run
