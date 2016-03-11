@@ -443,6 +443,12 @@ Node::ExecOnNode ()
   ScheduleNextEventOnSimulator ();
 }
 
+EventId 
+Node::Schedule (Time const &timeOffset, EventImpl *event) 
+{
+    return DoSchedule( timeOffset, event);
+}
+
 EventId
 Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 {
@@ -450,7 +456,7 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 //  NS_ASSERT_MSG (SystemThread::Equals (m_main), "Simulator::Schedule Thread-unsafe invocation!");
 
 
-  Time localTime = GetLocalTime();
+  Time localTime = GetLocalTime ();
   Time eventLocalTime = localTime + timeOffset;
 
 
@@ -495,12 +501,13 @@ Node::ScheduleNow (EventImpl *event)
     return DoSchedule(Time(0), event);
 }
 
+
 void
-Node::Remove (const EventId &id)
+Node::Remove (EventId &id)
 {
     //!
-    NS_FATAL_ERROR ("not implemented yet");
-//    Cancel (id);
+    NS_LOG_WARN ("not implemented yet");
+    Cancel (id);
 }
 
 bool
