@@ -331,8 +331,7 @@ TODO return bool to know if it's finished ?
 Also the simulator should
  */
 void
-Node::ScheduleNextEventOnSimulator (
-                    )
+Node::ScheduleNextEventOnSimulator ()
 {
   NS_LOG_FUNCTION_NOARGS ();
 
@@ -409,7 +408,7 @@ Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
 //  }
 
   NS_LOG_DEBUG ( "Enqueuing event to Simulator in " << eventSimTime - Simulator::Now() );
-  EventId simEventId = Simulator::Schedule ( 
+  EventId simEventId = Simulator::ScheduleWithContext ( nodeEventId.GetContext(),
                           eventSimTime - Simulator::Now(), 
                           &Node::ExecOnNode, this
 //                          , nodeEventId.PeekEventImpl()
@@ -441,6 +440,12 @@ Node::Schedule (Time const &timeOffset, EventImpl *event)
     return DoSchedule( timeOffset, event);
 }
 
+void
+Node::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
+{
+
+}
+
 EventId
 Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 {
@@ -461,11 +466,11 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
   // TODO check time if we need to add sthg
   NS_LOG_DEBUG ( "DoSchedule at localtime=" << eventLocalTime);
   newEvent.key.m_ts = (uint64_t) eventLocalTime.GetTimeStep ();
-  newEvent.key.m_context = this->GetId();
+  newEvent.key.m_context = this->GetId ();
 //  ev.key.m_uid = Simulator::GetImplementation()->GetFreeUid();
   newEvent.key.m_uid = m_localUid;
   m_localUid++;
-  
+
   // TODO check that m_localUid did not wrap
   // m_unscheduledEvents++;
   m_events->Insert (newEvent);
@@ -490,7 +495,7 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
 EventId
 Node::ScheduleNow (EventImpl *event)
 {
-    return DoSchedule(Time(0), event);
+    return DoSchedule (Time (0), event);
 }
 
 
@@ -541,8 +546,6 @@ Node::IsExpired (const EventId &id) const
     }
 }
 
-
-//const
 void
 Node::Cancel (EventId &localId)
 {
