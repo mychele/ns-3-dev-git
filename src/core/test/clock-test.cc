@@ -224,6 +224,7 @@ ClockRawFrequencyTestCase::DoSetup (void)
 
     // Check that at simulator time AbsoluteTime, local time is RelativeTime
     // hence when the simulator time is 2 
+    // TODO make it more generic with error limits; in case we have a clock with some jitter
     CheckTime (Time (2), Time (1));
     CheckTime (Time (4), Time (2));
     // at simulator time 6, node time should be 3
@@ -248,6 +249,8 @@ ClockRawFrequencyTestCase::DoRun (void)
     Simulator::Run ();
 
     NS_TEST_EXPECT_MSG_EQ (m_notifiedFrequencyChanges, m_expectedFrequencyChange, "The frequency change callback has not always been called");
+
+    Simulator::Destroy ();
 
 };
 
@@ -294,14 +297,14 @@ public:
     {
 
         // Node clock is twice as slow as simulator's,
-        ClockRawFrequencyTestCase *test0 = new ClockRawFrequencyTestCase (0.5);
-
 //        test0->ChangeFrequency (Time (6), 1.0);
 
     //    test0->CheckTime (Time (7), Time (4));
 
         // Node's time goes twice faster than simulation time
-        AddTestCase ( test0, TestCase::QUICK);
+        AddTestCase ( new ClockRawFrequencyTestCase (0.5), TestCase::QUICK);
+        // TODO le test est concu pour une frequence précise, one peut pas le changer pr l'instant
+//        AddTestCase ( new ClockRawFrequencyTestCase (1), TestCase::QUICK);
     }
     
     {

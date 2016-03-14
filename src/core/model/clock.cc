@@ -79,8 +79,8 @@ Clock::LocalTimeToSimulatorTime ()
 {
     //!
     Time t;
-    bool ok = LocalTimeToSimulatorTime (GetTime(), &t);
-    NS_ASSERT(ok);
+    bool ok = LocalTimeToSimulatorTime (GetTime (), &t);
+    NS_ASSERT (ok);
     return t;
 }
 

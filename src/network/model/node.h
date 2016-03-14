@@ -230,6 +230,9 @@ public:
   // TODO remove ? setup callback in Clock
   virtual void SetClock (Ptr<Clock> clock);
 
+  // same as in DefaultSimulatorImpl
+  EventId Schedule (Time const &time, EventImpl *event);
+
   // C++11 quick & dirty hacks
   template<typename ... Types>
   EventId Schedule (Time const &timeOffset, Types... rest)
@@ -288,7 +291,8 @@ public:
   virtual void Cancel (EventId &id);
 
   // Implemented as a cancel
-  virtual void Remove (const EventId &id);
+// TODO reestablish const 
+  virtual void Remove (EventId &id);
   virtual bool IsExpired (const EventId &id) const;
 
   void SetScheduler (ObjectFactory schedulerFactory);
