@@ -94,7 +94,7 @@ public:
   virtual void Stop (void);
   virtual void Stop (Time const &time);
   virtual EventId Schedule (Time const &time, EventImpl *event);
-  virtual void ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event);
+  virtual EventId ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event);
   virtual EventId ScheduleNow (EventImpl *event);
   virtual EventId ScheduleDestroy (EventImpl *event);
   virtual void Remove (const EventId &ev);

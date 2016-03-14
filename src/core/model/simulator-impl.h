@@ -110,7 +110,7 @@ public:
    * \param event The event to schedule.
    * \returns A unique identifier for the newly-scheduled event.
    */
-  virtual void ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event) = 0;
+  virtual EventId ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event) = 0;
   /**
    * Schedule an event to run at the current virtual time.
    *

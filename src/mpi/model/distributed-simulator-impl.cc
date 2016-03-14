@@ -492,7 +492,7 @@ DistributedSimulatorImpl::Schedule (Time const &time, EventImpl *event)
   return EventId (event, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
 }
 
-void
+EventId
 DistributedSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
 {
   NS_LOG_FUNCTION (this << context << time.GetTimeStep () << m_currentTs << event);

@@ -259,7 +259,7 @@ Simulator::ScheduleNow (const Ptr<EventImpl> &ev)
 {
   return DoScheduleNow (GetPointer (ev));
 }
-void
+EventId
 Simulator::ScheduleWithContext (uint32_t context, const Time &time, EventImpl *impl)
 {
   return GetImpl ()->ScheduleWithContext (context, time, impl);
@@ -292,7 +292,7 @@ Simulator::Schedule (Time const &time, void (*f)(void))
   return DoSchedule (time, MakeEvent (f));
 }
 
-void
+EventId
 Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(void))
 {
   return ScheduleWithContext (context, time, MakeEvent (f));

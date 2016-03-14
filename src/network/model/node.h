@@ -245,7 +245,7 @@ public:
   /** 
    * Required for dce as dce pass node id via the context.
    */
-  virtual void ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event);
+  virtual EventId ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event);
 
   EventId ScheduleNow (EventImpl *event);
 

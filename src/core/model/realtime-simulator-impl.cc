@@ -538,7 +538,7 @@ RealtimeSimulatorImpl::Schedule (Time const &time, EventImpl *impl)
   return EventId (impl, ev.key.m_ts, ev.key.m_context, ev.key.m_uid);
 }
 
-void
+EventId
 RealtimeSimulatorImpl::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *impl)
 {
   NS_LOG_FUNCTION (this << context << time << impl);

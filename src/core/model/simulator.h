@@ -294,7 +294,7 @@ public:
    * @param obj the object on which to invoke the member method
    */
   template <typename MEM, typename OBJ>
-  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -306,7 +306,7 @@ public:
    * @param a1 the first argument to pass to the invoked method
    */
   template <typename MEM, typename OBJ, typename T1>
-  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -319,7 +319,7 @@ public:
    * @param a2 the second argument to pass to the invoked method
    */
   template <typename MEM, typename OBJ, typename T1, typename T2>
-  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -334,7 +334,7 @@ public:
    */
   template <typename MEM, typename OBJ, 
             typename T1, typename T2, typename T3>
-  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -350,7 +350,7 @@ public:
    */
   template <typename MEM, typename OBJ, 
             typename T1, typename T2, typename T3, typename T4>
-  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3, T4 a4);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3, T4 a4);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -367,7 +367,7 @@ public:
    */
   template <typename MEM, typename OBJ, 
             typename T1, typename T2, typename T3, typename T4, typename T5>
-  static void ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, 
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, 
                                    T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -376,7 +376,7 @@ public:
    * @param context user-specified context parameter
    * @param f the function to invoke
    */
-  static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(void));
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, void (*f)(void));
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -387,7 +387,7 @@ public:
    * @param a1 the first argument to pass to the function to invoke
    */
   template <typename U1, typename T1>
-  static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1), T1 a1);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1), T1 a1);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -399,7 +399,7 @@ public:
    * @param a2 the second argument to pass to the function to invoke
    */
   template <typename U1, typename U2, typename T1, typename T2>
-  static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2), T1 a1, T2 a2);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2), T1 a1, T2 a2);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -412,7 +412,7 @@ public:
    * @param a3 the third argument to pass to the function to invoke
    */
   template <typename U1, typename U2, typename U3, typename T1, typename T2, typename T3>
-  static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3), T1 a1, T2 a2, T3 a3);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3), T1 a1, T2 a2, T3 a3);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -427,7 +427,7 @@ public:
    */
   template <typename U1, typename U2, typename U3, typename U4, 
             typename T1, typename T2, typename T3, typename T4>
-  static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4), T1 a1, T2 a2, T3 a3, T4 a4);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4), T1 a1, T2 a2, T3 a3, T4 a4);
 
   /**
    * This method is thread-safe: it can be called from any thread.
@@ -443,7 +443,7 @@ public:
    */
   template <typename U1, typename U2, typename U3, typename U4, typename U5,
             typename T1, typename T2, typename T3, typename T4, typename T5>
-  static void ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
+  static EventId ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5);
 
   /** @} */
   
@@ -753,7 +753,7 @@ public:
   /** \copydoc SimulatorImpl::ScheduleWithContext
    * This method is thread-safe: it can be called from any thread.
    */
-  static void ScheduleWithContext (uint32_t context, const Time &time, EventImpl *event);
+  static EventId ScheduleWithContext (uint32_t context, const Time &time, EventImpl *event);
 
   /** \copydoc SimulatorImpl::ScheduleDestroy */
   static EventId ScheduleDestroy (const Ptr<EventImpl> &event);
@@ -896,78 +896,78 @@ EventId Simulator::Schedule (Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1,
 
 
 template <typename MEM, typename OBJ>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj)
 {
-  ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj));
+  return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj));
 }
 
 
 template <typename MEM, typename OBJ,
           typename T1>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1)
 {
   return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1));
 }
 
 template <typename MEM, typename OBJ,
           typename T1, typename T2>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2)
 {
   return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1, a2));
 }
 
 template <typename MEM, typename OBJ,
           typename T1, typename T2, typename T3>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3)
 {
   return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1, a2, a3));
 }
 
 template <typename MEM, typename OBJ,
           typename T1, typename T2, typename T3, typename T4>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3, T4 a4)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj, T1 a1, T2 a2, T3 a3, T4 a4)
 {
   return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4));
 }
 
 template <typename MEM, typename OBJ,
           typename T1, typename T2, typename T3, typename T4, typename T5>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj,
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, MEM mem_ptr, OBJ obj,
                                      T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
 {
   return ScheduleWithContext (context, time, MakeEvent (mem_ptr, obj, a1, a2, a3, a4, a5));
 }
 
 template <typename U1, typename T1>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1), T1 a1)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1), T1 a1)
 {
   return ScheduleWithContext (context, time, MakeEvent (f, a1));
 }
 
 template <typename U1, typename U2,
           typename T1, typename T2>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2), T1 a1, T2 a2)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2), T1 a1, T2 a2)
 {
   return ScheduleWithContext (context, time, MakeEvent (f, a1, a2));
 }
 
 template <typename U1, typename U2, typename U3,
           typename T1, typename T2, typename T3>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3), T1 a1, T2 a2, T3 a3)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3), T1 a1, T2 a2, T3 a3)
 {
   return ScheduleWithContext (context, time, MakeEvent (f, a1, a2, a3));
 }
 
 template <typename U1, typename U2, typename U3, typename U4,
           typename T1, typename T2, typename T3, typename T4>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4), T1 a1, T2 a2, T3 a3, T4 a4)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4), T1 a1, T2 a2, T3 a3, T4 a4)
 {
   return ScheduleWithContext (context, time, MakeEvent (f, a1, a2, a3, a4));
 }
 
 template <typename U1, typename U2, typename U3, typename U4, typename U5,
           typename T1, typename T2, typename T3, typename T4, typename T5>
-void Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
+EventId Simulator::ScheduleWithContext (uint32_t context, Time const &time, void (*f)(U1,U2,U3,U4,U5), T1 a1, T2 a2, T3 a3, T4 a4, T5 a5)
 {
   return ScheduleWithContext (context, time, MakeEvent (f, a1, a2, a3, a4, a5));
 }

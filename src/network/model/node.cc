@@ -440,10 +440,10 @@ Node::Schedule (Time const &timeOffset, EventImpl *event)
     return DoSchedule( timeOffset, event);
 }
 
-void
+EventId
 Node::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
 {
-
+    NS_FATAL_ERROR ("not implemented");
 }
 
 EventId
