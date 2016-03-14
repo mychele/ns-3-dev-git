@@ -334,16 +334,7 @@ void
 Node::ScheduleNextEventOnSimulator (
                     )
 {
-  // TODO add times
-  NS_LOG_FUNCTION ("toto");
-
-//  &localEvent
-//  EventId localEvent
-
-
-
-  // Do the conversion eventSimTime <<
-//  Time eventSimTime;
+  NS_LOG_FUNCTION_NOARGS ();
 
   /**
    * \returns a pointer to the next earliest event. The caller
@@ -381,7 +372,7 @@ Node::ScheduleNextEventOnSimulator (
   }
   else 
   {
-    NS_LOG_DEBUG ( "No event running in Simulator yet" );
+    NS_LOG_DEBUG ( "No node event running in Simulator yet" );
     enqueueNextEvent = true;
   }
 
@@ -404,7 +395,7 @@ Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
   Ptr<ClockPerfect> clock = GetObject<ClockPerfect>();
 
   // we need to schedule
-  bool res = clock->LocalTimeToSimulatorTime ( Time (nodeEventId.GetTs()), &eventSimTime);
+  bool res = clock->LocalTimeToSimulatorTime ( Time (nodeEventId.GetTs ()), &eventSimTime);
   NS_ASSERT_MSG ( res, "Could not compute timelapse" );
 
 //  // if nextEvent is replaced by a sooner one, then we need to remove it from scheduled
@@ -423,6 +414,7 @@ Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
                           &Node::ExecOnNode, this
 //                          , nodeEventId.PeekEventImpl()
                     );
+  NS_LOG_DEBUG ( "simEventId=" << simEventId.GetUid() );
   m_nextEvent = std::make_pair (nodeEventId, simEventId);
 }
 

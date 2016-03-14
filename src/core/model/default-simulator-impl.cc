@@ -140,10 +140,12 @@ DefaultSimulatorImpl::ProcessOneEvent (void)
   NS_ASSERT (next.key.m_ts >= m_currentTs);
   m_unscheduledEvents--;
 
-  NS_LOG_LOGIC ("handle " << next.key.m_ts);
+  NS_LOG_LOGIC ("handle Timestamp=" << next.key.m_ts);
   m_currentTs = next.key.m_ts;
   m_currentContext = next.key.m_context;
+  NS_LOG_UNCOND ("Setting m_currentContext=" << m_currentContext);
   m_currentUid = next.key.m_uid;
+  NS_LOG_UNCOND ("m_currentUid=" << m_currentUid);
   next.impl->Invoke ();
   next.impl->Unref ();
 
