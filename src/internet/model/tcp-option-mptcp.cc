@@ -38,6 +38,7 @@ NS_OBJECT_ENSURE_REGISTERED (TcpOptionMpTcpChangePriority );
 NS_OBJECT_ENSURE_REGISTERED (TcpOptionMpTcpDSS);
 NS_OBJECT_ENSURE_REGISTERED (TcpOptionMpTcpFail);
 NS_OBJECT_ENSURE_REGISTERED (TcpOptionMpTcpFastClose);
+NS_OBJECT_ENSURE_REGISTERED (TcpOptionMpTcpDeltaOWD);
 
 
 
@@ -50,34 +51,36 @@ NS_LOG_COMPONENT_DEFINE ("TcpOptionMpTcp");
 /////////////////////////////////////////////////////////
 ////////  Base for MPTCP options
 /////////////////////////////////////////////////////////
-TcpOptionMpTcpMain::TcpOptionMpTcpMain ()
-  : TcpOption ()
+TcpOptionMpTcp::TcpOptionMpTcp (uint8_t subtype)
+  : TcpOption (),
+  m_subtype (subtype)
+  
 {
   NS_LOG_FUNCTION (this);
 }
 
 
-TcpOptionMpTcpMain::~TcpOptionMpTcpMain ()
+TcpOptionMpTcp::~TcpOptionMpTcp ()
 {
   NS_LOG_FUNCTION (this);
 }
 
 TypeId
-TcpOptionMpTcpMain::GetInstanceTypeId (void) const
+TcpOptionMpTcp::GetInstanceTypeId (void) const
 {
   return GetTypeId ();
 }
 
 uint8_t
-TcpOptionMpTcpMain::GetKind (void) const
+TcpOptionMpTcp::GetKind (void) const
 {
   return TcpOption::MPTCP;
 }
 
 TypeId
-TcpOptionMpTcpMain::GetTypeId (void)
+TcpOptionMpTcp::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::TcpOptionMpTcpMain")
+  static TypeId tid = TypeId ("ns3::TcpOptionMpTcp")
     .SetParent<TcpOption> ()
   ;
   return tid;
@@ -85,7 +88,7 @@ TcpOptionMpTcpMain::GetTypeId (void)
 
 
 void
-TcpOptionMpTcpMain::Print (std::ostream &os) const
+TcpOptionMpTcp::Print (std::ostream &os) const
 {
   NS_ASSERT_MSG (false, " You should override TcpOptionMpTcp::Print function");
 //    os << "MPTCP option. You should override";
@@ -94,7 +97,7 @@ TcpOptionMpTcpMain::Print (std::ostream &os) const
 
 
 std::string
-TcpOptionMpTcpMain::SubTypeToString (const uint8_t& flags, const std::string& delimiter)
+TcpOptionMpTcp::SubTypeToString (const uint8_t& flags, const std::string& delimiter)
 {
   static const char* flagNames[8] = {
     "CAPABLE",
@@ -126,7 +129,7 @@ TcpOptionMpTcpMain::SubTypeToString (const uint8_t& flags, const std::string& de
 
 
 Ptr<TcpOption>
-TcpOptionMpTcpMain::CreateMpTcpOption (const uint8_t& subtype)
+TcpOptionMpTcp::CreateMpTcpOption (const uint8_t& subtype)
 {
   NS_LOG_FUNCTION_NOARGS();
   switch (subtype)
@@ -146,6 +149,8 @@ TcpOptionMpTcpMain::CreateMpTcpOption (const uint8_t& subtype)
     case MP_REMOVE_ADDR:
       return CreateObject<TcpOptionMpTcpRemoveAddress>();
     case MP_ADD_ADDR:
+      return CreateObject<TcpOptionMpTcpAddAddress>();    
+    case MP_DELTAOWD:
       return CreateObject<TcpOptionMpTcpAddAddress>();
     default:
       break;
@@ -156,14 +161,15 @@ TcpOptionMpTcpMain::CreateMpTcpOption (const uint8_t& subtype)
 }
 
 void
-TcpOptionMpTcpMain::SerializeRef (Buffer::Iterator& i) const
+TcpOptionMpTcp::SerializeRef (Buffer::Iterator& i, uint8_t lower_bits) const
 {
   i.WriteU8 (GetKind ());
   i.WriteU8 (GetSerializedSize ());
+  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)lower_bits);
 }
 
 uint32_t
-TcpOptionMpTcpMain::DeserializeRef (Buffer::Iterator& i) const
+TcpOptionMpTcp::DeserializeRef (Buffer::Iterator& i) const
 {
   uint8_t kind = i.ReadU8 ();
   uint32_t length = 0;
@@ -179,7 +185,7 @@ TcpOptionMpTcpMain::DeserializeRef (Buffer::Iterator& i) const
 ////////  MP_CAPABLE
 /////////////////////////////////////////////////////////
 TcpOptionMpTcpCapable::TcpOptionMpTcpCapable ()
-  : TcpOptionMpTcp (),
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_CAPABLE),
     m_version (0),
     m_flags ( HMAC_SHA1 ),
     m_senderKey (0),
@@ -198,7 +204,7 @@ TypeId
 TcpOptionMpTcpCapable::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOptionMpTcpCapable")
-    .SetParent<TcpOptionMpTcpMain> ()
+    .SetParent<TcpOptionMpTcp> ()
     .AddConstructor<TcpOptionMpTcpCapable> ()
   ;
   return tid;
@@ -254,9 +260,9 @@ TcpOptionMpTcpCapable::IsChecksumRequired () const
 void
 TcpOptionMpTcpCapable::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
+  TcpOptionMpTcp::SerializeRef (i, (0x0f & GetVersion ()));
 
-  i.WriteU8 ( (GetSubType () << 4) + (0x0f & GetVersion ()) ); // Kind
+//  i.WriteU8 ( (GetSubType () << 4) +  ); // Kind
   i.WriteU8 ( m_flags ); //
   i.WriteHtonU64 ( GetSenderKey () );
   if ( HasReceiverKey () )
@@ -269,7 +275,7 @@ TcpOptionMpTcpCapable::Serialize (Buffer::Iterator i) const
 uint32_t
 TcpOptionMpTcpCapable::Deserialize (Buffer::Iterator i)
 {
-  uint32_t length = TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length = TcpOptionMpTcp::DeserializeRef (i);
 
   NS_ASSERT ( length == 12 || length == 20 );
 
@@ -331,7 +337,7 @@ TcpOptionMpTcpJoin::GetTypeId (void)
 {
     //!
   static TypeId tid = TypeId ("ns3::TcpOptionMpTcpJoin")
-    .SetParent<TcpOptionMpTcpMain> ()
+    .SetParent<TcpOptionMpTcp> ()
     .AddConstructor<TcpOptionMpTcpJoin> ()
   ;
   return tid;
@@ -345,7 +351,7 @@ TcpOptionMpTcpJoin::GetInstanceTypeId (void) const
 }
 
 TcpOptionMpTcpJoin::TcpOptionMpTcpJoin ()
-  : TcpOptionMpTcp (),
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_JOIN),
     m_mode (Uninitialized),
     m_addressId (0),
     m_flags (0)
@@ -497,8 +503,8 @@ TcpOptionMpTcpJoin::SetNonce (const uint32_t& nonce)
 void
 TcpOptionMpTcpJoin::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
-  i.WriteU8 ( GetSubType () << 4 );
+  TcpOptionMpTcp::SerializeRef (i, 0);
+//  i.WriteU8 ( GetSubType () << 4 );
   if (m_mode & (Syn | SynAck))
     {
       i.WriteU8 (GetAddressId ());
@@ -554,7 +560,7 @@ TcpOptionMpTcpJoin::Deserialize (Buffer::Iterator i)
 {
   NS_ASSERT (m_mode == Uninitialized);
 
-  uint32_t length = TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length = TcpOptionMpTcp::DeserializeRef (i);
 
 
   uint8_t subtype_and_flags = i.ReadU8 ();
@@ -633,7 +639,7 @@ TcpOptionMpTcpJoin::GetTruncatedHmac () const
 //// MP_DSS
 ////
 TcpOptionMpTcpDSS::TcpOptionMpTcpDSS ()
-  : TcpOptionMpTcp (),
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_DSS),
     m_hasChecksum (false),
     m_checksum (0),
     m_flags (0),
@@ -656,7 +662,7 @@ TypeId
 TcpOptionMpTcpDSS::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOptionMpTcpDSS")
-    .SetParent<TcpOptionMpTcpMain> ()
+    .SetParent<TcpOptionMpTcp> ()
     .AddConstructor<TcpOptionMpTcpDSS> ()
   ;
   return tid;
@@ -812,8 +818,8 @@ TcpOptionMpTcpDSS::Print (std::ostream& os) const
 void
 TcpOptionMpTcpDSS::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
-  i.WriteU8 ( GetSubType () << 4);
+  TcpOptionMpTcp::SerializeRef (i, 0);
+//  i.WriteU8 ( GetSubType () << 4);
   i.WriteU8 ( m_flags );
 
   if ( m_flags & DataAckPresent)
@@ -883,7 +889,7 @@ uint32_t
 TcpOptionMpTcpDSS::Deserialize (Buffer::Iterator i)
 {
 
-  uint32_t length =  TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length =  TcpOptionMpTcp::DeserializeRef (i);
 
   uint8_t subtype_and_reserved = i.ReadU8 ();
 
@@ -1023,7 +1029,7 @@ TcpOptionMpTcpDSS::operator== (const TcpOptionMpTcpDSS& opt) const
 //// ADD_ADDR
 ////
 TcpOptionMpTcpAddAddress::TcpOptionMpTcpAddAddress ()
-  : TcpOptionMpTcp (),
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_ADD_ADDR),
     m_addressVersion (0),
     m_addrId (0)
 {
@@ -1040,7 +1046,7 @@ TypeId
 TcpOptionMpTcpAddAddress::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOptionMpTcpAddAddress")
-    .SetParent<TcpOptionMpTcpMain> ()
+    .SetParent<TcpOptionMpTcp> ()
     .AddConstructor<TcpOptionMpTcpAddAddress> ()
   ;
   return tid;
@@ -1120,11 +1126,11 @@ TcpOptionMpTcpAddAddress::GetAddressId () const
 void
 TcpOptionMpTcpAddAddress::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
+  TcpOptionMpTcp::SerializeRef (i, m_addressVersion);
 
   NS_ASSERT_MSG (m_addressVersion == 4 || m_addressVersion == 6, "Set an IP before serializing");
 
-  i.WriteU8 ( (GetSubType () << 4) + (uint8_t) m_addressVersion );
+//  i.WriteU8 ( (GetSubType () << 4) + (uint8_t) m_addressVersion );
   i.WriteU8 ( GetAddressId () );
 
 
@@ -1152,7 +1158,7 @@ TcpOptionMpTcpAddAddress::Serialize (Buffer::Iterator i) const
 uint32_t
 TcpOptionMpTcpAddAddress::Deserialize (Buffer::Iterator i)
 {
-  uint32_t length =  TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length =  TcpOptionMpTcp::DeserializeRef (i);
   NS_ASSERT ( length > 3);
 
   // TODO here we should be able to deserialize more than one
@@ -1209,7 +1215,7 @@ TcpOptionMpTcpAddAddress::operator== (const TcpOptionMpTcpAddAddress& opt) const
 ////
 
 TcpOptionMpTcpRemoveAddress::TcpOptionMpTcpRemoveAddress ()
-  : TcpOptionMpTcp ()
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_REMOVE_ADDR)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -1224,7 +1230,7 @@ TypeId
 TcpOptionMpTcpRemoveAddress::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOptionMpTcpRemoveAddress")
-    .SetParent<TcpOptionMpTcpMain> ()
+    .SetParent<TcpOptionMpTcp> ()
     .AddConstructor<TcpOptionMpTcpRemoveAddress> ()
   ;
   return tid;
@@ -1257,9 +1263,9 @@ TcpOptionMpTcpRemoveAddress::AddAddressId ( uint8_t addrId )
 void
 TcpOptionMpTcpRemoveAddress::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
+  TcpOptionMpTcp::SerializeRef (i, 0);
 
-  i.WriteU8 ( (GetSubType () << 4) );
+//  i.WriteU8 ( (GetSubType () << 4) );
   for (
     std::vector<uint8_t>::const_iterator it = m_addressesId.begin ();
     it != m_addressesId.end ();
@@ -1273,7 +1279,7 @@ TcpOptionMpTcpRemoveAddress::Serialize (Buffer::Iterator i) const
 uint32_t
 TcpOptionMpTcpRemoveAddress::Deserialize (Buffer::Iterator i)
 {
-  uint32_t length =  TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length =  TcpOptionMpTcp::DeserializeRef (i);
 
   NS_ASSERT_MSG ( length > 3, "You probably forgot to add AddrId to the MPTCP Remove option");
 
@@ -1323,7 +1329,7 @@ TcpOptionMpTcpRemoveAddress::operator== (const TcpOptionMpTcpRemoveAddress& opt)
 //// MP_PRIO change priority
 ////
 TcpOptionMpTcpChangePriority::TcpOptionMpTcpChangePriority ()
-  : TcpOptionMpTcp (),
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_PRIO),
     m_length (3),
     m_addrId (0),
     m_flags (false)
@@ -1343,7 +1349,7 @@ TypeId
 TcpOptionMpTcpChangePriority::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::TcpOptionMpTcpChangePriority")
-    .SetParent<TcpOptionMpTcpMain> ()
+    .SetParent<TcpOptionMpTcp> ()
     .AddConstructor<TcpOptionMpTcpChangePriority> ()
   ;
   return tid;
@@ -1391,9 +1397,9 @@ TcpOptionMpTcpChangePriority::GetAddressId () const
 void
 TcpOptionMpTcpChangePriority::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
+  TcpOptionMpTcp::SerializeRef (i, m_flags);
 
-  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)m_flags );
+//  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)m_flags );
   if ( EmbeddedAddressId () )
     {
       i.WriteU8 ( m_addrId );
@@ -1405,7 +1411,7 @@ uint32_t
 TcpOptionMpTcpChangePriority::Deserialize (Buffer::Iterator i)
 {
 
-  uint32_t length =  TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length =  TcpOptionMpTcp::DeserializeRef (i);
 
   NS_ASSERT ( length == 3 || length == 4 );
 
@@ -1466,7 +1472,7 @@ TcpOptionMpTcpChangePriority::operator== (const TcpOptionMpTcpChangePriority& op
 //// MP_FASTCLOSE to totally stop a flow of data
 ////
 TcpOptionMpTcpFastClose::TcpOptionMpTcpFastClose ()
-  : TcpOptionMpTcp (),
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_FASTCLOSE),
     m_peerKey (0)
 {
   NS_LOG_FUNCTION (this);
@@ -1509,9 +1515,9 @@ TcpOptionMpTcpFastClose::operator== (const TcpOptionMpTcpFastClose& opt) const
 void
 TcpOptionMpTcpFastClose::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
+  TcpOptionMpTcp::SerializeRef (i, 0);
 
-  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
+//  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
   i.WriteHtonU64 ( GetPeerKey () );
 }
 
@@ -1520,7 +1526,7 @@ uint32_t
 TcpOptionMpTcpFastClose::Deserialize (Buffer::Iterator i)
 {
 
-  uint32_t length =  TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length =  TcpOptionMpTcp::DeserializeRef (i);
 
   NS_ASSERT ( length == GetSerializedSize() );
 
@@ -1542,7 +1548,7 @@ TcpOptionMpTcpFastClose::GetSerializedSize (void) const
 //// MP_FAIL to totally stop a flow of data
 ////
 TcpOptionMpTcpFail::TcpOptionMpTcpFail ()
-  : TcpOptionMpTcp (),
+  : TcpOptionMpTcp (TcpOptionMpTcp::MP_FAIL),
     m_dsn (0)
 {
   NS_LOG_FUNCTION (this);
@@ -1586,9 +1592,10 @@ TcpOptionMpTcpFail::operator== (const TcpOptionMpTcpFail& opt) const
 void
 TcpOptionMpTcpFail::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i);
+  TcpOptionMpTcp::SerializeRef (i, 0);
 
-  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
+//  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
+  i.WriteU8 ( 0 ); // reserved
   i.WriteHtonU64 ( GetDSN () );
 }
 
@@ -1597,7 +1604,7 @@ uint32_t
 TcpOptionMpTcpFail::Deserialize (Buffer::Iterator i)
 {
 
-  uint32_t length = TcpOptionMpTcpMain::DeserializeRef (i);
+  uint32_t length = TcpOptionMpTcp::DeserializeRef (i);
   NS_ASSERT ( length == 12 );
 
   uint8_t subtype_and_flags = i.ReadU8 ();
@@ -1613,6 +1620,88 @@ TcpOptionMpTcpFail::GetSerializedSize (void) const
 {
   return 12;
 }
+
+
+
+///////////////////////////////////////////////////
+//// MP_FAIL to totally stop a flow of data
+////
+TcpOptionMpTcpDeltaOWD::TcpOptionMpTcpDeltaOWD ()
+  : TcpOptionMpTcp (MP_DELTAOWD),
+    m_dsn (0)
+{
+  NS_LOG_FUNCTION (this);
+}
+
+
+TcpOptionMpTcpDeltaOWD::~TcpOptionMpTcpDeltaOWD (void)
+{
+  NS_LOG_FUNCTION (this);
+}
+
+void
+TcpOptionMpTcpDeltaOWD::SetDSN (const uint64_t& dsn)
+{
+  NS_LOG_FUNCTION (dsn);
+  m_dsn = dsn;
+}
+
+
+uint64_t
+TcpOptionMpTcpDeltaOWD::GetDSN (void) const
+{
+  return m_dsn;
+}
+
+
+void
+TcpOptionMpTcpDeltaOWD::Print (std::ostream &os) const
+{
+  os << "MP_DELTAOWD for DSN=" <<  ();
+}
+
+
+bool
+TcpOptionMpTcpDeltaOWD::operator== (const TcpOptionMpTcpDeltaOWD& opt) const
+{
+  return (m_nanoseconds == opt.m_nanoseconds 
+        && m_targetedSubflow == opt.m_targetedSubflow
+        );
+}
+
+
+void
+TcpOptionMpTcpDeltaOWD::Serialize (Buffer::Iterator i) const
+{
+  TcpOptionMpTcp::SerializeRef (i, 0);
+
+//  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
+  i.WriteU8 ( m_targetedSubflow );
+  i.WriteHtonU64 ( m_nanoseconds );
+}
+
+
+uint32_t
+TcpOptionMpTcpDeltaOWD::Deserialize (Buffer::Iterator i)
+{
+
+  uint32_t length = TcpOptionMpTcp::DeserializeRef (i);
+  NS_ASSERT ( length == 12 );
+
+  uint8_t subtype_and_flags = i.ReadU8 ();
+  NS_ASSERT ( subtype_and_flags >> 4 == GetSubType ()  );
+
+  m_nanoseconds = i.ReadNtohU64 ();
+
+  return GetSerializedSize ();
+}
+
+uint32_t
+TcpOptionMpTcpDeltaOWD::GetSerializedSize (void) const
+{
+  return 12;
+}
+
 
 
 } // namespace ns3

@@ -48,7 +48,7 @@ namespace ns3 {
  * MPTCP signaling messages are all encoded under the same TCP option number 30.
  * MPTCP then uses a subtype
  */
-class TcpOptionMpTcpMain : public TcpOption
+class TcpOptionMpTcp : public TcpOption
 {
 public:
   /**
@@ -63,12 +63,13 @@ public:
     MP_REMOVE_ADDR,
     MP_PRIO,
     MP_FAIL,
-    MP_FASTCLOSE
+    MP_FASTCLOSE,
+    MP_DELTAOWD
   };
 
 
-  TcpOptionMpTcpMain (void);
-  virtual ~TcpOptionMpTcpMain (void);
+  TcpOptionMpTcp (uint8_t subtype);
+  virtual ~TcpOptionMpTcp (void);
 
   static TypeId GetTypeId (void);
   virtual TypeId GetInstanceTypeId (void) const;
@@ -106,8 +107,12 @@ public:
   /**
    * \return the MPTCP subtype of this class
    */
-  virtual TcpOptionMpTcpMain::SubType
-  GetSubType (void) const = 0;
+  virtual 
+//  TcpOptionMpTcp::SubType
+  uint8_t
+  GetSubType (void) const {
+    return m_subtype;
+  }
 
 protected:
   /**
@@ -118,7 +123,7 @@ protected:
    * Should be called at the start of every subclass Serialize call
    */
   virtual void
-  SerializeRef (Buffer::Iterator& i) const;
+  SerializeRef (Buffer::Iterator& i, uint8_t lower_bits) const;
 
   /**
    * \brief Factorizes ation reading/subtype check that each subclass should do.
@@ -129,15 +134,15 @@ protected:
   DeserializeRef (Buffer::Iterator& i) const;
 };
 
-
+#if 0
 /**
  * \tparam SUBTYPE should be an integer
  */
-template<TcpOptionMpTcpMain::SubType SUBTYPE>
-class TcpOptionMpTcp : public TcpOptionMpTcpMain
+template<TcpOptionMpTcp::SubType SUBTYPE>
+class TcpOptionMpTcp : public TcpOptionMpTcp
 {
 public:
-  TcpOptionMpTcp () : TcpOptionMpTcpMain ()
+  TcpOptionMpTcp () : TcpOptionMpTcp ()
   {
   }
 
@@ -148,13 +153,13 @@ public:
   /**
    * \return MPTCP option type
    */
-  virtual TcpOptionMpTcpMain::SubType
+  virtual TcpOptionMpTcp::SubType
   GetSubType (void) const
   {
     return SUBTYPE;
   }
 };
-
+#endif
 
 /**
  * \brief The MP_CAPABLE option is carried on the SYN, SYN/ACK, and ACK packets of the first TCP connection
@@ -195,7 +200,9 @@ Only sha1 is defined and supported in the standard (same for ns3).
 +---------------------------------------------------------------+
 \endverbatim
  */
-class TcpOptionMpTcpCapable : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_CAPABLE>
+class TcpOptionMpTcpCapable : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_CAPABLE>
+public TcpOptionMpTcp
 {
 public:
   TcpOptionMpTcpCapable (void);
@@ -358,7 +365,9 @@ or
                         <-                ACK
 \endverbatim
 **/
-class TcpOptionMpTcpJoin : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_JOIN>
+class TcpOptionMpTcpJoin : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_JOIN>
+public TcpOptionMpTcp
 {
 
 public:
@@ -535,7 +544,9 @@ private:
 
 \endverbatim
 */
-class TcpOptionMpTcpDSS : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_DSS>
+class TcpOptionMpTcpDSS : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_DSS>
+public TcpOptionMpTcp
 {
 
 public:
@@ -712,7 +723,9 @@ private:
 \endverbatim
 
  */
-class TcpOptionMpTcpAddAddress : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_ADD_ADDR>
+class TcpOptionMpTcpAddAddress : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_ADD_ADDR>
+public TcpOptionMpTcp
 {
 
 public:
@@ -803,7 +816,9 @@ private:
 
 \endverbatim
  */
-class TcpOptionMpTcpRemoveAddress : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_REMOVE_ADDR>
+class TcpOptionMpTcpRemoveAddress : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_REMOVE_ADDR>
+public TcpOptionMpTcp
 {
 
 public:
@@ -867,7 +882,9 @@ private:
 \endverbatim
  *
  */
-class TcpOptionMpTcpChangePriority : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_PRIO>
+class TcpOptionMpTcpChangePriority : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_PRIO>
+public TcpOptionMpTcp
 {
 
 public:
@@ -968,7 +985,9 @@ private:
 
 \endverbatim
 **/
-class TcpOptionMpTcpFastClose : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_PRIO>
+class TcpOptionMpTcpFastClose : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_FASTCLOSE>
+public TcpOptionMpTcp
 {
 
 public:
@@ -1030,7 +1049,9 @@ private:
 
 \endverbatim
 */
-class TcpOptionMpTcpFail : public TcpOptionMpTcp<TcpOptionMpTcpMain::MP_FAIL>
+class TcpOptionMpTcpFail : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_FAIL>
+public TcpOptionMpTcp
 {
 
 public:
@@ -1067,6 +1088,58 @@ private:
 
 
 /**
+ * We assume a nanosecond resolution.
+ * This resolution could be exchanged in a 3WHS manner
+ * 
+ *
+\verbatim
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++---------------+---------------+-------+-----+-+--------------+
+|     Kind      |     Length    |Subtype|     |B| AddrID (opt) |
++---------------+---------------+-------+----------------------+
+|                                                              |
+|                 Departure time       (8 octets)              |
+|                                                              |
++--------------------------------------------------------------+
+
+\endverbatim
+ */
+class TcpOptionMpTcpDeltaOWD : 
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_FAIL>
+public TcpOptionMpTcp
+{
+
+public:
+  TcpOptionMpTcpDeltaOWD (void);
+  virtual ~TcpOptionMpTcpDeltaOWD (void);
+
+  virtual bool operator== (const TcpOptionMpTcpDeltaOWD& ) const;
+
+  /**
+   We don't care if it's hackish anymore, this is our own o/
+   we rule the world !
+  **/
+  uint8_t m_targetedSubflow;  /**< subflow id from which to compare arrival times */  
+  int64_t m_nanoseconds;      /**< assume this resolution Could be passed via the option */
+  //! Inherited
+  virtual void Print (std::ostream &os) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual uint32_t GetSerializedSize (void) const;
+
+
+private:
+  //! Defined and unimplemented to avoid misuse
+  TcpOptionMpTcpDeltaOWD (const TcpOptionMpTcpDeltaOWD&);
+  TcpOptionMpTcpDeltaOWD& operator= (const TcpOptionMpTcpDeltaOWD&);
+
+
+//  uint64_t m_dsn; /**< Last acked dsn */
+};
+
+
+/**
  * \brief Helper function to find an MPTCP option
  *
  * \param ret save found option in ret, otherwise
@@ -1082,7 +1155,7 @@ private:
 //    {
 //      if ( (*it)->GetKind () == TcpOption::MPTCP)
 //        {
-//          Ptr<TcpOptionMpTcpMain> opt = DynamicCast<TcpOptionMpTcpMain> (*it);
+//          Ptr<TcpOptionMpTcp> opt = DynamicCast<TcpOptionMpTcp> (*it);
 //          NS_ASSERT (opt);
 //          T temp;
 //          if ( opt->GetSubType () == temp.GetSubType ()  )
