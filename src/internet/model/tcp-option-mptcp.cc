@@ -86,6 +86,12 @@ TcpOptionMpTcp::GetTypeId (void)
   return tid;
 }
 
+uint8_t
+TcpOptionMpTcp::GetSubType (void) const {
+  return m_subtype;
+}
+
+
 
 void
 TcpOptionMpTcp::Print (std::ostream &os) const
@@ -1628,7 +1634,8 @@ TcpOptionMpTcpFail::GetSerializedSize (void) const
 ////
 TcpOptionMpTcpDeltaOWD::TcpOptionMpTcpDeltaOWD ()
   : TcpOptionMpTcp (MP_DELTAOWD),
-    m_dsn (0)
+    m_targetedSubflow (0),
+    m_nanoseconds (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -1638,26 +1645,25 @@ TcpOptionMpTcpDeltaOWD::~TcpOptionMpTcpDeltaOWD (void)
 {
   NS_LOG_FUNCTION (this);
 }
-
-void
-TcpOptionMpTcpDeltaOWD::SetDSN (const uint64_t& dsn)
-{
-  NS_LOG_FUNCTION (dsn);
-  m_dsn = dsn;
-}
-
-
-uint64_t
-TcpOptionMpTcpDeltaOWD::GetDSN (void) const
-{
-  return m_dsn;
-}
+//
+//void
+//TcpOptionMpTcpDeltaOWD::SetDSN (const uint64_t& dsn)
+//{
+//  NS_LOG_FUNCTION (dsn);
+//  m_dsn = dsn;
+//}
+//uint64_t
+//TcpOptionMpTcpDeltaOWD::GetDSN (void) const
+//{
+//  return m_dsn;
+//}
 
 
 void
 TcpOptionMpTcpDeltaOWD::Print (std::ostream &os) const
 {
-  os << "MP_DELTAOWD for DSN=" <<  ();
+  os << "MP_DELTAOWD targeting=" <<  (int)m_targetedSubflow 
+     << " with a recorded delay of =" << m_nanoseconds ;
 }
 
 

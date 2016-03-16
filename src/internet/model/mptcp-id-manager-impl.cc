@@ -51,7 +51,7 @@ MpTcpPathIdManagerImpl::GetTypeId (void)
     //
     .AddConstructor<MpTcpPathIdManagerImpl> ()
   ;
-//  NS_LOG_UNCOND("TcpOptionMpTcpMain::GetTypeId called !");
+//  NS_LOG_UNCOND("TcpOptionMpTcp::GetTypeId called !");
   return tid;
 }
 
@@ -59,7 +59,7 @@ MpTcpPathIdManagerImpl::GetTypeId (void)
 TypeId
 MpTcpPathIdManagerImpl::GetInstanceTypeId (void) const
 {
-//  NS_LOG_UNCOND("TcpOptionMpTcpMain::GetInstanceTypeId called");
+//  NS_LOG_UNCOND("TcpOptionMpTcp::GetInstanceTypeId called");
   return GetTypeId ();
 }
 

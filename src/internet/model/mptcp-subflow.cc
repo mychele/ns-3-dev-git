@@ -1190,7 +1190,7 @@ MpTcpSubflow::ProcessSynSent(Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
 
 int
-MpTcpSubflow::ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcpMain> option)
+MpTcpSubflow::ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option)
 {
     NS_LOG_LOGIC(this << option);
     NS_ASSERT_MSG(IsMaster(), "You can receive MP_CAPABLE only on the master subflow");
@@ -1234,7 +1234,7 @@ MpTcpSubflow::ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcpMain> opti
   */
 
 int
-MpTcpSubflow::ProcessOptionMpTcpJoin(const Ptr<const TcpOptionMpTcpMain> option)
+MpTcpSubflow::ProcessOptionMpTcpJoin(const Ptr<const TcpOptionMpTcp> option)
 {
    NS_LOG_FUNCTION(this << option);
 
@@ -1264,16 +1264,16 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
     //! adds the header
     NS_LOG_FUNCTION(option);
     // TODO
-    Ptr<const TcpOptionMpTcpMain> main = DynamicCast<const TcpOptionMpTcpMain>(option);
+    Ptr<const TcpOptionMpTcp> main = DynamicCast<const TcpOptionMpTcp>(option);
     switch(main->GetSubType())
     {
-        case TcpOptionMpTcpMain::MP_CAPABLE:
+        case TcpOptionMpTcp::MP_CAPABLE:
             return ProcessOptionMpTcpCapable(main);
 
-        case TcpOptionMpTcpMain::MP_JOIN:
+        case TcpOptionMpTcp::MP_JOIN:
             return ProcessOptionMpTcpJoin(main);
 
-        case TcpOptionMpTcpMain::MP_DSS:
+        case TcpOptionMpTcp::MP_DSS:
             {
                 Ptr<const TcpOptionMpTcpDSS> dss = DynamicCast<const TcpOptionMpTcpDSS>(option);
                 NS_ASSERT(dss);
@@ -1282,8 +1282,8 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
             }
             break;
 
-        case TcpOptionMpTcpMain::MP_FASTCLOSE:
-        case TcpOptionMpTcpMain::MP_FAIL:
+        case TcpOptionMpTcp::MP_FASTCLOSE:
+        case TcpOptionMpTcp::MP_FAIL:
         default:
             NS_FATAL_ERROR("Unsupported yet");
             break;

@@ -385,7 +385,7 @@ TcpHeader::Deserialize (Buffer::Iterator start)
         i.ReadU16(); // skip TCP kind & length
         uint8_t subtype = i.ReadU8() >> 4;  // read MPTCP subtype
         i.Prev(3); // revert the iterator back to where it should be
-        op = TcpOptionMpTcpMain::CreateMpTcpOption(subtype);
+        op = TcpOptionMpTcp::CreateMpTcpOption (subtype);
       }
       else if (TcpOption::IsKindKnown (kind))
         {

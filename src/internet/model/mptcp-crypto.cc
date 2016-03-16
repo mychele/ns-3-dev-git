@@ -105,7 +105,6 @@ GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t& token, u
     In the following, the idsn = the key (could be 0) and the token a truncated key
 
     */
-  #error test
     idsn = key;
     token = (uint32_t)key;
 

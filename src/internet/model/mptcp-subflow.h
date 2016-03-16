@@ -52,7 +52,7 @@ namespace ns3
 class MpTcpSocketBase;
 class MpTcpPathIdManager;
 class TcpOptionMpTcpDSS;
-class TcpOptionMpTcpMain;
+class TcpOptionMpTcp;
 
 /**
  * \class MpTcpSubflow
@@ -319,8 +319,8 @@ TODO move this up to TcpSocketBase
    */
 //  virtual int ProcessOptionMpTcpEstablished(const Ptr<const TcpOption> option);
   virtual int ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS> option);
-  virtual int ProcessOptionMpTcpJoin(const Ptr<const TcpOptionMpTcpMain> option);
-  virtual int ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcpMain> option);
+  virtual int ProcessOptionMpTcpJoin(const Ptr<const TcpOptionMpTcp> option);
+  virtual int ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option);
 //  virtual int ProcessTcpOptionMpTcpDSS(Ptr<const TcpOptionMpTcpDSS> dss);
 
   Ptr<MpTcpPathIdManager> GetIdManager();

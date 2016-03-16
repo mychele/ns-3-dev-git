@@ -107,12 +107,8 @@ public:
   /**
    * \return the MPTCP subtype of this class
    */
-  virtual 
-//  TcpOptionMpTcp::SubType
-  uint8_t
-  GetSubType (void) const {
-    return m_subtype;
-  }
+  virtual uint8_t
+  GetSubType (void) const;
 
 protected:
   /**
@@ -132,6 +128,9 @@ protected:
    */
   uint32_t
   DeserializeRef (Buffer::Iterator& i) const;
+  
+private:
+  const uint8_t m_subtype;
 };
 
 #if 0
