@@ -89,7 +89,10 @@ MpTcpPathIdManagerImpl::GetInstanceTypeId (void) const
 //
 //uint8_t
 bool
-MpTcpPathIdManagerImpl::AddRemoteAddr(uint8_t addrId, const Ipv4Address& addressToRegister, uint16_t portToRegister)
+MpTcpPathIdManagerImpl::AddRemoteId (
+uint8_t addrId, const Address& addressToRegister
+//, uint16_t portToRegister
+)
 {
   MpTcpAddressContainer& container = m_addrs;
 

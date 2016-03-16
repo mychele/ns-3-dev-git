@@ -486,16 +486,16 @@ HandleSubflowCreated(Ptr<MpTcpSubflow> subflow)
 void
 HandleSubflowConnected(Ptr<MpTcpSubflow> subflow)
 {
-  NS_LOG_LOGIC("successful connection of a subflow");
+  NS_LOG_LOGIC ("successful connection of a subflow");
 
-  if(subflow->IsMaster())
+  if (subflow->IsMaster ())
   {
-    NS_LOG_LOGIC("successful establishement of first subflow " << subflow);
+    NS_LOG_LOGIC ("successful establishement of first subflow " << subflow);
   }
   else
   {
     //! ce n'est pas le master donc forcement il s'agit d'un join
-    NS_LOG_LOGIC("successful JOIN of subflow " << subflow );
+    NS_LOG_LOGIC ("successful JOIN of subflow " << subflow );
   }
 //  subflow->GetMeta()->SetupSubflowTracing(subflow);
 }
@@ -512,7 +512,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
 {
   // TODO this number should be made configurable
   int nbOfDevices = 2;
-  NS_LOG_UNCOND("SetupDefaultSim Start ");
+  NS_LOG_UNCOND ("SetupDefaultSim Start ");
 
   const char* netmask = "255.255.255.0";
 

@@ -299,7 +299,7 @@ MpTcpSocketBase::ConnectNewSubflow(const Address &local, const Address &remote)
   NS_ASSERT(socket);
   Ptr<MpTcpSubflow> sf = DynamicCast<MpTcpSubflow>(socket);
   NS_ASSERT(sf);
-  AddSubflow(sf);
+  AddSubflow (sf);
 
   // TODO account for this error as well ?
   bool res = (sf->Bind(local) == 0);
@@ -337,7 +337,7 @@ MpTcpSocketBase::GetPeerKey() const
 //MpTcpAddressInfo info
 // Address info
 void
-MpTcpSocketBase::NotifyRemoteAddAddr(Address address)
+MpTcpSocketBase::NotifyRemoteAddAddr (Address address)
 {
 
   if (!m_onRemoteAddAddr.IsNull())
@@ -357,20 +357,37 @@ MpTcpSocketBase::DoChecksum() const
 
 
 MpTcpSocketBase::SubflowList::size_type
-MpTcpSocketBase::GetNActiveSubflows() const
+MpTcpSocketBase::GetNActiveSubflows () const
 {
   return m_subflows[Established].size();
 }
 
   //std::vector<MpTcpSubflow>::size_ uint8
 Ptr<MpTcpSubflow>
-MpTcpSocketBase::GetSubflow(uint8_t id) const
+MpTcpSocketBase::GetSubflow (uint8_t id) const
 {
   NS_ASSERT_MSG(id < m_subflows[Established].size(), "Trying to get an unexisting subflow");
   return m_subflows[Established][id];
 }
 
-
+Ptr<MpTcpSubflow> 
+MpTcpSocketBase::GetSubflowFromAddressId (uint8_t addrId) const
+{
+  //!
+//  NS_FATAL_ERROR ("not implemented");
+  for(int i = 0; i < Maximum; ++i)
+  {
+//    Established
+//    NS_LOG_INFO("Closing all subflows in state [" << containerNames [i] << "]");
+    for( SubflowList::const_iterator it = m_subflows[i].begin(); it != m_subflows[i].end(); it++ )
+    {
+      if ( it->GetMptcpId() == addrId) {
+        return *id;
+      }
+    }
+  }
+  return 0;
+}
 
 // There could be some kind of artifical EstimateRtt based
 // on dataack returns
@@ -435,7 +452,7 @@ MpTcpSocketBase::InitLocalISN(const SequenceNumber32& seq)
 }
 
 void
-MpTcpSocketBase::ProcessListen(Ptr<Packet> packet, const TcpHeader& mptcpHeader, const Address& fromAddress, const Address& toAddress)
+MpTcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& mptcpHeader, const Address& fromAddress, const Address& toAddress)
 {
   // TODO removed
   NS_FATAL_ERROR("disabled");
@@ -938,7 +955,7 @@ MpTcpSocketBase::OnSubflowConnectionFailure (Ptr<Socket> socket)
 
 
 void
-MpTcpSocketBase::AddSubflow(Ptr<MpTcpSubflow> sflow)
+MpTcpSocketBase::AddSubflow (Ptr<MpTcpSubflow> sflow)
 {
   NS_LOG_FUNCTION(sflow);
 //  Ptr<MpTcpSubflow> sf = DynamicCast<MpTcpSubflow>(sflow);
@@ -984,6 +1001,12 @@ MpTcpSocketBase::AddSubflow(Ptr<MpTcpSubflow> sflow)
 
   sf->SetCongestionControlAlgorithm(this->m_congestionControl);
 
+  // TODO WIP if subflow has no id yet, then we should give one to it
+  if (sf->GetMpTcpId () == -1) {
+  
+  }
+  
+  
   m_subflows[Others].push_back( sf );
 }
 
@@ -1096,7 +1119,7 @@ MpTcpSocketBase::CreateSubflowAndCompleteFork(
 #endif
 
 Ipv4EndPoint*
-MpTcpSocketBase::NewSubflowRequest(
+MpTcpSocketBase::NewSubflowRequest (
 Ptr<const Packet> p,
 const TcpHeader & tcpHeader,
 const Address & fromAddress,
@@ -1143,11 +1166,11 @@ Ptr<const TcpOptionMpTcpJoin> join
   Ptr<MpTcpSubflow> subflow ;
 
   // TODO remove next line
-  m_subflowTypeId = MpTcpSubflow::GetTypeId();
+  m_subflowTypeId = MpTcpSubflow::GetTypeId ();
   Ptr<Socket> sock = m_tcp->CreateSocket(m_congestionControl, m_subflowTypeId);
 
   subflow = DynamicCast<MpTcpSubflow>(sock);
-  AddSubflow(subflow);
+  AddSubflow (subflow);
 
   // Call it now so that endpoint gets allocated
   subflow->CompleteFork(p, tcpHeader, fromAddress, toAddress);
@@ -2014,7 +2037,7 @@ MpTcpSocketBase::SendPendingData(bool withAck)
 #endif
 
 int
-MpTcpSocketBase::Listen(void)
+MpTcpSocketBase::Listen (void)
 {
   NS_LOG_FUNCTION (this);
   NS_FATAL_ERROR("Disabled");
@@ -2274,7 +2297,7 @@ MpTcpSocketBase::GenerateKey()
 //}
 
 void
-MpTcpSocketBase::GetAllAdvertisedDestinations(std::vector<InetSocketAddress>& cont)
+MpTcpSocketBase::GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& cont)
 {
   NS_ASSERT(m_remotePathIdManager);
   m_remotePathIdManager->GetAllAdvertisedDestinations(cont);
@@ -2282,7 +2305,7 @@ MpTcpSocketBase::GetAllAdvertisedDestinations(std::vector<InetSocketAddress>& co
 
 
 void
-MpTcpSocketBase::SetNewAddrCallback(Callback<bool, Ptr<Socket>, Address, uint8_t> remoteAddAddrCb,
+MpTcpSocketBase::SetNewAddrCallback (Callback<bool, Ptr<Socket>, Address, uint8_t> remoteAddAddrCb,
                           Callback<void, uint8_t> remoteRemAddrCb)
 
 {

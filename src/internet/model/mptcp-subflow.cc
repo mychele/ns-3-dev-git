@@ -93,7 +93,7 @@ MpTcpSubflow::GetTypeId(void)
 //! wrapper function
 static inline
 MpTcpMapping
-GetMapping(const Ptr<const TcpOptionMpTcpDSS> dss)
+GetMapping (const Ptr<const TcpOptionMpTcpDSS> dss)
 {
     MpTcpMapping mapping;
     uint64_t dsn;
@@ -110,14 +110,14 @@ GetMapping(const Ptr<const TcpOptionMpTcpDSS> dss)
 
 
 TypeId
-MpTcpSubflow::GetInstanceTypeId(void) const
+MpTcpSubflow::GetInstanceTypeId (void) const
 {
   return MpTcpSubflow::GetTypeId();
 }
 
 
 void
-MpTcpSubflow::SetMeta(Ptr<MpTcpSocketBase> metaSocket)
+MpTcpSubflow::SetMeta (Ptr<MpTcpSocketBase> metaSocket)
 {
   NS_ASSERT(metaSocket);
   NS_LOG_FUNCTION(this);
@@ -250,14 +250,18 @@ MpTcpSubflow::Close(void)
 
 
 
-/*
-If copied from a legacy socket, then it's a master socket
-*/
-MpTcpSubflow::MpTcpSubflow(const TcpSocketBase& sock)
+/**
+ * If copied from a legacy socket, then it's a master socket
+ * We assign by default a bad subflowId to make sure it is updated somewhere in the
+ * code.
+ */
+MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
     : TcpSocketBase(sock),
-    m_dssFlags(0),
+    m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
+    m_dssFlags (0),
     m_masterSocket(true),
     m_localNonce(0)
+    
 
 {
     NS_LOG_FUNCTION (this << &sock);
@@ -281,6 +285,7 @@ MpTcpSubflow::MpTcpSubflow(const TcpSocketBase& sock)
 // Does this constructor even make sense ? no ? to remove ?
 MpTcpSubflow::MpTcpSubflow(const MpTcpSubflow& sock)
   : TcpSocketBase(sock),
+  m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
   m_dssFlags(0),
   m_masterSocket(sock.m_masterSocket),  //!false
   m_backupSubflow(sock.m_backupSubflow),
@@ -295,9 +300,9 @@ MpTcpSubflow::MpTcpSubflow(
 //Ptr<MpTcpSocketBase> metaSocket
 ) :
     TcpSocketBase(),
-    m_routeId(0),
-    m_metaSocket(0),
-    m_dssFlags(0),
+    m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
+    m_metaSocket (0),
+    m_dssFlags (0),
     m_backupSubflow(false),
     m_masterSocket(false),
     m_localNonce(0),
@@ -320,9 +325,9 @@ void
 MpTcpSubflow::CloseAndNotify(void)
 {
   //TODO
-  NS_LOG_FUNCTION_NOARGS();
-  TcpSocketBase::CloseAndNotify();
-  GetMeta()->OnSubflowClosed( this, false );
+  NS_LOG_FUNCTION_NOARGS ();
+  TcpSocketBase::CloseAndNotify ();
+  GetMeta()->OnSubflowClosed (this, false);
 }
 
 
@@ -330,14 +335,14 @@ MpTcpSubflow::CloseAndNotify(void)
 Mapping should already exist when sending the packet
 **/
 int
-MpTcpSubflow::Send(Ptr<Packet> p, uint32_t flags)
+MpTcpSubflow::Send (Ptr<Packet> p, uint32_t flags)
 {
   // TODO use TcpSocketBase
 //  NS_FATAL_ERROR("Use SendMapping instead");
-  NS_LOG_FUNCTION(this);
+  NS_LOG_FUNCTION (this);
 
   // TO
-  int ret = TcpSocketBase::Send(p, flags);
+  int ret = TcpSocketBase::Send (p, flags);
 
 
   if(ret > 0)
@@ -359,10 +364,10 @@ MpTcpSubflow::Send(Ptr<Packet> p, uint32_t flags)
 // rename globalSeqNb ?
 
 void
-MpTcpSubflow::SendEmptyPacket(uint8_t flags)
+MpTcpSubflow::SendEmptyPacket (uint8_t flags)
 {
   NS_LOG_FUNCTION_NOARGS();
-  TcpSocketBase::SendEmptyPacket(flags);
+  TcpSocketBase::SendEmptyPacket (flags);
 }
 
 
@@ -1125,11 +1130,12 @@ MpTcpSubflow::ProcessSynSent(Ptr<Packet> packet, const TcpHeader& tcpHeader)
       m_firstTxUnack = m_nextTxSequence;
 
       // TODO support IPv6
-      GetIdManager()->AddRemoteAddr(addressId, m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
+      // TODO move to mptcp socket base
+      GetIdManager ()->AddRemoteId (addressId, m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
 
       TcpHeader answerHeader;
-      GenerateEmptyPacketHeader(answerHeader, TcpHeader::ACK);
-      AddOptionMpTcp3WHS(answerHeader);
+      GenerateEmptyPacketHeader (answerHeader, TcpHeader::ACK);
+      AddOptionMpTcp3WHS (answerHeader);
 
       NS_LOG_INFO ("SYN_SENT -> ESTABLISHED");
       m_state = ESTABLISHED;
@@ -1146,12 +1152,12 @@ MpTcpSubflow::ProcessSynSent(Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
       // TODO here we send a packet  with wrong seq number
       // and another ack will be emitted just after
-      SendEmptyPacket(answerHeader);
+      SendEmptyPacket (answerHeader);
 
 //      NS_LOG_UNCOND("m_nextTxSequence [" << m_nextTxSequence << "]");
 
       // TODO check we can send rightaway data ?
-      SendPendingData(m_connected);
+      SendPendingData (m_connected);
 
 //      NS_LOG_UNCOND("m_nextTxSequence [" << m_nextTxSequence << "]");
 
@@ -1234,7 +1240,7 @@ MpTcpSubflow::ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option)
   */
 
 int
-MpTcpSubflow::ProcessOptionMpTcpJoin(const Ptr<const TcpOptionMpTcp> option)
+MpTcpSubflow::ProcessOptionMpTcpJoin (const Ptr<const TcpOptionMpTcp> option)
 {
    NS_LOG_FUNCTION(this << option);
 
@@ -1252,8 +1258,11 @@ MpTcpSubflow::ProcessOptionMpTcpJoin(const Ptr<const TcpOptionMpTcp> option)
     // TODO Here we should check the tokens
 //        uint8_t buf[20] =
 //        opt3->GetTruncatedHmac();
-  NS_LOG_DEBUG("Id manager");
-  GetIdManager()->AddRemoteAddr(addressId, m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
+  NS_LOG_DEBUG ("Id manager");
+  InetSocketAddress address ( m_endPoint->->GetPeerAddress(), m_endPoint->GetPeerPort() );
+  bool res = GetIdManager()->AddRemoteId (addressId, address);
+//  res = ;
+  
   return 0;
 }
 
@@ -1262,7 +1271,7 @@ int
 MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
 {
     //! adds the header
-    NS_LOG_FUNCTION(option);
+    NS_LOG_FUNCTION (option);
     // TODO
     Ptr<const TcpOptionMpTcp> main = DynamicCast<const TcpOptionMpTcp>(option);
     switch(main->GetSubType())
@@ -1282,10 +1291,12 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
             }
             break;
 
+        case TcpOptionMpTcp::MP_ADD_ADDR:
+        case TcpOptionMpTcp::MP_RMADDR:
         case TcpOptionMpTcp::MP_FASTCLOSE:
         case TcpOptionMpTcp::MP_FAIL:
         default:
-            NS_FATAL_ERROR("Unsupported yet");
+            NS_FATAL_ERROR ("Unsupported yet");
             break;
 
 

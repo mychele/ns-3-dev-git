@@ -351,12 +351,17 @@ public:
 
 
   /**
-  *
-  * \return an established subflow
-  */
-  virtual Ptr<MpTcpSubflow> GetSubflow(uint8_t) const;
-
-
+   *
+   * \return an established subflow
+   */
+  virtual Ptr<MpTcpSubflow> GetSubflow(uint8_t pos) const;
+  
+  /**
+   * \param addrId Address id as registered in path manager
+   * \assert if could not find subflow
+   */
+  virtual Ptr<MpTcpSubflow> GetSubflowFromAddressId (uint8_t addrId) const;
+  
   // can Potentially be removed ?
   virtual void ClosingOnEmpty(TcpHeader& header);
 
@@ -772,7 +777,7 @@ public:
  /****** END TRACING *****/
 
 protected:
-  virtual void CreateScheduler(TypeId schedulerTypeId);
+  virtual void CreateScheduler (TypeId schedulerTypeId);
 
   // TODO rename since will track local too.
   Ptr<MpTcpPathIdManager> m_remotePathIdManager;  //!< Keep track of advertised ADDR id advertised by remote endhost

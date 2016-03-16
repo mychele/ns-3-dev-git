@@ -887,6 +887,13 @@ public TcpOptionMpTcp
 {
 
 public:
+
+  /**
+   * This is to help finding bugs in the code where one subflow would have forgotten
+   * 
+   */
+  static const uint8_t BAD_ADDRID = 0xff;
+
   /**
    * Only one flag standardized
    */

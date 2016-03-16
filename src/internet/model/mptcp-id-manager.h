@@ -83,7 +83,7 @@ public:
   **/
 
   virtual void
-  GetAllAdvertisedDestinations(std::vector<InetSocketAddress>& addresses) = 0;
+  GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& addresses) = 0;
 
   // TODO move callbacks here + local address Mgmt ?
 
@@ -92,26 +92,29 @@ public:
   /**
   Can force the ID with which to register
   //    const Ipv4Address& address, uint16_t port = 0
+  
   **/
   virtual bool
-  AddRemoteAddr(uint8_t addrId, const Ipv4Address& address, uint16_t port) = 0;
+  AddRemoteId (uint8_t addrId, const Address& address) = 0;
+
+  virtual bool
+  AddLocalId (uint8_t addrId, const Ipv4Address& address, uint16_t port) = 0;
 
   /**
   * del/rem
   *
   */
-  virtual bool
-  RemRemoteAddr(uint8_t addrId) = 0;
+  virtual bool RemoveRemoteAddr (uint8_t addrId) = 0;
 
   virtual uint8_t
-  GetLocalAddrId(const InetSocketAddress& address) = 0;
+  GetLocalAddrId (const InetSocketAddress& address) = 0;
 //  RegisterLocalAddress()
 
   /**
    * Called when closing the subflow
    */
   virtual bool
-  RemLocalAddr(InetSocketAddress addrId) = 0;
+  RemLocalAddr (InetSocketAddress addrId) = 0;
 
   /**
    * Called when meta receives a REMOVE_ADDRESS. It just contians ids then.

@@ -525,7 +525,7 @@ protected:
   CancelAllTimers(void); // Cancel all timer when endpoint is deleted
 
 
-  uint16_t m_routeId;   //!< Subflow's ID (TODO rename into subflowId ). Position of this subflow in MetaSock's subflows std::vector
+  uint8_t m_subflowId;   //!< Subflow's ID (TODO rename into subflowId ). Position of this subflow in MetaSock's subflows std::vector
 
 
   // Use Ptr here so that we don't have to unallocate memory manually ?

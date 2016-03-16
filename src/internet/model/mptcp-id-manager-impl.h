@@ -88,28 +88,28 @@ public:
   **/
 
   virtual void
-  GetAllAdvertisedDestinations(std::vector<InetSocketAddress>& addresses);
+  GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& addresses);
 
   // TODO move callbacks here + local address Mgmt ?
 
 
   uint8_t
-  GetLocalAddrId(const InetSocketAddress& address);
+  GetLocalAddrId (const InetSocketAddress& address);
   /**
   Can force the ID with which to register
   //    const Ipv4Address& address, uint16_t port = 0
   **/
   virtual bool
-  AddRemoteAddr(uint8_t addrId, const Ipv4Address& address, uint16_t port);
+  AddRemoteId (uint8_t addrId, const Ipv4Address& address, uint16_t port);
 
   /**
   * del/rem
   */
   virtual bool
-  RemRemoteAddr(uint8_t addrId);
+  RemRemoteAddr (uint8_t addrId);
 
   virtual bool
-  RemLocalAddr(InetSocketAddress addrId);
+  RemLocalAddr (InetSocketAddress addrId);
 //  virtual bool
 //  RemLocalAddr(uint8_t addrId) ;
 

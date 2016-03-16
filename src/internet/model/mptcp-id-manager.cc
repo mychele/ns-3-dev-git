@@ -25,10 +25,10 @@
 namespace ns3
 {
 
-NS_LOG_COMPONENT_DEFINE("MpTcpPathIdManager");
+NS_LOG_COMPONENT_DEFINE ("MpTcpPathIdManager");
 
 
-NS_OBJECT_ENSURE_REGISTERED(MpTcpPathIdManager);
+NS_OBJECT_ENSURE_REGISTERED (MpTcpPathIdManager);
 
 TypeId
 MpTcpPathIdManager::GetTypeId(void)

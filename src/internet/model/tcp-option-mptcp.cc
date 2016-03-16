@@ -1387,6 +1387,7 @@ TcpOptionMpTcpChangePriority::Print (std::ostream &os) const
 void
 TcpOptionMpTcpChangePriority::SetAddressId (const uint8_t& addrId)
 {
+  NS_ASSERT_MSG (addrId != BAD_ADDRID, "ns3 prevents the use of this id for internal reasons");
   m_addrId = addrId;
   m_length = 4;
 }
@@ -1395,7 +1396,7 @@ TcpOptionMpTcpChangePriority::SetAddressId (const uint8_t& addrId)
 uint8_t
 TcpOptionMpTcpChangePriority::GetAddressId () const
 {
-  NS_ASSERT_MSG (EmbeddedAddressId (),"Use EmbeddedAddressId to check beforehand if this option carries an id");
+  NS_ASSERT_MSG (EmbeddedAddressId (), "Use EmbeddedAddressId to check beforehand if this option carries an id");
   return m_addrId;
 }
 
