@@ -31,7 +31,7 @@ NS_LOG_COMPONENT_DEFINE ("MpTcpPathIdManager");
 NS_OBJECT_ENSURE_REGISTERED (MpTcpPathIdManager);
 
 TypeId
-MpTcpPathIdManager::GetTypeId(void)
+MpTcpPathIdManager::GetTypeId (void)
 {
   static TypeId tid = TypeId("ns3::MpTcpPathIdManager")
       .SetParent<Object>()
@@ -44,7 +44,7 @@ MpTcpPathIdManager::GetTypeId(void)
   return tid;
 }
 
-MpTcpPathIdManager::MpTcpPathIdManager() :
+MpTcpPathIdManager::MpTcpPathIdManager () :
   Object()
 {
   NS_LOG_INFO(this);

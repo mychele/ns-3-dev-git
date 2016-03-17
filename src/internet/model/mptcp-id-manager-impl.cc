@@ -27,12 +27,17 @@
 namespace ns3
 {
 
-NS_LOG_COMPONENT_DEFINE("MpTcpPathIdManagerImpl");
+NS_LOG_COMPONENT_DEFINE ("MpTcpPathIdManagerImpl");
 
-NS_OBJECT_ENSURE_REGISTERED(MpTcpPathIdManagerImpl);
+NS_OBJECT_ENSURE_REGISTERED (MpTcpPathIdManagerImpl);
 
-MpTcpPathIdManagerImpl::MpTcpPathIdManagerImpl() :
-  MpTcpPathIdManager()
+MpTcpPathIdManagerImpl::MpTcpPathIdManagerImpl(
+//const bool localPM
+) :
+  MpTcpPathIdManager (),
+  m_localSubflowUid (0)
+  
+//,  m_localPM (localPM)
 {
   NS_LOG_INFO(this);
 }
@@ -85,11 +90,22 @@ MpTcpPathIdManagerImpl::GetInstanceTypeId (void) const
 //}
 
 
-
-//
-//uint8_t
 bool
-MpTcpPathIdManagerImpl::AddRemoteId (
+MpTcpPathIdManagerImpl::AddLocalId (uint8_t *addrId, const Address& address)
+{
+  NS_ASSERT_MSG (m_localPM, "Can't call this function with a remote id manager");
+
+  bool res = AddId (m_localSubflowUid, address);
+  if(res) 
+  {
+    *addrId = m_localSubflowUid++;;
+  }
+  return res;
+}
+
+// 
+bool
+MpTcpPathIdManagerImpl::AddId (
 uint8_t addrId, const Address& addressToRegister
 //, uint16_t portToRegister
 )
@@ -99,58 +115,60 @@ uint8_t addrId, const Address& addressToRegister
 //  MpTcpAddressInfo addrInfo = std::make_pair(address,port);
 
 
-  NS_LOG_INFO("Trying to ADD_ADDR [" << addrId << "] ");
+  NS_LOG_INFO ("Trying to ADD_ADDR [" << addrId << "] ");
 
   MpTcpAddressContainer::iterator it = container.find( addrId );
   // if id already registered then we need to check the IPs are the same as the one advertised and that ports are different
 
+//  bool insert;
+  NS_LOG_ERROR ("TODO not implemented : should lookup closest match");
   if(it != container.end() )
   {
-    //
-    Ipv4Address addrRegisteredWithId = it->second.first;
-//    uint16_t portRegisteredTo)
-//    for(MpTcpAddressContainer::iterator it2 = it.first; it2 != it.second; it2++)
-//    {
-
-      // id already registered to another IP
-      if (addrRegisteredWithId != addressToRegister)
-      {
-        NS_LOG_WARN("Rejected ADD_ADDR because id [" << addrId
-              << "] already registered with IP " << addressToRegister
-              );
-        return false;
-      }
-
-      std::vector<uint16_t>& ports = it->second.second;
+    Address match = it->second;
+    if (match.GetSerializedSize () != addressToRegister.GetSerializedSize () ) {
+      NS_LOG_WARN ("it could be ok to add it anyway");
+    }
+    // if there is a match, we
+//    Ipv4Address addrRegisteredWithId = it->second.first;
+////    uint16_t portRegisteredTo)
+////    for(MpTcpAddressContainer::iterator it2 = it.first; it2 != it.second; it2++)
+////    {
+//
+//      // id already registered to another IP
+//      if (addrRegisteredWithId != addressToRegister)
+//      {
+//        NS_LOG_WARN("Rejected ADD_ADDR because id [" << addrId
+//              << "] already registered with IP " << addressToRegister
+//              );
+//        return false;
+//      }
+//
+//      std::vector<uint16_t>& ports = it->second.second;
 
       // if port specified
-      if(portToRegister != 0 )
-      {
-        std::vector<uint16_t>::iterator it2 = std::find(ports.begin(), ports.end(), portToRegister);
-
-        // if port already registered
-        if( it2 != ports.end() )
-        {
-          NS_LOG_WARN("Rejected ADD_ADDR because this port " << portToRegister
-                << " was already advertised with id [" << addrId << "] "
-                );
-          return false;
-        }
-        else {
-          ports.push_back(portToRegister);
-        }
-
-      }
+//      if(portToRegister != 0 )
+//      {
+//        std::vector<uint16_t>::iterator it2 = std::find(ports.begin(), ports.end(), portToRegister);
+//
+//        // if port already registered
+//        if( it2 != ports.end() )
+//        {
+//          NS_LOG_WARN ("Rejected ADD_ADDR because this port " << portToRegister
+//                << " was already advertised with id [" << addrId << "] "
+//                );
+//          return false;
+//        }
+//        else 
+//        {
+//          ports.push_back(portToRegister);
+//        }
+//
+//      }
     }
     else
     {
-      std::vector<uint16_t> ports;
-
-      container.insert(
-       std::make_pair(addrId,
-                std::make_pair(addressToRegister, ports)
-                )
-              );
+      NS_LOG_DEBUG ("Registering " << addressToRegister << addrId );
+      container.insert (std::make_pair (addrId, addressToRegister));
     }
 
 // callback to know if we should accept it ?
@@ -172,22 +190,41 @@ uint8_t addrId, const Address& addressToRegister
 
 
 bool
-MpTcpPathIdManagerImpl::RemRemoteAddr(uint8_t addrId)
+MpTcpPathIdManagerImpl::RemoveId (uint8_t addrId)
 {
 //  MpTcpAddressContainer& container = m_remoteAddrs[remote];
 
   // TODO retreive the address, check there is no subflow establish with this ID
   // Than remove it from available addresses
-  NS_LOG_ERROR("Function not implemented ");
+//  NS_LOG_ERROR ("Function not implemented ");
 
-      MpTcpAddressContainer::size_type res = m_addrs.erase( addrId );
+  MpTcpAddressContainer::size_type res = m_addrs.erase( addrId );
 //  NotifyRemAddress(addrId);
   return (res != 0);
 }
 
+//
+//bool
+//MpTcpPathIdManagerImpl::RemoveLocalId(
+//  Address address
+//  )
+////  Ipv4Address address, uint8_t& id)
+//{
+//  NS_ASSERT_MSG (InetSocketAddress::IsMatchingType(address), "Only ipv4 supported");
+//  
+//  std::map<Ipv4Address,uint8_t>::iterator it  = m_localAddresses.find( address.GetIpv4() );
+//  if(it != m_localAddresses.end() )
+//  {
+////    id = it->second;
+//    return true;
+//  }
+//  return false;
+//}
 
+
+#if 0
 uint8_t
-MpTcpPathIdManagerImpl::GetLocalAddrId(const InetSocketAddress& address)
+MpTcpPathIdManagerImpl::GetLocalAddrId(const Address& address)
 {
   //TODO should be able to improve AddrId allocation to allow for more choices
   // converts Static into member function ? add a modulo in case we add too many local addr ?
@@ -204,28 +241,13 @@ MpTcpPathIdManagerImpl::GetLocalAddrId(const InetSocketAddress& address)
 
   return result.first->second;
 }
+#endif
 
 
 
-
-bool
-MpTcpPathIdManagerImpl::RemLocalAddr(
-  InetSocketAddress address
-  )
-//  Ipv4Address address, uint8_t& id)
-{
-  std::map<Ipv4Address,uint8_t>::iterator it  = m_localAddresses.find( address.GetIpv4() );
-  if(it != m_localAddresses.end() )
-  {
-//    id = it->second;
-    return true;
-  }
-  return false;
-}
-
-
+#if 0
 void
-MpTcpPathIdManagerImpl::GetAllAdvertisedDestinations(std::vector<InetSocketAddress>& addresses)
+MpTcpPathIdManagerImpl::GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& addresses)
 {
   addresses.clear();
   for(MpTcpAddressContainer::iterator externIt = m_addrs.begin(); externIt != m_addrs.end(); externIt++)
@@ -241,7 +263,7 @@ MpTcpPathIdManagerImpl::GetAllAdvertisedDestinations(std::vector<InetSocketAddre
 }
 
 
-#if 0
+
 void
 MpTcpSocketBase::SetAddAddrCallback(Callback<bool, Ptr<Socket>, Address, uint8_t> addAddr)
 {

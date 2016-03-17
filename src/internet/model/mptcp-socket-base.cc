@@ -164,12 +164,16 @@ MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
   m_peerToken(0),
   m_doChecksum(false),
   m_receivedDSS(false)
+//  , m_localSubflowUid (0)
 //    MpTcpSocketBase()   //! delegatin constructors only available in C++11
 {
     //
     NS_LOG_FUNCTION(this);
     NS_LOG_LOGIC("Copying from TcpSocketBase");
-    m_remotePathIdManager = Create<MpTcpPathIdManagerImpl>();
+    
+    // TODO make it configurable
+    m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
+    m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
     CreateScheduler(m_schedulerTypeId);
 }
@@ -188,6 +192,7 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_joinRequest(sock.m_joinRequest),
   m_receivedDSS(sock.m_receivedDSS),
   m_subflowCreated(sock.m_subflowCreated),
+//  m_localSubflowUid (sock.m_localSubflowUid),
   m_subflowTypeId(sock.m_subflowTypeId),
   m_schedulerTypeId(sock.m_schedulerTypeId)
 
@@ -195,7 +200,8 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   NS_LOG_FUNCTION(this);
   NS_LOG_LOGIC ("Invoked the copy constructor");
   //! Scheduler may have some states, thus generate a new one
-  m_remotePathIdManager = Create<MpTcpPathIdManagerImpl>();
+  m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
+  m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
 
   // TODO
@@ -221,7 +227,8 @@ MpTcpSocketBase::MpTcpSocketBase() :
   NS_LOG_FUNCTION(this);
 
   //not considered as an Object
-  m_remotePathIdManager = Create<MpTcpPathIdManagerImpl>();
+  m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
+  m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
 
   CreateScheduler(m_schedulerTypeId);
@@ -265,6 +272,21 @@ MpTcpSocketBase::~MpTcpSocketBase(void)
 }
 
 
+bool
+MpTcpSocketBase::AddLocalId (uint8_t *addrId, const Address& address)
+{
+  NS_LOG_FUNCTION (address);
+  return m_localIdManager->AddLocalId (addrId, address);
+}
+
+bool
+MpTcpSocketBase::AddRemoteId (uint8_t addrId, const Address& address)
+{
+  NS_LOG_FUNCTION (address);
+  return m_remoteIdManager->AddId (addrId, address);
+}
+  
+  
 void
 MpTcpSocketBase::CreateScheduler(TypeId schedulerTypeId)
 {
@@ -370,6 +392,7 @@ MpTcpSocketBase::GetSubflow (uint8_t id) const
   return m_subflows[Established][id];
 }
 
+// FROM remote AddrId or localAddrId
 Ptr<MpTcpSubflow> 
 MpTcpSocketBase::GetSubflowFromAddressId (uint8_t addrId) const
 {
@@ -381,9 +404,9 @@ MpTcpSocketBase::GetSubflowFromAddressId (uint8_t addrId) const
 //    NS_LOG_INFO("Closing all subflows in state [" << containerNames [i] << "]");
     for( SubflowList::const_iterator it = m_subflows[i].begin(); it != m_subflows[i].end(); it++ )
     {
-      if ( it->GetMptcpId() == addrId) {
-        return *id;
-      }
+//      if ( it->GetMptcpId() == addrId) {
+//        return *id;
+//      }
     }
   }
   return 0;
@@ -988,12 +1011,15 @@ MpTcpSocketBase::AddSubflow (Ptr<MpTcpSubflow> sflow)
   don't communicate with the applications directly. The meta socket will
   */
 //  sf->SetSendCallback ( MakeCallback);
-  sf->SetConnectCallback (MakeCallback (&MpTcpSocketBase::OnSubflowConnectionSuccess,this),
-                          MakeCallback (&MpTcpSocketBase::OnSubflowConnectionFailure,this));   // Ok
+  sf->SetConnectCallback (
+    MakeCallback (&MpTcpSocketBase::OnSubflowConnectionSuccess, this),
+    MakeCallback (&MpTcpSocketBase::OnSubflowConnectionFailure, this)
+  );
   sf->SetAcceptCallback (
-                         MakeNullCallback<bool, Ptr<Socket>, const Address &>(),
-//                         MakeCallback (&MpTcpSocketBase::NotifyConnectionRequest,this)
-                         MakeCallback (&MpTcpSocketBase::OnSubflowCreated,this));
+     MakeNullCallback<bool, Ptr<Socket>, const Address &>(),
+    // MakeCallback (&MpTcpSocketBase::NotifyConnectionRequest,this)
+     MakeCallback (&MpTcpSocketBase::OnSubflowCreated,this)
+  );
   // Il y a aussi les!
 //  sf->SetCloseCallbacks
 //  sf->SetDataSentCallback (  );
@@ -1002,9 +1028,9 @@ MpTcpSocketBase::AddSubflow (Ptr<MpTcpSubflow> sflow)
   sf->SetCongestionControlAlgorithm(this->m_congestionControl);
 
   // TODO WIP if subflow has no id yet, then we should give one to it
-  if (sf->GetMpTcpId () == -1) {
-  
-  }
+//  if (sf->GetMpTcpId () == -1) {
+//    NS_LOG_ERROR ("TODO");
+//  }
   
   
   m_subflows[Others].push_back( sf );
@@ -2292,15 +2318,16 @@ MpTcpSocketBase::GenerateKey()
 //void
 //MpTcpSocketBase::GetIdManager()
 //{
-//  NS_ASSERT(m_remotePathIdManager);
-//  return m_remotePathIdManager;
+//  NS_ASSERT(m_remoteIdManager);
+//  return m_remoteIdManager;
 //}
 
 void
 MpTcpSocketBase::GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& cont)
 {
-  NS_ASSERT(m_remotePathIdManager);
-  m_remotePathIdManager->GetAllAdvertisedDestinations(cont);
+  NS_ASSERT (m_remoteIdManager);
+  NS_FATAL_ERROR("Disabled");
+//  m_remoteIdManager->GetAllAdvertisedDestinations(cont);
 }
 
 

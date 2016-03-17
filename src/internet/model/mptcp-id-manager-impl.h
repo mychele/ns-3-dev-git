@@ -64,10 +64,14 @@ class MpTcpPathIdManagerImpl : public MpTcpPathIdManager
 
 public:
 
+  /**
+   * \param 
+   */
+  MpTcpPathIdManagerImpl (
+//  const bool local_pm
+  );
 
-  MpTcpPathIdManagerImpl();
-
-  virtual ~MpTcpPathIdManagerImpl();
+  virtual ~MpTcpPathIdManagerImpl ();
 
   static TypeId
   GetTypeId (void);
@@ -80,50 +84,55 @@ public:
   (InetSocketAddress addr
   **/
 //  virtual uint8_t GetIdForLocalAddr( Ipv4Address address );
-//  virtual bool RemLocalAddr(Ipv4Address addr);
+//  virtual bool RemoveLocalId(Ipv4Address addr);
 
   /**
   \param addresses
   \warning Don't forget to clear the vector first !
   **/
 
-  virtual void
-  GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& addresses);
+//  virtual void
+//  GetAllAdvertisedDestinations (std::vector<Address>& addresses);
 
   // TODO move callbacks here + local address Mgmt ?
 
-
+  // GetClosestMatchingId
   uint8_t
-  GetLocalAddrId (const InetSocketAddress& address);
+  GetLocalAddrId (const Address& address);
   /**
   Can force the ID with which to register
   //    const Ipv4Address& address, uint16_t port = 0
+  // TODO rename into registerId ?
   **/
   virtual bool
-  AddRemoteId (uint8_t addrId, const Ipv4Address& address, uint16_t port);
+  AddId (uint8_t addrId, const Address& address);
+
+  virtual bool
+  AddLocalId (uint8_t *addrId, const Address& address);
 
   /**
   * del/rem
   */
   virtual bool
-  RemRemoteAddr (uint8_t addrId);
+  RemoveId (uint8_t addrId);
 
-  virtual bool
-  RemLocalAddr (InetSocketAddress addrId);
 //  virtual bool
-//  RemLocalAddr(uint8_t addrId) ;
+//  RemoveLocalId(uint8_t addrId) ;
 
 protected:
   friend class MpTcpSocketBase;
 
-
+  uint8_t m_localSubflowUid;  /**!< Used to generate local subflow ids */
+//  const bool m_localPM;
+  
   // MPTCP containers
   // INetSocketAddress
 //  InetSocketAddress
-  typedef std::pair<const Ipv4Address, std::vector<uint16_t> > MpTcpAddressInfo;  //!< Ipv4/v6 address and its port
+  //!< Ipv4/v6 address and its port
+//  typedef std::pair<const Ipv4Address, std::vector<uint16_t> > MpTcpAddressInfo;
 
 //  typedef std::multimap<uint8_t,MpTcpAddressInfo>  MpTcpAddressContainer;
-  typedef std::map<uint8_t,MpTcpAddressInfo>  MpTcpAddressContainer;
+  typedef std::map<uint8_t, Address>  MpTcpAddressContainer;
 
   //! Maps an Address Id to the pair  (Ipv4/v6, port)
 //  std::map<uint8_t,MpTcpAddressInfo> m_localAddrs;
@@ -133,7 +142,9 @@ protected:
   MpTcpAddressContainer m_addrs;
 
 
-  std::map<Ipv4Address,uint8_t> m_localAddresses; //!< Associate every local IP with an unique identifier
+  /** Associate every local IP with an unique identifier
+   */
+  std::map<Address,uint8_t> m_localAddresses; 
 
   /**
   Need this to check if an IP has already been advertised, in which case

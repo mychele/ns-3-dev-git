@@ -25,8 +25,6 @@
 #include "ns3/callback.h"
 #include "ns3/mptcp-mapping.h"
 #include "ns3/tcp-socket-base.h"
-//#include "ns3/mp-tcp-path-manager.h"
-//#include "ns3/gnuplot.h"
 //#include "mp-tcp-subflow.h"
 
 //#include "ns3/mp-tcp-cc.h"
@@ -719,6 +717,7 @@ protected: // protected variables
   // like putting m_nextTxSequence in MpTcpScheduler and make it friend ?
   friend class MpTcpSchedulerRoundRobin;
   friend class MpTcpSchedulerFastestRTT;
+  friend class MpTcpSchedulerOwd;
 
 
   /**
@@ -759,6 +758,12 @@ protected: // protected variables
 //  virtual void OnRemAddress();
 
 public:
+
+  virtual bool
+  AddLocalId (uint8_t *addrId, const Address& address);
+  virtual bool
+  AddRemoteId (uint8_t addrId, const Address& address);
+
   /**
   ONLY TEMPORARY
   Used to export a whole range of statistics to csv files (filenames hardcoded).
@@ -780,7 +785,8 @@ protected:
   virtual void CreateScheduler (TypeId schedulerTypeId);
 
   // TODO rename since will track local too.
-  Ptr<MpTcpPathIdManager> m_remotePathIdManager;  //!< Keep track of advertised ADDR id advertised by remote endhost
+  Ptr<MpTcpPathIdManager> m_remoteIdManager;  //!< Keep track of advertised ADDR id advertised by remote endhost
+  Ptr<MpTcpPathIdManager> m_localIdManager;  //!< Keep track of advertised ADDR id advertised by remote endhost
 
 
   /***
@@ -831,6 +837,7 @@ private:
 
 // , const Address &, bool master
 //  Callback<void, Ptr<MpTcpSubflow> >    m_subflowConnectionSucceeded; //!< connection created callback
+
 
     //!
     TypeId m_subflowTypeId;

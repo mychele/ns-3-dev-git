@@ -556,7 +556,7 @@ MpTcpAddressTestCase::DoSetup()
 //    case REM_UNREGISTERED_ADDRESS:
 //        {
 //          // Attemps to
-//          bool res = m_serverSock->RemLocalAddr( Ipv4Address("42.42.42.42")   );
+//          bool res = m_serverSock->RemoveLocalId( Ipv4Address("42.42.42.42")   );
 //          NS_TEST_ASSERT_MSG_EQ( res, false, "Should not be able to remove an unregistered address");
 //
 //

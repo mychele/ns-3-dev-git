@@ -37,15 +37,15 @@
 #include "ns3/inet-socket-address.h"
 #include "ns3/inet6-socket-address.h"
 #include "ns3/uinteger.h"
-#include "ns3/log.h"
+//#include "ns3/log.h"
 
 #include "ns3/ipv4-end-point.h"
 #include "ns3/arp-l3-protocol.h"
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/ipv6-l3-protocol.h"
-#include "ns3/icmpv4-l4-protocol.h"
-#include "ns3/icmpv6-l4-protocol.h"
-#include "ns3/udp-l4-protocol.h"
+//#include "ns3/icmpv4-l4-protocol.h"
+//#include "ns3/icmpv6-l4-protocol.h"
+//#include "ns3/udp-l4-protocol.h"
 #include "ns3/tcp-l4-protocol.h"
 
 #include "ns3/core-module.h"
@@ -58,13 +58,13 @@
 #include "ns3/internet-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/network-module.h"
-#include "ns3/tcp-newreno.h"
-#include "ns3/point-to-point-module.h"
+//#include "ns3/tcp-newreno.h"
+//#include "ns3/point-to-point-module.h"
 #include "ns3/mptcp-uncoupled.h"
 //#include "ns3/point-to-point-channel.h"
 #include <string>
 
-NS_LOG_COMPONENT_DEFINE ("MpTcpTestSuite");
+//NS_LOG_COMPONENT_DEFINE ("MpTcpIdTest");
 
 using namespace ns3;
 
@@ -76,177 +76,17 @@ we should try not to add to internet dependancies ['bridge', 'mpi', 'network', '
 **/
 
 
-//typedef MpTcpSocketBase SocketToBeTested;
-//typedef TcpNewReno SocketToBeTested;
 
-
-/**
-Provide basic functions to generate a topology (or outsource them ?)
-
-Control the Number of interfaces per node
-**/
-class MpTcpTestCase : public TestCase
-{
-public:
-
-  MpTcpTestCase(std::string name,
-                  uint8_t nbClientIfs,
-                  uint8_t nbServerIfs,
-                  uint8_t nbIpsPerClientIf,
-                  uint8_t nbIpsPerServerIf);
-
-  virtual ~MpTcpTestCase ();
-
-//  virtual void AdvertiseAllAddressesOfNode();
-
-protected:
-  /**
-  \brief Creates a star topology with all ends belonging to either the server or the client
-  **/
-  virtual void CreateNodes();
-
-//  virtual void SetupDefaultSim (
-//      Ptr<Node> n0, Ptr<Node> n1, int nbOfParallelLinks
-//      );
-//private:
-  virtual void DoSetup(void) = 0;
-  virtual void DoRun(void) = 0;
-  virtual void DoTeardown (void);
-
-
-  void ServerHandleConnectionCreated (Ptr<Socket> s, const Address & addr);
-  void ServerHandleRecv (Ptr<Socket> sock);
-  void ServerHandleSend (Ptr<Socket> sock, uint32_t available);
-//  void SourceHandleSend (Ptr<Socket> sock, uint32_t available);
-//  void SourceHandleRecv (Ptr<Socket> sock);
-
-
-  uint8_t m_nbInterfacesClient;
-  uint8_t m_nbInterfacesServer;
-  uint8_t m_nbClientIPsPerNetDevice;
-  uint8_t m_nbServerIPsPerNetDevice;
-
-  Ptr<Node> m_client;
-  Ptr<MpTcpSocketBase> m_clientSock;
-  Ptr<Node> m_server;
-  Ptr<MpTcpSocketBase> m_serverSock;
-};
-
-
-
-void
-getAllIpsOfANode(Ptr<Node> node, std::vector<Ipv4Address>& addr )
-{
-  NS_ASSERT(node);
-
-  // TODO That should go into a helper
-  // Object from L3 to access to routing protocol, Interfaces and NetDevices and so on.
-  Ptr<Ipv4L3Protocol> ipv4 = node->GetObject<Ipv4L3Protocol>();
-
-  NS_ASSERT(ipv4);
-
-  addr.clear();
-  ipv4->GetAllRegisteredIPs(addr);
-
-  /**
-  Keep that code in case the patch sent to ns3 is not accepted
-  **/
-//  for (uint32_t i = 0; i < ipv4->GetNInterfaces(); i++)
-//  {
-//      //Ptr<NetDevice> device = m_node->GetDevice(i);
-//      // Pourrait y avoir plusieurs IPs sur l'interface
-//      Ptr<Ipv4Interface> interface = ipv4->GetInterface(i);
-//      for( uint32_t j = 0; j < interface->GetNAddresses(); j++ )
-//      {
-//        Ipv4InterfaceAddress interfaceAddr = interface->GetAddress(j);
-//
-//
-//        // Skip the loop-back
-//        if (interfaceAddr.GetLocal() == Ipv4Address::GetLoopback())
-//          continue;
-//
-//
-//        addr.push_back( interfaceAddr.GetLocal() );
-//      }
-//
-//
-//
-//
-//  }
-}
-
-/**
-
-
-**/
-class PathEventTracker
-{
-public:
-  PathEventTracker();
-  ~PathEventTracker() {}
-
-
-};
-
-PathEventTracker::PathEventTracker()
-{
-}
-
-/**
-can be kept global ? MpTcpTestCase
-, std::vector<uint16_t> ports
-**/
-void AdvertiseAllAddresses(Ptr<MpTcpSocketBase> mptcp)
-{
-  NS_ASSERT(mptcp);
-
-  Ptr<Node> m_node = mptcp->GetNode();
-
-  // Il peut en avoir plusieurs ?
-  if (!mptcp->IsConnected())
-  {
-    NS_LOG_ERROR("This node has no established MPTCP connection");
-    return;
-  }
-
-  std::vector<Ipv4Address> addresses;
-  getAllIpsOfANode( m_node, addresses);
-
-  for(std::vector<Ipv4Address>::const_iterator i = addresses.begin(); i != addresses.end(); i++ )
-  {
-    mptcp->GetSubflow(0)->AdvertiseAddress( *i, 0 );
-  }
-
-
-}
-
-
-//class MpTcpTestCase : public MpTcpTestCase
-//{
-//public:
-//
-//}
 
 /**
 Number of interfaces per node
 **/
-class MpTcpAddressTestCase : public MpTcpTestCase
+class MpTcpIdManagerTestCase : public MpTcpTestCase
 {
 public:
-  /* Depending on the test */
-  typedef enum {
-  REM_UNREGISTERED_ADDRESS,
-  ADD_THEN_REM_ADDRESS,
-  ADD_CREATE_ADDRESS,
-  ADD_CREATE_CLOSE
-  } TestType;
 
-  MpTcpAddressTestCase(TestType testType,
-                    uint8_t nbClientIfs,
-                  uint8_t nbServerIfs,
-                  uint8_t nbIpsPerClientIf,
-                  uint8_t nbIpsPerServerIf);
-  virtual ~MpTcpAddressTestCase () {};
+  MpTcpIdManagerTestCase (Ptr<MpTcpPathIdManager>);
+  virtual ~MpTcpIdManagerTestCase () {};
 
   virtual void DoSetup();
 
@@ -261,34 +101,15 @@ public:
 
 private:
   virtual void DoRun(void);
-  TestType m_testType;
+  Ptr<MpTcpPathIdManager> m_mgr;
 };
 
-MpTcpTestCase::MpTcpTestCase(
-                  std::string name,
-                  ) :
-  TestCase(name)
+MpTcpIdManagerTestCase::MpTcpIdManagerTestCase (Ptr<MpTcpPathIdManager> mgr) :
+  m_mgr (mgr)
 {
-  NS_LOG_LOGIC (this);
-
+  //!
+  NS_ASSERT (m_mgr)
 }
-
-MpTcpTestCase::~MpTcpTestCase()
-{
-}
-
-
-void
-MpTcpTestCase::CreateNodes()
-{
-  Config::SetDefault("ns3::TcpL4Protocol::SocketType",
-			             TypeIdValue (MpTcpCCUncoupled::GetTypeId()));
-//  Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1000));
-//  Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue (1));
-//  Config::SetDefault ("ns3::DropTailQueue::MaxPackets", UintegerValue (20));
-
-}
-
 
 
 void
@@ -300,20 +121,48 @@ MpTcpTestCase::DoTeardown (void)
 
 
 void
-MpTcpAddressTestCase::DoRun (void)
+MpTcpIdManagerTestCase::DoRun (void)
 {
-  NS_LOG_LOGIC ("Doing run in MpTcpAddressTestCase");
+//  NS_LOG_LOGIC ("Doing run in MpTcpIdManagerTestCase");
 
 
-  Simulator::Run();
+  InetSocketAddress addr0 ("192.168.1.0", 42 );
+  InetSocketAddress addr1 ("192.168.1.1", 42 );
+  InetSocketAddress addr2 ("192.168.1.2");
+//  Inet6SocketAddress addr0 ( )
 
+  std::set<Address> localAddresses;
+  std::set<Address> remoteAddresses;
 
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->GetTypeId().IsChildOf ( MpTcpPathIdManager::GetTypeId () ), 
+    true, "Should have a proper parent");
+  
+//  NS_LOG_LOGIC("Simulation ended");
+  m_mgr->AddLocalId ();
+  uint8_t addrId0_0, addrId0_1;
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddLocalId (&addrId0_0, addr0), true, 
+    "Could not add localId even though the list is empty");
 
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddLocalId (&addrId0_1, addr0), false, 
+    "It should not be possible to register twice the same id");
 
-  NS_LOG_LOGIC("Simulation ended");
-
-//  NS_TEST_EXPECT_MSG_EQ (0, 1, "This test must fail (not ready)");
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddRemoteId ( 4, addr0), true, 
+    "First added remote id, should succeed !");
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddRemoteId ( 4, addr1), false, 
+    "This test must fail (a similar id has been registered just before)");
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddLocalId (&addrId0_1, addr1), true, "This test must fail (not ready)");
 //  NS_TEST_ASSERT_MSG_EQ (true, true, "true doesn't equal true for some reason");
+
+
+
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddLocalId (&addrId0_1, addr2), true, 
+    "Not registered yet so ok");
+    
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->RemoveLocalId (&addrId0_1, addr2), true, 
+    "Not registered yet so ok");
+  
+  m_mgr->GetLocalIds (localAddresses);
+//  m_mgr->GetRemoteIds (remoteAddresses);
 }
 
 
@@ -324,16 +173,9 @@ public:
   MpTcpTestSuite ()
     : TestSuite ("mptcp-pm", UNIT)
   {
-//    CommandLine cmd;
-
-    // KESAKO ?
-    Packet::EnablePrinting ();  // Enable packet metadata for all test cases
-    // Arguments to these test cases are 1) totalStreamSize,
-    // 2) source write size, 3) source read size
-    // 4) server write size, and 5) server read size
-    // with units of bytes
-    AddTestCase (new MpTcpAddressTestCase(MpTcpAddressTestCase::REM_UNREGISTERED_ADDRESS,1,1,1,1), TestCase::QUICK);
-    AddTestCase (new MpTcpAddressTestCase(MpTcpAddressTestCase::ADD_THEN_REM_ADDRESS  ,1,1,1,1), TestCase::QUICK);
+    Ptr<MpTcpPathIdManager> mgr = CreateObject<MpTcpPathIdManagerImpl> ();
+    AddTestCase (new MpTcpIdManagerTestCase (mgr), TestCase::QUICK);
+//    AddTestCase (new MpTcpIdManagerTestCase(), TestCase::QUICK);
 
   }
 

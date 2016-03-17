@@ -58,6 +58,10 @@ RFC6824
 * There should be a testsuite to
 * \class MpTcpPathIdManager
 * TODO tempalte
+
+
+Id identifies only one endpoint (
+
 **/
 class MpTcpPathIdManager
   : public Object
@@ -65,8 +69,8 @@ class MpTcpPathIdManager
 
 public:
   static TypeId GetTypeId();
-
-  MpTcpPathIdManager();
+  //const bool generate_uid
+  MpTcpPathIdManager ();
 
   virtual ~MpTcpPathIdManager() {};
 
@@ -75,15 +79,15 @@ public:
   (InetSocketAddress addr
   **/
 //  virtual uint8_t GetIdForLocalAddr( Ipv4Address address );
-//  virtual bool RemLocalAddr(Ipv4Address addr);
+//  virtual bool RemoveLocalId(Ipv4Address addr);
 
   /**
   \param addresses
   \warning Don't forget to clear the vector first !
   **/
-
-  virtual void
-  GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& addresses) = 0;
+//  GetAllAdvertisedDestinations (std::vector<Address>& addresses) = 0;
+//  virtual void
+//  GetRegisteredIds (std::vector<Address>& addresses) = 0;
 
   // TODO move callbacks here + local address Mgmt ?
 
@@ -93,36 +97,39 @@ public:
   Can force the ID with which to register
   //    const Ipv4Address& address, uint16_t port = 0
   
-  **/
-  virtual bool
-  AddRemoteId (uint8_t addrId, const Address& address) = 0;
-
-  virtual bool
-  AddLocalId (uint8_t addrId, const Ipv4Address& address, uint16_t port) = 0;
-
-  /**
-  * del/rem
-  *
-  */
-  virtual bool RemoveRemoteAddr (uint8_t addrId) = 0;
-
-  virtual uint8_t
-  GetLocalAddrId (const InetSocketAddress& address) = 0;
-//  RegisterLocalAddress()
-
-  /**
-   * Called when closing the subflow
    */
   virtual bool
-  RemLocalAddr (InetSocketAddress addrId) = 0;
+  AddId (uint8_t addrId, const Address& address) = 0;
 
+  virtual bool
+  AddLocalId (uint8_t *addrId, const Address& address) = 0;
+
+  /**
+   * del/rem
+   *
+   */
+  virtual bool RemoveId (uint8_t addrId) = 0;
+  
+/**
+   * Called when closing the subflow
+   */
+//  virtual bool
+//  RemoveLocalId (uint8_t addrId) = 0;
+
+  
+//  virtual uint8_t
+//  GetLocalAddrId (const InetSocketAddress& address) = 0;
+//  RegisterLocalAddress()
+
+  
   /**
    * Called when meta receives a REMOVE_ADDRESS. It just contians ids then.
    */
 //  virtual bool
-//  RemLocalAddr(uint8_t addrId) = 0;
-
-
+//  RemoveLocalId(uint8_t addrId) = 0;
+//
+//protected:
+//  const bool m_localPM;
 };
 
 

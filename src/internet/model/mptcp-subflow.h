@@ -100,6 +100,16 @@ public:
 //  AvailableWindow(void);      // Return unfilled portion of window
 
   /**
+   * 
+   */
+  uint8_t GetLocalId ();
+
+  /**
+   * 
+   */
+  uint8_t GetRemoteId ();
+
+  /**
    * will update the meta rwnd. Called by subflows whose
    * \return true
   */

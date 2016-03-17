@@ -86,7 +86,9 @@ MpTcpSchedulerOwd::GetSubflowToUseForEmptyPacket()
 // std::pair< start,size , subflow>
 // ca génère les mappings ensuite
 bool
-MpTcpSchedulerOwd::GenerateMapping(int& activeSubflowArrayId, SequenceNumber64& dsn, uint16_t& length)
+MpTcpSchedulerOwd::GenerateMapping(
+    int& activeSubflowArrayId, SequenceNumber64& dsn, uint16_t& length
+)
 {
     NS_LOG_FUNCTION(this);
     NS_ASSERT(m_metaSock);

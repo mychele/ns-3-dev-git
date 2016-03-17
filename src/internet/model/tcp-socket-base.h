@@ -1000,6 +1000,7 @@ protected:
   //!< TODO try to remove some friends
   friend class MpTcpSubflow;
   friend class MpTcpSchedulerRoundRobin;
+  friend class MpTcpSchedulerDeltaOWD;
   friend class TcpTraceHelper;
 
   // Counters and events
