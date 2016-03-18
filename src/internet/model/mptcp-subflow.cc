@@ -991,11 +991,11 @@ MpTcpSubflow::CompleteFork(Ptr<const Packet> p, const TcpHeader& h, const Addres
     }
 }
 
-Ptr<MpTcpPathIdManager>
-MpTcpSubflow::GetIdManager()
-{
-  return GetMeta()->m_remotePathIdManager;
-}
+//Ptr<MpTcpPathIdManager>
+//MpTcpSubflow::GetIdManager()
+//{
+//  return GetMeta()->m_remotePathIdManager;
+//}
 
 
 //void
@@ -1131,7 +1131,7 @@ MpTcpSubflow::ProcessSynSent(Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
       // TODO support IPv6
       // TODO move to mptcp socket base
-      GetIdManager ()->AddRemoteId (addressId, m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
+      m_remoteIdManager->AddRemoteId (addressId, m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
 
       TcpHeader answerHeader;
       GenerateEmptyPacketHeader (answerHeader, TcpHeader::ACK);
@@ -1259,8 +1259,8 @@ MpTcpSubflow::ProcessOptionMpTcpJoin (const Ptr<const TcpOptionMpTcp> option)
 //        uint8_t buf[20] =
 //        opt3->GetTruncatedHmac();
   NS_LOG_DEBUG ("Id manager");
-  InetSocketAddress address ( m_endPoint->->GetPeerAddress(), m_endPoint->GetPeerPort() );
-  bool res = GetIdManager()->AddRemoteId (addressId, address);
+  InetSocketAddress address ( m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
+  bool res = GetMeta ()->AddRemoteId (addressId, address);
 //  res = ;
   
   return 0;
@@ -1292,7 +1292,7 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
             break;
 
         case TcpOptionMpTcp::MP_ADD_ADDR:
-        case TcpOptionMpTcp::MP_RMADDR:
+        case TcpOptionMpTcp::MP_REMOVE_ADDR:
         case TcpOptionMpTcp::MP_FASTCLOSE:
         case TcpOptionMpTcp::MP_FAIL:
         default:

@@ -164,6 +164,7 @@ def build(bld):
         'model/mptcp-id-manager.cc',
         'model/mptcp-mapping.cc',
         'model/mptcp-id-manager-impl.cc',
+        'model/mptcp-subflow.cc',
         'model/ipv4-packet-info-tag.cc',
         'model/ipv6-packet-info-tag.cc',
         'model/ipv4-interface-address.cc',

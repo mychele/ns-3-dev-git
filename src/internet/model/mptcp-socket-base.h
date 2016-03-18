@@ -472,6 +472,23 @@ protected: // protected methods
 
   friend class Tcp;
   friend class MpTcpSubflow;
+
+
+  /*
+   *
+   * \return addrId the assigned addrId
+   * \return bool 
+   */
+  virtual bool
+  AddLocalId (uint8_t *addrId, const Address& address);
+
+  /*
+   *
+   */ 
+  virtual bool
+  AddRemoteId (uint8_t addrId, const Address& address);
+
+
   /**
    * Expects InetXSocketAddress
    * if no callback set then returns true
@@ -758,11 +775,6 @@ protected: // protected variables
 //  virtual void OnRemAddress();
 
 public:
-
-  virtual bool
-  AddLocalId (uint8_t *addrId, const Address& address);
-  virtual bool
-  AddRemoteId (uint8_t addrId, const Address& address);
 
   /**
   ONLY TEMPORARY

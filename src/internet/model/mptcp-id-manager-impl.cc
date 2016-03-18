@@ -93,7 +93,7 @@ MpTcpPathIdManagerImpl::GetInstanceTypeId (void) const
 bool
 MpTcpPathIdManagerImpl::AddLocalId (uint8_t *addrId, const Address& address)
 {
-  NS_ASSERT_MSG (m_localPM, "Can't call this function with a remote id manager");
+//  NS_ASSERT_MSG (m_localPM, "Can't call this function with a remote id manager");
 
   bool res = AddId (m_localSubflowUid, address);
   if(res) 
