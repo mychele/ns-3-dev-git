@@ -125,7 +125,7 @@ MpTcpSubflow::SetMeta (Ptr<MpTcpSocketBase> metaSocket)
 }
 
 void
-MpTcpSubflow::DumpInfo() const
+MpTcpSubflow::DumpInfo () const
 {
       NS_LOG_LOGIC ("MpTcpSubflow " << this << " SendPendingData" <<
 //          " w " << w <<
@@ -2537,6 +2537,38 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS
   return 0;
 }
 
+uint8_t 
+MpTcpSubflow::GetLocalId () const
+{
+  uint8_t localId;
+  bool res = GetMeta() ->m_localIdManager->GetMatch (
+      &localId,
+      InetSocketAddress (m_endPoint->GetLocalAddress(), m_endPoint->GetLocalPort())
+    );
+  NS_ASSERT (res);
+  return localId;
+}
+
+uint8_t 
+MpTcpSubflow::GetRemoteId () const
+{
+  uint8_t peerId;
+  bool res = GetMeta() ->m_remoteIdManager->GetMatch (
+    &peerId,
+    InetSocketAddress (m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort())
+    );
+  NS_ASSERT (res);
+  return peerId;
+}
+
+void
+MpTcpSubflow::Dump (std::ostream &os) const
+{
+  TcpSocketBase::Dump (os);
+  // TODO check if we are connected
+  os << "Local id=" << GetLocalId () 
+     << "Remote id = " << GetRemoteId();
+}
 
 /*
 Upon ack receival we need to act depending on if it's new or not

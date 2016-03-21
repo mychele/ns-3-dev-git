@@ -222,26 +222,42 @@ MpTcpPathIdManagerImpl::RemoveId (uint8_t addrId)
 //}
 
 
-#if 0
-uint8_t
-MpTcpPathIdManagerImpl::GetLocalAddrId(const Address& address)
+
+bool
+MpTcpPathIdManagerImpl::GetMatch (uint8_t *result, const Address& address)
 {
   //TODO should be able to improve AddrId allocation to allow for more choices
   // converts Static into member function ? add a modulo in case we add too many local addr ?
   static uint8_t addrId = 0;
   addrId++;
 
+  bool res = InetSocketAddress::IsMatchingType (address);
+  NS_ASSERT_MSG (res, "only support InetSocketAddress for now");
+  
   // TODO check if it's owned by the node ? or not ?
-
-  std::pair< std::map<Ipv4Address,uint8_t>::iterator , bool > result = m_localAddresses.insert(
-              std::make_pair(address.GetIpv4(), addrId)
-              );
+//  MpTcpAddressContainer::const_iterator it = std::find (m_addrs.being(), m_addrs.edn());
+  for (MpTcpAddressContainer::const_iterator it(m_addrs.begin()); it != m_addrs.end(); it++ )
+  {
+    if(it->second == address)
+    {
+      NS_LOG_DEBUG ("Found a match");
+      *result = it->first;
+      return true;
+    }
+  }
+//  if (it != m_addrs.end())
+//  {
+//    result = it->first;
+//  }
+//  std::pair< std::map<Ipv4Address,uint8_t>::iterator , bool > result = m_localAddresses.insert(
+//              std::make_pair(address.GetIpv4(), addrId)
+//              );
 //  std::map<Ipv4Address,uint8_t>::iterator it = m_localAddresses.find( address );
-  if( ! result.second) addrId--;
+//  if( ! result.second) addrId--;
 
-  return result.first->second;
+  return false;
 }
-#endif
+
 
 
 

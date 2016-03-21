@@ -2343,7 +2343,7 @@ MpTcpSocketBase::SetNewAddrCallback (Callback<bool, Ptr<Socket>, Address, uint8_
 
 
 void
-MpTcpSocketBase::MoveSubflow(Ptr<MpTcpSubflow> subflow, mptcp_container_t from, mptcp_container_t to)
+MpTcpSocketBase::MoveSubflow (Ptr<MpTcpSubflow> subflow, mptcp_container_t from, mptcp_container_t to)
 {
 
   NS_LOG_DEBUG("Moving subflow " << subflow << " from " << containerNames[from] << " to " << containerNames[to]);
@@ -2353,7 +2353,7 @@ MpTcpSocketBase::MoveSubflow(Ptr<MpTcpSubflow> subflow, mptcp_container_t from, 
   if(it == m_subflows[from].end())
   {
     NS_LOG_ERROR("Could not find subflow in *from* container. It may have already been moved by another callback ");
-    DumpSubflows();
+    DumpSubflows(std::cout);
     return;
   }
 
@@ -2363,18 +2363,18 @@ MpTcpSocketBase::MoveSubflow(Ptr<MpTcpSubflow> subflow, mptcp_container_t from, 
 
 
 void
-MpTcpSocketBase::DumpSubflows() const
+MpTcpSocketBase::DumpSubflows (std::ostream &os) const
 {
-  NS_LOG_FUNCTION(this << "\n");
+//  NS_LOG_FUNCTION(this << "\n");
   for(int i = 0; i < Maximum; ++i)
   {
 
-    NS_LOG_UNCOND("===== container [" << containerNames[i] << "]");
+    os << "===== container [" << containerNames[i] << "]";
 //    Established
 //    NS_LOG_INFO("Closing all subflows in state [" << containerNames [i] << "]");
     for( SubflowList::const_iterator it = m_subflows[i].begin(); it != m_subflows[i].end(); it++ )
     {
-      NS_LOG_UNCOND("- subflow [" << *it  << "]");
+      os << "- subflow [" << *it  << "]";
 
     }
 

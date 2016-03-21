@@ -494,6 +494,7 @@ protected: // protected methods
    * if no callback set then returns true
    */
   virtual bool NotifyJoinRequest (const Address &from, const Address & toAddress);
+
   /**
    * Expects Ipv4 (6 not supported yet)
    */
@@ -756,9 +757,9 @@ protected: // protected variables
 
   /**
    * TODO should accept a stream
-   *
+   * Dump 
    */
-  virtual void DumpSubflows() const;
+  virtual void DumpSubflows (std::ostream &os) const;
 
   /**
    *
@@ -796,7 +797,7 @@ public:
 protected:
   virtual void CreateScheduler (TypeId schedulerTypeId);
 
-  // TODO rename since will track local too.
+  // TODO rename to peerIdManager ?
   Ptr<MpTcpPathIdManager> m_remoteIdManager;  //!< Keep track of advertised ADDR id advertised by remote endhost
   Ptr<MpTcpPathIdManager> m_localIdManager;  //!< Keep track of advertised ADDR id advertised by remote endhost
 

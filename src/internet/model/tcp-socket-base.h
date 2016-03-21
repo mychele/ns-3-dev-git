@@ -987,6 +987,7 @@ public:
   virtual void
   SetupTracing(std::string prefix);
 protected:
+  virtual void Dump (std::ostream &os) const;
   //SetupTracingIfEnabled
   bool 
   IsTracingEnabled() const;

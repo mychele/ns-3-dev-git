@@ -91,7 +91,13 @@ public:
 
   // TODO move callbacks here + local address Mgmt ?
 
-
+  /**
+   * Find closest match
+   *
+   * \return true if found a match
+   * \todo should be const
+   */
+  virtual bool GetMatch (uint8_t *result, const Address& address ) = 0;
 
   /**
   Can force the ID with which to register

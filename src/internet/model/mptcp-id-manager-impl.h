@@ -97,8 +97,15 @@ public:
   // TODO move callbacks here + local address Mgmt ?
 
   // GetClosestMatchingId
-  uint8_t
-  GetLocalAddrId (const Address& address);
+//  uint8_t
+//  GetLocalAddrId (const Address& address);
+
+  /**
+   * For now only search for exact matches of InetSocketAddress, while it should 
+   * also look for closest match (in case just ip is searched, no port for instance).
+   */
+  bool GetMatch (uint8_t *result, const Address& address );
+
   /**
   Can force the ID with which to register
   //    const Ipv4Address& address, uint16_t port = 0
@@ -144,7 +151,7 @@ protected:
 
   /** Associate every local IP with an unique identifier
    */
-  std::map<Address,uint8_t> m_localAddresses; 
+//  std::map<Address,uint8_t> m_localAddresses; 
 
   /**
   Need this to check if an IP has already been advertised, in which case

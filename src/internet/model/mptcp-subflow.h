@@ -102,12 +102,12 @@ public:
   /**
    * 
    */
-  uint8_t GetLocalId ();
+  uint8_t GetLocalId () const;
 
   /**
    * 
    */
-  uint8_t GetRemoteId ();
+  uint8_t GetRemoteId () const;
 
   /**
    * will update the meta rwnd. Called by subflows whose
@@ -169,9 +169,8 @@ public:
   /**
    * for debug
    */
-  void
-  DumpInfo() const;
-
+  void DumpInfo() const;
+  virtual void Dump (std::ostream &os) const;
 
   /**
   \brief
@@ -442,6 +441,8 @@ public:
 
 protected:
 
+
+//  void DumpInfo () const;
   /////////////////////////////////////////////
   //// DSS Mapping handling
   /////////////////////////////////////////////
@@ -560,6 +561,9 @@ private:
 
   bool m_backupSubflow; //!< Priority
   bool m_masterSocket;  //!< True if this is the first subflow established (with MP_CAPABLE)
+
+//  uint8_t m_localId;  //!< Store local host token, generated during the 3-way handshake
+//  uint8_t m_remoteId;  //!< Store local host token, generated during the 3-way handshake
 
   uint32_t m_localNonce;  //!< Store local host token, generated during the 3-way handshake
 
