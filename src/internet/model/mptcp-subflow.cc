@@ -965,7 +965,10 @@ MpTcpSubflow::DeallocateEndPoint(void)
 
 
 void
-MpTcpSubflow::CompleteFork(Ptr<const Packet> p, const TcpHeader& h, const Address& fromAddress, const Address& toAddress)
+MpTcpSubflow::CompleteFork(
+  Ptr<const Packet> p, const TcpHeader& h, 
+  const Address& fromAddress, const Address& toAddress
+)
 {
   NS_LOG_INFO( this << "Completing fork of MPTCP subflow");
 
@@ -1028,13 +1031,13 @@ MpTcpSubflow::ConnectionSucceeded(void)
 
 /** Received a packet upon SYN_SENT */
 void
-MpTcpSubflow::ProcessSynSent(Ptr<Packet> packet, const TcpHeader& tcpHeader)
+MpTcpSubflow::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
   NS_ASSERT(m_state == SYN_SENT);
 
   NS_LOG_DEBUG("endp=" << m_endPoint);
-  TcpSocketBase::ProcessSynSent(packet, tcpHeader);
+  TcpSocketBase::ProcessSynSent (packet, tcpHeader);
   #if 0
   // Extract the flags. PSH and URG are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags() & ~(TcpHeader::PSH | TcpHeader::URG);
@@ -1261,7 +1264,7 @@ MpTcpSubflow::ProcessOptionMpTcpJoin (const Ptr<const TcpOptionMpTcp> option)
   NS_LOG_DEBUG ("Id manager");
   InetSocketAddress address ( m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
   bool res = GetMeta ()->AddRemoteId (addressId, address);
-//  res = ;
+  NS_ASSERT_MSG (res, "Address id should have been registered correctly");
   
   return 0;
 }

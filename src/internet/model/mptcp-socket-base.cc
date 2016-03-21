@@ -876,9 +876,10 @@ TODO do it so that it does not return the subflow. Should make for fewer mistake
 
 C'est là qu'il faut activer le socket tracing
 
-TODO remove
+================================
+TODO REMOVE utilisé nul part
+===============================
 */
-
 Ptr<MpTcpSubflow>
 MpTcpSocketBase::CreateSubflow(
                                bool masterSocket
@@ -920,7 +921,7 @@ MpTcpSocketBase::CreateSubflow(
   // TODO pass CC
 //  m_congestionControl->GetInstanceTypeId()
 //GetMpTcpSubflowTypeId
-  Ptr<Socket> sock = m_tcp->CreateSocket();
+  Ptr<Socket> sock = m_tcp->CreateSocket ();
 
   Ptr<MpTcpSubflow> sFlow = DynamicCast<MpTcpSubflow>(sock);
   // So that we know when the connection gets established
@@ -930,12 +931,19 @@ MpTcpSocketBase::CreateSubflow(
   // TODO Maybe useless, master could be recognized based on endpoint  or mptcp state
   sFlow->m_masterSocket = masterSocket;
 
+//  InetSocketAddress addr (m_endPoint->)
+//  if(masterSocket) {
+//    GetMeta ()->AddId (0, );
+//  }
+//  else {
+//    GetMeta ()->AddId (0, );
+//  }
 
   /**
   We need to update MPTCP level cwin every time a subflow window is updated,
   thus we resort to the tracing system to track subflows cwin
   **/
-  NS_ASSERT_MSG( sFlow, "Contact ns3 team");
+  NS_ASSERT_MSG ( sFlow, "Contact ns3 team");
   m_subflows[Others].push_back( sFlow );
   NS_LOG_INFO ( "subflow " << sFlow << " associated with node " << sFlow->m_node);
   return sFlow;
@@ -1003,6 +1011,12 @@ MpTcpSocketBase::AddSubflow (Ptr<MpTcpSubflow> sflow)
       // Those may be overriden later
       m_endPoint = sf->m_endPoint;
       m_endPoint6 = sf->m_endPoint6;
+
+      InetSocketAddress addr(m_endPoint->GetLocalAddress());
+      ok = m_localIdManager->AddId(0, addr);
+      NS_ASSERT_MSG (ok, "Master subflow has mptcp id = 0");
+      
+//      GetMeta ()->AddLocalId ();
   }
 
   sf->SetMeta(this);
@@ -2424,8 +2438,8 @@ MpTcpSocketBase::OnSubflowEstablished(Ptr<MpTcpSubflow> subflow)
   {
     NS_LOG_LOGIC("Master subflow created, copying its endpoint");
     m_endPoint = subflow->m_endPoint;
-    SetTcp(subflow->m_tcp);
-    SetNode(subflow->GetNode());
+    SetTcp (subflow->m_tcp);
+    SetNode (subflow->GetNode());
 
     if(m_state == SYN_SENT || m_state == SYN_RCVD)
     {
