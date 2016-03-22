@@ -51,6 +51,11 @@ MpTcpPathIdManager::MpTcpPathIdManager () :
 }
 
 
+TypeId
+MpTcpPathIdManager::GetInstanceTypeId(void) const
+{
+  return MpTcpPathIdManager::GetTypeId();
+}
 
 
 } // end of ns3

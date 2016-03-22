@@ -74,6 +74,8 @@ public:
 
   virtual ~MpTcpPathIdManager() {};
 
+  virtual TypeId GetInstanceTypeId(void) const;
+
   /**
   Will generate an appropriate ID
   (InetSocketAddress addr

@@ -65,7 +65,7 @@ TypeId
 MpTcpPathIdManagerImpl::GetInstanceTypeId (void) const
 {
 //  NS_LOG_UNCOND("TcpOptionMpTcp::GetInstanceTypeId called");
-  return GetTypeId ();
+  return MpTcpPathIdManagerImpl::GetTypeId ();
 }
 
 
@@ -93,8 +93,10 @@ MpTcpPathIdManagerImpl::GetInstanceTypeId (void) const
 bool
 MpTcpPathIdManagerImpl::AddLocalId (uint8_t *addrId, const Address& address)
 {
+  NS_LOG_FUNCTION (address);
 //  NS_ASSERT_MSG (m_localPM, "Can't call this function with a remote id manager");
 
+  
   bool res = AddId (m_localSubflowUid, address);
   if(res) 
   {
@@ -110,24 +112,34 @@ uint8_t addrId, const Address& addressToRegister
 //, uint16_t portToRegister
 )
 {
-  MpTcpAddressContainer& container = m_addrs;
+  NS_LOG_FUNCTION (addrId << addressToRegister);
+//  MpTcpAddressContainer& container = m_addrs;
 
 //  MpTcpAddressInfo addrInfo = std::make_pair(address,port);
 
+  uint8_t temp;
+  if (GetMatch (&temp, addressToRegister)) 
+  {
+    NS_LOG_DEBUG ("Can't add twice the same address");
+    return false;
+  }
 
-  NS_LOG_INFO ("Trying to ADD_ADDR [" << addrId << "] ");
+  NS_LOG_INFO ("Trying to add addrId [" << static_cast<int>(addrId) << "] ");
 
-  MpTcpAddressContainer::iterator it = container.find( addrId );
+  MpTcpAddressContainer::iterator it = m_addrs.find( addrId );
   // if id already registered then we need to check the IPs are the same as the one advertised and that ports are different
 
 //  bool insert;
-  NS_LOG_ERROR ("TODO not implemented : should lookup closest match");
-  if(it != container.end() )
+//  NS_LOG_ERROR ("TODO not implemented : should lookup closest match");
+  if(it != m_addrs.end() )
   {
-    Address match = it->second;
-    if (match.GetSerializedSize () != addressToRegister.GetSerializedSize () ) {
-      NS_LOG_WARN ("it could be ok to add it anyway");
-    }
+    NS_LOG_FUNCTION ("Id already registered");
+    return false;
+//    Address match = it->second;
+//    if (match.GetSerializedSize () != addressToRegister.GetSerializedSize () ) 
+//    {
+//      NS_LOG_WARN ("it could be ok to add it anyway");
+//    }
     // if there is a match, we
 //    Ipv4Address addrRegisteredWithId = it->second.first;
 ////    uint16_t portRegisteredTo)
@@ -168,7 +180,7 @@ uint8_t addrId, const Address& addressToRegister
     else
     {
       NS_LOG_DEBUG ("Registering " << addressToRegister << addrId );
-      container.insert (std::make_pair (addrId, addressToRegister));
+      m_addrs.insert (std::make_pair (addrId, addressToRegister));
     }
 
 // callback to know if we should accept it ?
@@ -226,6 +238,7 @@ MpTcpPathIdManagerImpl::RemoveId (uint8_t addrId)
 bool
 MpTcpPathIdManagerImpl::GetMatch (uint8_t *result, const Address& address)
 {
+  NS_LOG_FUNCTION (address);
   //TODO should be able to improve AddrId allocation to allow for more choices
   // converts Static into member function ? add a modulo in case we add too many local addr ?
   static uint8_t addrId = 0;
@@ -240,7 +253,7 @@ MpTcpPathIdManagerImpl::GetMatch (uint8_t *result, const Address& address)
   {
     if(it->second == address)
     {
-      NS_LOG_DEBUG ("Found a match");
+      NS_LOG_DEBUG ( it->first << " match " << address);
       *result = it->first;
       return true;
     }

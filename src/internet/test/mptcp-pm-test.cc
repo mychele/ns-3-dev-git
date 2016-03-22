@@ -131,9 +131,7 @@ MpTcpIdManagerTestCase::DoRun (void)
   std::set<Address> localAddresses;
   std::set<Address> remoteAddresses;
 
-  NS_TEST_EXPECT_MSG_EQ (m_mgr->GetTypeId().IsChildOf ( MpTcpPathIdManager::GetTypeId () ), 
-    true, "Should have a proper parent");
-  
+
 //  NS_LOG_LOGIC("Simulation ended");
 //  m_mgr->AddLocalId ();
   uint8_t addrId0_0, addrId0_1, result;
@@ -143,25 +141,28 @@ MpTcpIdManagerTestCase::DoRun (void)
   NS_TEST_EXPECT_MSG_EQ (m_mgr->AddLocalId (&addrId0_1, addr0), false, 
     "It should not be possible to register twice the same id");
 
-  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddId ( 4, addr0), true, 
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddId (4, addr1), true, 
     "First added remote id, should succeed !");
-  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddId ( 4, addr1), false, 
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddId ( 4, addr2), false, 
     "This test must fail (a similar id has been registered just before)");
-  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddLocalId (&addrId0_1, addr1), true, 
-    "Adding a new address should be ok");
+//  NS_TEST_EXPECT_MSG_EQ (m_mgr->AddLocalId (&addrId0_1, addr1), false, 
+//    "addr1 already registered (maybe return true instead for exact match ?)");
 //  NS_TEST_ASSERT_MSG_EQ (true, true, "true doesn't equal true for some reason");
 
-    
-  NS_TEST_EXPECT_MSG_EQ (m_mgr->RemoveId (addrId0_1), true, 
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->GetMatch(&result, addr0), true, 
+    "Must find it");
+
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->RemoveId (addrId0_0), true, 
     "Just registered so it should be possible to remove it");
-  
+//  
 //  m_mgr->GetIds (localAddresses);
 //
 //  //! Now I need to check that alls id are made available
 //  NS_TEST_EXPECT_MSG_EQ (localAddresses.size(), 2, "We have added 2 addresses");
-//  
-  NS_TEST_EXPECT_MSG_EQ (m_mgr->GetMatch(&result, addr0), true, 
-    "Must find it");
+
+  NS_TEST_EXPECT_MSG_EQ (m_mgr->GetMatch(&result, addr0), false, 
+    "It was just removed");
+  std::cout << "Comparing " << result << "and " << addrId0_0;
   NS_TEST_EXPECT_MSG_EQ (result, addrId0_0, "Ids must be the same");
 //  m_mgr->GetRemoteIds (remoteAddresses);
 }
