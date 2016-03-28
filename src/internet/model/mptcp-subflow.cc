@@ -266,11 +266,6 @@ MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
 {
     NS_LOG_FUNCTION (this << &sock);
       NS_LOG_LOGIC ("Copying from TcpSocketBase. endPoint=" << sock.m_endPoint);
-//      if(sFlow->IsMaster())
-//  {
-//    m_endPoint = sock.m_endPoint;
-//  }
-
     // We need to update the endpoint callbnacks so that packets come to this socket
     // instead of the abstract meta
     // this is necessary for the client socket
@@ -278,7 +273,6 @@ MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
     m_endPoint = (sock.m_endPoint);
     m_endPoint6 = (sock.m_endPoint6);
     SetupCallback();
-//    NS_ASSERT(res == 0);
 }
 
 
@@ -978,7 +972,7 @@ MpTcpSubflow::CompleteFork(
 
   // Get port and address from peer (connecting host)
   // TODO upstream ns3 should assert that to and from Address are of the same kind
-  TcpSocketBase::CompleteFork(p, h, fromAddress, toAddress);
+  TcpSocketBase::CompleteFork (p, h, fromAddress, toAddress);
 //   NS_FATAL_ERROR("TODO: endpoint never set. be careful to set it for meta too");
 //   GetMeta()->AddSubflow(this);
   NS_LOG_INFO( this << " Endpoint="  << m_endPoint);

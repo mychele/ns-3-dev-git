@@ -24,9 +24,6 @@
 
 NS_LOG_COMPONENT_DEFINE ("MpTcpCryptoTest");
 
-
-
-
 namespace ns3 {
 
 /* client initiates connection => SYN */

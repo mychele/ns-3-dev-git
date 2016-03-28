@@ -292,7 +292,7 @@ public:
   void SetCongestionControlAlgorithm (Ptr<TcpCongestionOps> algo);
 
   // HACK MATT
-  virtual void GenerateEmptyPacketHeader(TcpHeader& header, uint8_t flags);
+  virtual void GenerateEmptyPacketHeader (TcpHeader& header, uint8_t flags);
 
   // TODO pass on data
   /**

@@ -533,7 +533,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
     p2p.SetDeviceAttribute ("DataRate", StringValue ("100Mbps"));
     p2p.SetChannelAttribute ("Delay", StringValue ("10ms"));
     NetDeviceContainer cont = p2p.Install(m_serverNode,m_sourceNode);
-    p2p.EnablePcapAll("test", true);
+    p2p.EnablePcapAll("mptcp-multi", true);
 
     Ipv4AddressHelper ipv4;
     NS_LOG_DEBUG("setting ipv4 base " << netAddr.str());
@@ -705,13 +705,15 @@ public:
     // TODO addition by matt
 //    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCCOlia") );
 //    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCCLia") );
-    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::TcpNewReno") );
+	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::TcpNewReno") );
+  Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true));
+  Config::SetDefault ("ns3::TcpSocketBase::NullISN", BooleanValue(false));
 //    Time::SetResolution (Time::MS);
     // Arguments to these test cases are 1) totalStreamSize,
     // 2) source write size, 3) source read size
     // 4) server write size, and 5) server read size
     // with units of bytes
-//    AddTestCase (new MpTcpMultihomedTestCase (13, 200, 200, 200, 200, false), TestCase::QUICK);
+	AddTestCase (new MpTcpMultihomedTestCase (13, 200, 200, 200, 200, false), TestCase::QUICK);
 //    AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, false), TestCase::QUICK);
 //    AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, false), TestCase::QUICK);
 
