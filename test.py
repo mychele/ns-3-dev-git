@@ -24,9 +24,7 @@ import argparse
 import subprocess
 import threading
 import signal
-import xml.dom.minidom
 import shutil
-import re
 import logging
 import csv
 import io
@@ -1023,8 +1021,9 @@ def list_tests(test_runner_name, constrain=None):
 
     reader = csv.DictReader(io.StringIO(standard_out), fieldnames=["kind", "name"], delimiter=' ', skipinitialspace=True)
     # list_items = [(row['kind'], row['name']) for row in reader]
-    list_items = [(row['kind'], row['name']) for row in reader]
+    # list_items = [(row['kind'], row['name']) for row in reader]
     # data = {}
+    return dict((row['name'], row['kind']) for row in reader)
     # for row in reader:
     #     # print("name=%s" % row["name"])
     #     try:
@@ -1032,10 +1031,10 @@ def list_tests(test_runner_name, constrain=None):
     #     except KeyError:
     #         data[header] = [value]
     # return data
-    # list_items = standard_out.split('\n')
-    # print(list_items)
-    # list_items.sort()
-    return list_items
+    # # list_items = standard_out.split('\n')
+    # # print(list_items)
+    # # list_items.sort()
+    # # return list_items
 
 #
 # This is the main function that does the work of interacting with the
@@ -1206,12 +1205,12 @@ def run_tests(unknown_args):
 
     # TODO move that to a function
     if options.list:
-        list_items = list_tests(test_runner_name, options.constrain)
+        tests = list_tests(test_runner_name, options.constrain)
         print("Test Type    Test Name")
         print("---------    ---------")
-        for kind, name in list_items:
+        for name, desc  in tests.items():
             # if len(item.strip()):
-            line = "{:<12}{}".format(kind, name)
+            line = "{:<12}{}".format(desc, name)
             print(line)
         example_names_original.sort()
         for item in example_names_original:
@@ -1285,12 +1284,12 @@ def run_tests(unknown_args):
     #
     # if len(options.suite):
     available_tests = list_tests(test_runner_name)
-    print("Available tests", available_tests)
+    # print("Available tests", available_tests)
     # suite_list = set.intersection(available_tests, options.suite)
     suite_list = []
     for suite in options.suite:
         # See if this is a valid test suite.
-        if suite not in available_tests:
+        if suite not in available_tests.keys():
             print('The test suite was not run because an unknown test suite "%s" name was requested.' % suite, file=sys.stderr)
             sys.exit(2)
         suite_list.append(suite)
@@ -1410,12 +1409,12 @@ def run_tests(unknown_args):
             job.set_tempdir(testpy_output_dir)
 
             path_cmd = os.path.join("utils", test_runner_name)
-            path_cmd += " --test-name={name} {multiple} {fullness} {verbose} {args}".format(
+            path_cmd += " --test-name={name} {multiple} --fullness={fullness} {verbose} {args}".format(
                 name=test,
                 multiple= "" if options.multiple else " --stop-on-failure",
                 fullness=options.fullness,
                 verbose="--verbose" if options.verbose else "",
-                args=unknown_args if len(suite_list) == 1 else ""
+                args= ""
             )
 
             job.set_shell_command(path_cmd)
@@ -1518,6 +1517,8 @@ def run_tests(unknown_args):
             #
             example_path = ns3_runnable_programs_dictionary[example_name]
             example_path = os.path.abspath(example_path)
+            example_path += " " + ' '.join(unknown_args)
+
             job = Job()
             job.set_is_example(True)
             job.set_is_pyexample(False)
@@ -1896,7 +1897,9 @@ def main(argv):
     parser.add_argument("-d", "--duration", action="store_true", dest="duration", default=False,
                       help="print the duration of each test suite and example")
 
-    parser.add_argument("-e", "--example", action="append", type=str, dest="example", default="",
+    parser.add_argument("-e", "--example", 
+            type=str,
+            # action="append", default=[],
                       metavar="EXAMPLE",
                       help="specify a single example to run (no relative path is needed)")
 
@@ -1929,12 +1932,10 @@ def main(argv):
     parser.add_argument("-r", "--retain", action="store_true", dest="retain", default=False,
                       help="retain all temporary files (which are normally deleted)")
 
-    parser.add_argument("-s", "--suite", action="append",  dest="suite", 
-                      metavar="TEST-SUITE",
+    parser.add_argument("-s", "--suite", action="append", default=[], metavar="TEST-SUITE",
                       help="specify a test suite to run. Can appear several times")
 
-    parser.add_argument("-t", "--text", action="store", type=str, dest="text", default="",
-                      metavar="TEXT-FILE",
+    parser.add_argument("-t", "--text", action="store", type=str, default="", metavar="TEXT-FILE",
                       help="write detailed test results into TEXT-FILE.txt")
 
     parser.add_argument("-D", "--debug", action="store_true", default=False,
@@ -1955,6 +1956,7 @@ def main(argv):
     options, unknown_args = parser.parse_known_args()
     signal.signal(signal.SIGINT, sigint_hook)
 
+    print("unknown", unknown_args)
     return run_tests(unknown_args)
 
 if __name__ == '__main__':
