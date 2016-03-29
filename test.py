@@ -1020,11 +1020,18 @@ def list_tests(test_runner_name, constrain=None):
 
     if isinstance(standard_out, bytes):
         standard_out = standard_out.decode()
-    reader = csv.DictReader(io.StringIO(standard_out), fieldnames=["kind", "name"], delimiter=' ', skipinitialspace=True)
-    list_items = [row['name'] for row in reader]
-    # for row in reader:
-        # print("name=%s" % row["name"])
 
+    reader = csv.DictReader(io.StringIO(standard_out), fieldnames=["kind", "name"], delimiter=' ', skipinitialspace=True)
+    # list_items = [(row['kind'], row['name']) for row in reader]
+    list_items = [(row['kind'], row['name']) for row in reader]
+    # data = {}
+    # for row in reader:
+    #     # print("name=%s" % row["name"])
+    #     try:
+    #         data[header].append(value)
+    #     except KeyError:
+    #         data[header] = [value]
+    # return data
     # list_items = standard_out.split('\n')
     # print(list_items)
     # list_items.sort()
@@ -1034,7 +1041,7 @@ def list_tests(test_runner_name, constrain=None):
 # This is the main function that does the work of interacting with the
 # test-runner itself.
 #
-def run_tests():
+def run_tests(unknown_args):
 
     if options.debug:
         log.setLevel(logging.DEBUG)
@@ -1202,9 +1209,10 @@ def run_tests():
         list_items = list_tests(test_runner_name, options.constrain)
         print("Test Type    Test Name")
         print("---------    ---------")
-        for item in list_items:
-            if len(item.strip()):
-                print(item)
+        for kind, name in list_items:
+            # if len(item.strip()):
+            line = "{:<12}{}".format(kind, name)
+            print(line)
         example_names_original.sort()
         for item in example_names_original:
                 print("example     ", item)
@@ -1303,8 +1311,6 @@ def run_tests():
         else:
             path_cmd = os.path.join("utils", test_runner_name + " --print-test-name-list")
             (rc, suites, standard_err, et) = run_job_synchronously(path_cmd, os.getcwd(), False, False)
-    else:
-        suites = ""
 
     #
     # suite_list will either a single test suite name that the user has 
@@ -1404,11 +1410,12 @@ def run_tests():
             job.set_tempdir(testpy_output_dir)
 
             path_cmd = os.path.join("utils", test_runner_name)
-            path_cmd += " --test-name={name} {multiple} {fullness} {verbose}".format(
+            path_cmd += " --test-name={name} {multiple} {fullness} {verbose} {args}".format(
                 name=test,
                 multiple= "" if options.multiple else " --stop-on-failure",
                 fullness=options.fullness,
-                verbose="--verbose" if options.verbose else ""
+                verbose="--verbose" if options.verbose else "",
+                args=unknown_args if len(suite_list) == 1 else ""
             )
 
             job.set_shell_command(path_cmd)
@@ -1775,7 +1782,7 @@ def run_tests():
                     f = open(xml_results_file, 'a')
                     f.write("<Test>\n")
                     f.write("  <Name>%s</Name>\n" % job.display_name)
-                    f.write('  <Result>CRASH</Suite>\n')
+                    f.write('  <Result>CRASH</Result>\n')
                     f.write("</Test>\n")
                     f.close()
 
@@ -1896,9 +1903,9 @@ def main(argv):
     parser.add_argument("-u", "--update-data", action="store_true", dest="update_data", default=False,
                       help="If examples use reference data files, get them to re-generate them")
 
-    parser.add_argument("-f", "--fullness", action="store", choices=["QUICK", "EXTENSIVE", "TAKES_FOREVER"], dest="fullness", default="QUICK",
-                      metavar="FULLNESS",
-                      help="choose the duration of tests to run: QUICK, EXTENSIVE, or TAKES_FOREVER, where EXTENSIVE includes QUICK and TAKES_FOREVER includes QUICK and EXTENSIVE (only QUICK tests are run by default)")
+    parser.add_argument("-f", "--fullness", action="store", choices=["QUICK", "EXTENSIVE", "TAKES_FOREVER"],
+            dest="fullness", default="QUICK", metavar="FULLNESS",
+            help="choose the duration of tests to run: QUICK, EXTENSIVE, or TAKES_FOREVER, where EXTENSIVE includes QUICK and TAKES_FOREVER includes QUICK and EXTENSIVE (only QUICK tests are run by default)")
 
     parser.add_argument("-g", "--grind", action="store_true", dest="valgrind", default=False,
                       help="run the test suites and examples using valgrind")
@@ -1922,7 +1929,6 @@ def main(argv):
     parser.add_argument("-r", "--retain", action="store_true", dest="retain", default=False,
                       help="retain all temporary files (which are normally deleted)")
 
-    # TODO convert it to accumulator
     parser.add_argument("-s", "--suite", action="append",  dest="suite", 
                       metavar="TEST-SUITE",
                       help="specify a test suite to run. Can appear several times")
@@ -1946,11 +1952,10 @@ def main(argv):
                       help="write detailed test results into XML-FILE.xml")
 
     global options
-    # TODO parse_known_args
-    options = parser.parse_args()
+    options, unknown_args = parser.parse_known_args()
     signal.signal(signal.SIGINT, sigint_hook)
 
-    return run_tests()
+    return run_tests(unknown_args)
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
