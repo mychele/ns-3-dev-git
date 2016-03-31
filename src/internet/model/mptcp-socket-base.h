@@ -353,13 +353,13 @@ public:
    * \return an established subflow
    */
   virtual Ptr<MpTcpSubflow> GetSubflow(uint8_t pos) const;
-  
+
   /**
    * \param addrId Address id as registered in path manager
    * \assert if could not find subflow
    */
   virtual Ptr<MpTcpSubflow> GetSubflowFromAddressId (uint8_t addrId) const;
-  
+
   // can Potentially be removed ?
   virtual void ClosingOnEmpty(TcpHeader& header);
 
@@ -399,9 +399,15 @@ public:
 
   /**
    * Initiate
+   * - establish link between subflow and meta
+   * - Setup subflow callbacks
+   * - assign congestion control
+   * - adds the
+   *
+   * TODO should we use the aggregate mechanism instead ? could we even ?
    * TODO rename into SetupSubflow ?
    */
-  virtual void AddSubflow(Ptr<MpTcpSubflow> sf);
+  virtual void AddSubflow (Ptr<MpTcpSubflow> sf);
 
 
   // Path management related functions
@@ -468,25 +474,27 @@ public: // public variables
   virtual void
   CompleteFork(Ptr<const Packet> p, const TcpHeader& h, const Address& fromAddress, const Address& toAddress);
 
-protected: // protected methods
-
-  friend class Tcp;
-  friend class MpTcpSubflow;
-
-
   /*
    *
    * \return addrId the assigned addrId
-   * \return bool 
+   * \return bool
    */
   virtual bool
   AddLocalId (uint8_t *addrId, const Address& address);
 
   /*
    *
-   */ 
+   */
   virtual bool
   AddRemoteId (uint8_t addrId, const Address& address);
+
+protected: // protected methods
+
+  friend class Tcp;
+  friend class MpTcpSubflow;
+
+
+
 
 
   /**
@@ -757,7 +765,7 @@ protected: // protected variables
 
   /**
    * TODO should accept a stream
-   * Dump 
+   * Dump
    */
   virtual void DumpSubflows (std::ostream &os) const;
 
@@ -825,7 +833,7 @@ private:
   bool     m_receivedDSS;  //!< True if we received at least one DSS
 
   bool     m_generatedIdsn; //!<
-  
+
 
 private:
 

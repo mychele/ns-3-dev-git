@@ -332,7 +332,7 @@ public:
   // Return Peer ISN
   virtual SequenceNumber32 GetLocalIsn(void) const;
   virtual SequenceNumber32 GetPeerIsn(void) const;
-  
+
   // Implementing ns3::TcpSocket -- Attribute get/set
   // inherited, no need to doc
   virtual uint32_t GetSndBufSize (void) const;
@@ -357,10 +357,10 @@ protected:
   virtual void     SetSegSize (uint32_t size);
   virtual void     SetInitialSSThresh (uint32_t threshold);
   virtual void     SetInitialCwnd (uint32_t cwnd);
-  
+
 //  virtual void     SetLocalISN (SequenceNumber32 seq);
-  
-  
+
+
   virtual void     SetConnTimeout (Time timeout);
   virtual void     SetConnCount (uint32_t count);
   virtual void     SetDelAckTimeout (Time timeout);
@@ -834,10 +834,11 @@ protected:
    * The function does not register the new subflow in m_tcp->AddSocket, this should be taken care
    * of afterwards.
    *
+   * @param connecting Set to true for the client
    * \param master
    * \return master subflow. It is not associated to the meta at this point
    */
-  virtual Ptr<MpTcpSubflow> UpgradeToMeta();
+  virtual Ptr<MpTcpSubflow> UpgradeToMeta(bool connecting);
 
   /**
    * TODO replace all of them by ProcessTcpOptions ?
@@ -989,7 +990,7 @@ public:
 protected:
   virtual void Dump (std::ostream &os) const;
   //SetupTracingIfEnabled
-  bool 
+  bool
   IsTracingEnabled() const;
 //  bool EnableTracing();
   std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed

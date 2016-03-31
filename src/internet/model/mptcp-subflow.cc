@@ -261,7 +261,7 @@ MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
     m_dssFlags (0),
     m_masterSocket(true),
     m_localNonce(0)
-    
+
 
 {
     NS_LOG_FUNCTION (this << &sock);
@@ -301,7 +301,7 @@ MpTcpSubflow::MpTcpSubflow(
     m_masterSocket(false),
     m_localNonce(0),
     m_prefixCounter(0)
-    
+
 {
   NS_LOG_FUNCTION(this);
 }
@@ -589,7 +589,7 @@ MpTcpSubflow::SendPacket(TcpHeader header, Ptr<Packet> p)
         NS_FATAL_ERROR("Could not find mapping associated to ssn");
       }
       NS_ASSERT_MSG(mapping.TailSSN() >= ssnHead +p->GetSize() -1, "mapping should cover the whole packet" );
-    
+
       // otherwise sometimes we were sending too  long mappings and the datafin number was way off
 //      mapping.SetMappingSize( std::min( p->GetSize(), (uint32_t)mapping.GetLength()));
       AppendDSSMapping(mapping);
@@ -866,7 +866,7 @@ MpTcpSubflow::AddMpTcpOptionDSS(TcpHeader& header)
   {
 
     // we want to set the final ssn to 0 but m_txBuffer->HeadSequence() is always removed from current SSN
-    // hence we set it here to m_txBuffer->HeadSequence() so that it becomes 
+    // hence we set it here to m_txBuffer->HeadSequence() so that it becomes
     // (m_txBuffer->HeadSequence() - m_txBuffer->HeadSequence() = 0 later.
     // TODO rewrite so that it becomes clearer, maybe when we setMapping
 //    m_dssMapping.MapToSSN(m_txBuffer->HeadSequence());
@@ -891,12 +891,12 @@ MpTcpSubflow::AddMpTcpOptionDSS(TcpHeader& header)
   if(m_dssFlags & TcpOptionMpTcpDSS::DSNMappingPresent)
   {
 
-      dss->SetMapping(m_dssMapping.HeadDSN().GetValue(), 
+      dss->SetMapping(m_dssMapping.HeadDSN().GetValue(),
                       /** SSN should be relative **/
                       m_dssMapping.HeadSSN().GetValue(),
                       m_dssMapping.GetLength(),
-                      // HACK to fix bug 
-//                      std::min(m_dssMapping.GetLength(), header.Get), 
+                      // HACK to fix bug
+//                      std::min(m_dssMapping.GetLength(), header.Get),
                       sendDataFin);
    }
   header.AppendOption(dss);
@@ -960,7 +960,7 @@ MpTcpSubflow::DeallocateEndPoint(void)
 
 void
 MpTcpSubflow::CompleteFork(
-  Ptr<const Packet> p, const TcpHeader& h, 
+  Ptr<const Packet> p, const TcpHeader& h,
   const Address& fromAddress, const Address& toAddress
 )
 {
@@ -968,6 +968,15 @@ MpTcpSubflow::CompleteFork(
 
     // Already done in ForkMeta => TODO remove
 //  GetMeta()->GenerateUniqueMpTcpKey(true);
+    // We need to assign an id before the answer is actually sent
+
+  InetSocketAddress addr = InetSocketAddress::ConvertFrom(fromAddress);
+//  InetSocketAddress addr (fromAddress);
+  uint8_t id = 0;
+  bool ok;
+  ok = GetMeta()->m_localIdManager->AddLocalId (&id, fromAddress);
+  NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
+  NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
 
 
   // Get port and address from peer (connecting host)
@@ -983,6 +992,8 @@ MpTcpSubflow::CompleteFork(
                     << " bound to interface " << m_endPoint->GetBoundNetDevice()
                     );
        GetMeta()->m_endPoint = m_endPoint;
+
+
        /** allows to set*/
 //       m_boundnetdevice = m_endPoint->GetBoundNetDevice();
     }
@@ -1259,7 +1270,7 @@ MpTcpSubflow::ProcessOptionMpTcpJoin (const Ptr<const TcpOptionMpTcp> option)
   InetSocketAddress address ( m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
   bool res = GetMeta ()->AddRemoteId (addressId, address);
   NS_ASSERT_MSG (res, "Address id should have been registered correctly");
-  
+
   return 0;
 }
 
@@ -2479,11 +2490,11 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS
   if(!GetMeta()->FullyEstablished() )
   {
     NS_LOG_LOGIC("First DSS received !");
-    
-    /* TODO 
+
+    /* TODO
     this should be removed and the meta should become fully established only when
     the datack is received, hence it should be processed
-    maybe rework that part so that it pro 
+    maybe rework that part so that it pro
     BecomeFullyEstablished
     */
     GetMeta()->BecomeFullyEstablished();
@@ -2495,7 +2506,7 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS
   {
       MpTcpMapping m;
       // TODO Get mapping n'est utilisé qu'une fois, copier le code ici
-      //+ SequenceNumber(1) 
+      //+ SequenceNumber(1)
       m = GetMapping(dss);
       m.MapToSSN( m.HeadSSN() + GetPeerIsn() );
 //      AddPeerMapping(m);
@@ -2534,7 +2545,7 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS
   return 0;
 }
 
-uint8_t 
+uint8_t
 MpTcpSubflow::GetLocalId () const
 {
   uint8_t localId;
@@ -2546,7 +2557,7 @@ MpTcpSubflow::GetLocalId () const
   return localId;
 }
 
-uint8_t 
+uint8_t
 MpTcpSubflow::GetRemoteId () const
 {
   uint8_t peerId;
@@ -2563,7 +2574,7 @@ MpTcpSubflow::Dump (std::ostream &os) const
 {
   TcpSocketBase::Dump (os);
   // TODO check if we are connected
-  os << "Local id=" << GetLocalId () 
+  os << "Local id=" << GetLocalId ()
      << "Remote id = " << GetRemoteId();
 }
 

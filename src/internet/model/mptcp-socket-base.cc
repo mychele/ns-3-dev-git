@@ -170,7 +170,7 @@ MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
     //
     NS_LOG_FUNCTION(this);
     NS_LOG_LOGIC("Copying from TcpSocketBase");
-    
+
     // TODO make it configurable
     m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
     m_localIdManager = Create<MpTcpPathIdManagerImpl>();
@@ -285,8 +285,8 @@ MpTcpSocketBase::AddRemoteId (uint8_t addrId, const Address& address)
   NS_LOG_FUNCTION (address);
   return m_remoteIdManager->AddId (addrId, address);
 }
-  
-  
+
+
 void
 MpTcpSocketBase::CreateScheduler(TypeId schedulerTypeId)
 {
@@ -393,7 +393,7 @@ MpTcpSocketBase::GetSubflow (uint8_t id) const
 }
 
 // FROM remote AddrId or localAddrId
-Ptr<MpTcpSubflow> 
+Ptr<MpTcpSubflow>
 MpTcpSocketBase::GetSubflowFromAddressId (uint8_t addrId) const
 {
   //!
@@ -458,7 +458,7 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 
 
 
-void 
+void
 MpTcpSocketBase::InitLocalISN(const SequenceNumber32& seq)
 {
     //!
@@ -1000,24 +1000,7 @@ MpTcpSocketBase::AddSubflow (Ptr<MpTcpSubflow> sflow)
   ok = sf->TraceConnectWithoutContext ("State", MakeBoundCallback(&onSubflowNewState, this, sf));
   NS_ASSERT_MSG(ok, "Tracing mandatory to update the MPTCP socket state");
 
-  if(sf->IsMaster())
-  {
-      //! then we update
-      m_state = sf->GetState();
-      m_mptcpLocalKey = sf->m_mptcpLocalKey;
-      m_mptcpLocalToken = sf->m_mptcpLocalToken;
-      NS_LOG_DEBUG("Set master key/token to "<< m_mptcpLocalKey << "/" << m_mptcpLocalToken);
 
-      // Those may be overriden later
-      m_endPoint = sf->m_endPoint;
-      m_endPoint6 = sf->m_endPoint6;
-
-      InetSocketAddress addr(m_endPoint->GetLocalAddress());
-      ok = m_localIdManager->AddId(0, addr);
-      NS_ASSERT_MSG (ok, "Master subflow has mptcp id = 0");
-      
-//      GetMeta ()->AddLocalId ();
-  }
 
   sf->SetMeta(this);
 
@@ -1045,8 +1028,8 @@ MpTcpSocketBase::AddSubflow (Ptr<MpTcpSubflow> sflow)
 //  if (sf->GetMpTcpId () == -1) {
 //    NS_LOG_ERROR ("TODO");
 //  }
-  
-  
+
+
   m_subflows[Others].push_back( sf );
 }
 
@@ -1600,8 +1583,8 @@ MpTcpSocketBase::NewAck(SequenceNumber32 const& dsn)
   NS_LOG_FUNCTION(this << " new dataack=[" <<  dsn << "]");
 
   if(m_state == SYN_SENT) {
-    
-    
+
+
   }
   TcpSocketBase::NewAck(dsn);
 
@@ -1699,7 +1682,7 @@ MpTcpSocketBase::BecomeFullyEstablished()
 {
     NS_LOG_FUNCTION (this);
     m_receivedDSS = true;
-    
+
     // same as in ProcessSynSent upon SYN/ACK reception
 //    m_nextTxSequence++;
 //    m_firstTxUnack = m_nextTxSequence;
@@ -1718,7 +1701,7 @@ MpTcpSocketBase::FullyEstablished() const
 
 
 
-  
+
 //void
 //MpTcpSocketBase::SetupSubflowTracing(Ptr<MpTcpSubflow> sf)
 //{
@@ -1736,7 +1719,7 @@ MpTcpSocketBase::FullyEstablished() const
 //}
 
 /*****************************
-END TRACING system 
+END TRACING system
 *****************************/
 
 

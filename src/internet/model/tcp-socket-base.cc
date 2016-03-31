@@ -766,7 +766,7 @@ TcpSocketBase::Connect (const Address & address)
 
   // TODO regenerate ISN
    InitLocalISN();
-  
+
   // DoConnect() will do state-checking and send a SYN packet
   return DoConnect ();
 }
@@ -1594,7 +1594,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // TODO is it possible to move these to CompleteFork
       // would clutter less TcpSocketBase
 
-      Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta();
+      Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta (false);
 
       // HACK matt otherwise the new subflow sends the packet on the wroing interface
       master->m_boundnetdevice = this->m_boundnetdevice;
@@ -1614,7 +1614,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 }
 
 Ptr<MpTcpSubflow>
-TcpSocketBase::UpgradeToMeta()
+TcpSocketBase::UpgradeToMeta (bool connecting)
 {
   NS_LOG_FUNCTION("Upgrading to meta " << this);
 
@@ -1643,6 +1643,7 @@ TcpSocketBase::UpgradeToMeta()
   Callback<void, Ptr<Socket> >  cbConnectSuccess = this->m_connectionSucceeded;
   Callback<bool, Ptr<Socket>, const Address &> connectionRequest = this->m_connectionRequest;
   Callback<void, Ptr<Socket>, const Address&> newConnectionCreated = this->m_newConnectionCreated;
+  Ipv4EndPoint *endPoint = m_endPoint;
   ////////////////////////
   //// !! CAREFUL !!
   //// all callbacks are disabled
@@ -1667,12 +1668,34 @@ TcpSocketBase::UpgradeToMeta()
 //  CompleteConstruct(meta);
   meta->SetTcp(master->m_tcp);
   meta->SetNode(master->GetNode());
+
+  if(connecting)
+  {
+      //! then we update
+//      m_state = sf->GetState ();
+//      m_mptcpLocalKey = sf->m_mptcpLocalKey;
+//      m_mptcpLocalToken = sf->m_mptcpLocalToken;
+//      NS_LOG_DEBUG("Set master key/token to "<< m_mptcpLocalKey << "/" << m_mptcpLocalToken);
+
+      // Those may be overriden later
+//      m_endPoint = endPoint;
+//      m_endPoint6 = sf->m_endPoint6;
+
+      InetSocketAddress addr (endPoint->GetLocalAddress(), endPoint->GetLocalPort());
+      uint8_t id = 0;
+      bool ok = meta->AddLocalId(&id, addr);
+      NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
+      NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
+
+//      GetMeta ()->AddLocalId ();
+  }
+
 //InitLocalISN
   // we add it to tcp so that it can be freed and used for token lookup
 
 //  MpTcpSocketBase* meta = new (this) MpTcpSocketBase();
 //  meta->m_sendCb =sf->m_sendCb;
-  meta->AddSubflow(master);
+  meta->AddSubflow (master);
 
   // TODO convert this into a Socket member function so that
   // members can become private again
@@ -1866,8 +1889,8 @@ TcpSocketBase::IsTracingEnabled() const
     return !m_tracePrefix.empty();
 }
 
-void 
-TcpSocketBase::InitLocalISN() 
+void
+TcpSocketBase::InitLocalISN()
 {
     SequenceNumber32 isn(0);
      if(!m_nullIsn)
@@ -1878,10 +1901,10 @@ TcpSocketBase::InitLocalISN()
     InitLocalISN(isn);
 }
 
-void 
+void
 TcpSocketBase::InitLocalISN(const SequenceNumber32& localIsn)
 {
-    
+
 //    SequenceNumber32 localIsn;
 // TODO replace m_nullIsn by a attribute
 //  	RandomVariable
@@ -1896,8 +1919,8 @@ TcpSocketBase::InitLocalISN(const SequenceNumber32& localIsn)
     m_localISN = m_nextTxSequence;
 }
 
-void 
-TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn) 
+void
+TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn)
 {
     NS_LOG_INFO("Setting peer ISN=" << peerIsn);
     // TODO check it was not initialized already ?
@@ -1909,20 +1932,20 @@ TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn)
 //{
 //    return 1;
 //}
-SequenceNumber32 
+SequenceNumber32
 TcpSocketBase::GetPeerIsn(void) const
 {
-    // TODO check it's connected 
+    // TODO check it's connected
 //    NS_ASSERT(m_connected);
     return m_peerISN;
 }
 
 
 
-SequenceNumber32 
+SequenceNumber32
 TcpSocketBase::GetLocalIsn(void) const
 {
-    // TODO check it's connected 
+    // TODO check it's connected
 //    NS_ASSERT(m_connected);
     return m_localISN;
 }
@@ -1974,17 +1997,31 @@ uint32_t localToken;
         Ptr<NetDevice> boundDev = m_boundnetdevice;
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
         // master = first subflow
-        Ptr<MpTcpSubflow> master = UpgradeToMeta();
+        Ptr<MpTcpSubflow> master = UpgradeToMeta(true);
 
         GenerateTokenForKey( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
         SequenceNumber32 sidsn( (uint32_t) idsn);
-        
+
         NS_LOG_DEBUG("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
         InitLocalISN(sidsn);
 //              // HACK matt otherwise the new subflow sends the packet on the wroing interface
         master->m_boundnetdevice = boundDev;
         master->m_endPoint = endPoint;
 
+        //
+//      if(sf->IsMaster())
+//      {
+//          //! then we update
+//          m_state = sf->GetState ();
+//          NS_LOG_DEBUG("Set master key/token to "<< m_mptcpLocalKey << "/" << m_mptcpLocalToken);
+//
+//          // Those may be overriden later
+//          m_endPoint = sf->m_endPoint;
+//          m_endPoint6 = sf->m_endPoint6;
+//
+//
+//    //      GetMeta ()->AddLocalId ();
+//      }
         NS_LOG_DEBUG("MATT2 end of upgrade" << this << " "<< GetInstanceTypeId());
 //        bool result = m_tcp->AddSocket(master);
 //        NS_ASSERT(result);
@@ -3348,7 +3385,7 @@ TcpSocketBase::SetSegSize (uint32_t size)
 {
   NS_ABORT_MSG_UNLESS ( (m_state == CLOSED) || (m_tcb->m_segmentSize == size), "Cannot change segment size dynamically.");
   m_tcb->m_segmentSize = size;
-  
+
 }
 
 uint32_t
@@ -3848,7 +3885,7 @@ void
 TcpSocketBase::Dump (std::ostream &os) const
 {
 
-  //! TODO assuming it's ipv4 
+  //! TODO assuming it's ipv4
   os << m_endPoint->GetLocalAddress () << ":" << m_endPoint->GetLocalPort ();
   os << m_endPoint->GetPeerAddress () << ":" << m_endPoint->GetPeerPort ();
 }
