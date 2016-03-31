@@ -485,7 +485,7 @@ MpTcpSubflow::AddLooseMapping(SequenceNumber64 dsnHead, uint16_t length)
 
     mapping.MapToSSN(FirstUnmappedSSN());
     mapping.SetMappingSize(length);
-    mapping.SetHeadDSN(dsnHead);
+    mapping.SetHeadDSN (dsnHead);
 
     bool ok = m_TxMappings.AddMapping( mapping  );
     NS_ASSERT_MSG( ok, "Can't add mapping: 2 mappings overlap");
@@ -964,17 +964,19 @@ MpTcpSubflow::CompleteFork(
   const Address& fromAddress, const Address& toAddress
 )
 {
-  NS_LOG_INFO( this << "Completing fork of MPTCP subflow");
+  NS_LOG_INFO ( this << " Completing fork of MPTCP subflow");
 
     // Already done in ForkMeta => TODO remove
 //  GetMeta()->GenerateUniqueMpTcpKey(true);
     // We need to assign an id before the answer is actually sent
 
   InetSocketAddress addr = InetSocketAddress::ConvertFrom(fromAddress);
+
 //  InetSocketAddress addr (fromAddress);
+// TODO cela devrait dependre du endpoint
   uint8_t id = 0;
   bool ok;
-  ok = GetMeta()->m_localIdManager->AddLocalId (&id, fromAddress);
+  ok = GetMeta()->AddLocalId (&id, fromAddress);
   NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
   NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
 
@@ -1204,7 +1206,7 @@ MpTcpSubflow::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
 
 int
-MpTcpSubflow::ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option)
+MpTcpSubflow::ProcessOptionMpTcpCapable (const Ptr<const TcpOptionMpTcp> option)
 {
     NS_LOG_LOGIC(this << option);
     NS_ASSERT_MSG(IsMaster(), "You can receive MP_CAPABLE only on the master subflow");
@@ -1225,7 +1227,7 @@ MpTcpSubflow::ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option)
 //        NS_ASSERT_MSG( GetTcpOption(tcpHeader, mpcRcvd), "There must be an MP_CAPABLE option in the SYN Packet" );
 
     // TODO check it depending on the state
-    GetMeta()->SetPeerKey( mpcRcvd->GetSenderKey() );
+    GetMeta()->SetPeerKey ( mpcRcvd->GetSenderKey () );
 
     // TODO add it to the manager too
     return 0;
@@ -1316,7 +1318,7 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
 //TcpOptionMpTcpJoin::State
 // TODO move to meta and adapt meta state
 void
-MpTcpSubflow::AddOptionMpTcp3WHS(TcpHeader& hdr) const
+MpTcpSubflow::AddOptionMpTcp3WHS (TcpHeader& hdr) const
 {
   //NS_ASSERT(m_state == SYN_SENT || m_state == SYN_RCVD);
   NS_LOG_FUNCTION(this << hdr << hdr.FlagsToString(hdr.GetFlags()));
@@ -1341,10 +1343,10 @@ MpTcpSubflow::AddOptionMpTcp3WHS(TcpHeader& hdr) const
         mpc->SetPeerKey( GetMeta()->GetPeerKey() );
         break;
       default:
-        NS_FATAL_ERROR("Should never happen");
+        NS_FATAL_ERROR ("Should never happen");
         break;
     };
-    NS_LOG_INFO("Appended option" << mpc);
+    NS_LOG_INFO ("Appended option" << mpc);
     hdr.AppendOption( mpc );
   }
   else
@@ -1382,11 +1384,13 @@ MpTcpSubflow::AddOptionMpTcp3WHS(TcpHeader& hdr) const
           //! TODO request from idmanager an id
           static uint8_t id = 0;
           // TODO
-          NS_LOG_WARN("IDs are incremental, there is no real logic behind it yet");
+          NS_LOG_WARN ("IDs are incremental, there is no real logic behind it yet");
   //        id = GetIdManager()->GetLocalAddrId( InetSocketAddress(m_endPoint->GetLocalAddress(),m_endPoint->GetLocalPort()) );
-          join->SetAddressId( id++ );
-          join->SetTruncatedHmac(424242); // who cares
-          join->SetNonce(4242); //! truly random :)
+
+          // TODO use GetLocalId
+          join->SetAddressId ( id++ );
+          join->SetTruncatedHmac (424242); // who cares
+          join->SetNonce (4242); //! truly random :)
         }
         break;
 
@@ -1829,7 +1833,7 @@ MpTcpSubflow::Recv(void)
 this is private
 **/
 Ptr<Packet>
-MpTcpSubflow::ExtractAtMostOneMapping(uint32_t maxSize, bool only_full_mapping, SequenceNumber64& headDSN)
+MpTcpSubflow::ExtractAtMostOneMapping (uint32_t maxSize, bool only_full_mapping, SequenceNumber64 *headDSN)
 {
   NS_LOG_DEBUG(this << " maxSize="<< maxSize);
   MpTcpMapping mapping;
@@ -1861,7 +1865,7 @@ MpTcpSubflow::ExtractAtMostOneMapping(uint32_t maxSize, bool only_full_mapping, 
   }
   NS_LOG_DEBUG("Extracting mapping " << mapping);
 
-  headDSN = mapping.HeadDSN();
+  *headDSN = mapping.HeadDSN();
 
   if(only_full_mapping) {
 

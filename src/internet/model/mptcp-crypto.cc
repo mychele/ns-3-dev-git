@@ -55,11 +55,12 @@ void
 GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t& token, uint64_t& idsn)
 {
 
-  NS_LOG_LOGIC("Generating token/key from key=" << key);
+  NS_LOG_LOGIC ("Generating token/key from key=" << key);
 
 //  uint8_t digest[DIGEST_SIZE_IN_BYTES];
   #ifdef HAVE_CRYPTO
 
+  NS_LOG_DEBUG ("Using libgcrypt");
 //  gcry_md_algos gcry_algo = map_ns_to_gcrypt_alg(ns_alg);
   gcry_md_algos gcry_algo = GCRY_MD_SHA1;
 //  NS_LOG_UNCOND("Used algorithm [" << gcry_md_algo_name(alg) << "]");
@@ -105,6 +106,7 @@ GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t& token, u
     In the following, the idsn = the key (could be 0) and the token a truncated key
 
     */
+    NS_LOG_DEBUG ("Using ns3 method");
     idsn = key;
     token = (uint32_t)key;
 

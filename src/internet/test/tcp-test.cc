@@ -46,6 +46,7 @@
 #include "ns3/icmpv6-l4-protocol.h"
 #include "ns3/udp-l4-protocol.h"
 #include "ns3/tcp-l4-protocol.h"
+#include "ns3/global-route-manager.h"
 
 #include <string>
 

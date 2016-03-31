@@ -54,7 +54,7 @@ NS_LOG_COMPONENT_DEFINE ("TcpOptionMpTcp");
 TcpOptionMpTcp::TcpOptionMpTcp (uint8_t subtype)
   : TcpOption (),
   m_subtype (subtype)
-  
+
 {
   NS_LOG_FUNCTION (this);
 }
@@ -155,7 +155,7 @@ TcpOptionMpTcp::CreateMpTcpOption (const uint8_t& subtype)
     case MP_REMOVE_ADDR:
       return CreateObject<TcpOptionMpTcpRemoveAddress>();
     case MP_ADD_ADDR:
-      return CreateObject<TcpOptionMpTcpAddAddress>();    
+      return CreateObject<TcpOptionMpTcpAddAddress>();
     case MP_DELTAOWD:
       return CreateObject<TcpOptionMpTcpAddAddress>();
     default:
@@ -248,6 +248,7 @@ void
 TcpOptionMpTcpCapable::Print (std::ostream &os) const
 {
   os << "MP_CAPABLE:"
+     << " flags=" << (int)m_flags << "]"
      << " flags=" << (int)m_flags << "]"
      << " Sender's Key :[" << GetSenderKey () << "]";
   if ( HasReceiverKey () )
@@ -1663,7 +1664,7 @@ TcpOptionMpTcpDeltaOWD::~TcpOptionMpTcpDeltaOWD (void)
 void
 TcpOptionMpTcpDeltaOWD::Print (std::ostream &os) const
 {
-  os << "MP_DELTAOWD targeting=" <<  (int)m_targetedSubflow 
+  os << "MP_DELTAOWD targeting=" <<  (int)m_targetedSubflow
      << " with a recorded delay of =" << m_nanoseconds ;
 }
 
@@ -1671,7 +1672,7 @@ TcpOptionMpTcpDeltaOWD::Print (std::ostream &os) const
 bool
 TcpOptionMpTcpDeltaOWD::operator== (const TcpOptionMpTcpDeltaOWD& opt) const
 {
-  return (m_nanoseconds == opt.m_nanoseconds 
+  return (m_nanoseconds == opt.m_nanoseconds
         && m_targetedSubflow == opt.m_targetedSubflow
         );
 }

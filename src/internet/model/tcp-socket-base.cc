@@ -1587,7 +1587,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
    ///! we first forked here
    //////////////////////////////////////
    Ptr<TcpSocketBase> newSock = Fork();
-    if(ProcessTcpOptions(tcpHeader) == 1)
+    if(ProcessTcpOptions (tcpHeader) == 1)
     {
       NS_LOG_LOGIC("Fork & Upgrade to meta " << this);
 
@@ -1599,9 +1599,22 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // HACK matt otherwise the new subflow sends the packet on the wroing interface
       master->m_boundnetdevice = this->m_boundnetdevice;
 
+        Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
+
       bool result = m_tcp->AddSocket(newSock);
       NS_ASSERT_MSG(result, "could not register meta");
-      newSock->GenerateUniqueMpTcpKey();
+      uint64_t localKey = meta->GenerateUniqueMpTcpKey();
+        uint32_t localToken;
+        uint64_t idsn;
+
+      GenerateTokenForKey( HMAC_SHA1, localKey, localToken, idsn );
+      SequenceNumber32 sidsn ( (uint32_t) idsn);
+
+      NS_LOG_DEBUG ("Server meta ISN = " << idsn << " from key " << localKey);
+
+        // Setting isn of meta
+        meta->InitLocalISN (sidsn);
+
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
 
@@ -1681,11 +1694,11 @@ TcpSocketBase::UpgradeToMeta (bool connecting)
 //      m_endPoint = endPoint;
 //      m_endPoint6 = sf->m_endPoint6;
 
-      InetSocketAddress addr (endPoint->GetLocalAddress(), endPoint->GetLocalPort());
-      uint8_t id = 0;
-      bool ok = meta->AddLocalId(&id, addr);
-      NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
-      NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
+//      InetSocketAddress addr (endPoint->GetLocalAddress(), endPoint->GetLocalPort());
+//      uint8_t id = 0;
+//      bool ok = meta->AddLocalId(&id, addr);
+//      NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
+//      NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
 
 //      GetMeta ()->AddLocalId ();
   }
@@ -1890,7 +1903,7 @@ TcpSocketBase::IsTracingEnabled() const
 }
 
 void
-TcpSocketBase::InitLocalISN()
+TcpSocketBase::InitLocalISN ()
 {
     SequenceNumber32 isn(0);
      if(!m_nullIsn)
@@ -1902,14 +1915,14 @@ TcpSocketBase::InitLocalISN()
 }
 
 void
-TcpSocketBase::InitLocalISN(const SequenceNumber32& localIsn)
+TcpSocketBase::InitLocalISN (const SequenceNumber32& localIsn)
 {
 
 //    SequenceNumber32 localIsn;
 // TODO replace m_nullIsn by a attribute
 //  	RandomVariable
 
-    NS_LOG_INFO("Setting local ISN to" << localIsn);
+    NS_LOG_INFO ("Setting local ISN to " << localIsn);
     // TODO check it was not initialized already ?
 //    m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
     m_nextTxSequence = localIsn;
@@ -1920,9 +1933,9 @@ TcpSocketBase::InitLocalISN(const SequenceNumber32& localIsn)
 }
 
 void
-TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn)
+TcpSocketBase::InitPeerISN (const SequenceNumber32& peerIsn)
 {
-    NS_LOG_INFO("Setting peer ISN=" << peerIsn);
+    NS_LOG_INFO("Setting peer ISN=" << peerIsn << " " << GetInstanceTypeId());
     // TODO check it was not initialized already ?
     m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
     m_peerISN = peerIsn;
@@ -1933,7 +1946,7 @@ TcpSocketBase::InitPeerISN(const SequenceNumber32& peerIsn)
 //    return 1;
 //}
 SequenceNumber32
-TcpSocketBase::GetPeerIsn(void) const
+TcpSocketBase::GetPeerIsn (void) const
 {
     // TODO check it's connected
 //    NS_ASSERT(m_connected);
@@ -1999,11 +2012,22 @@ uint32_t localToken;
         // master = first subflow
         Ptr<MpTcpSubflow> master = UpgradeToMeta(true);
 
-        GenerateTokenForKey( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
-        SequenceNumber32 sidsn( (uint32_t) idsn);
+        // Need to register an id
+        InetSocketAddress addr (endPoint->GetLocalAddress(), endPoint->GetLocalPort());
+        MpTcpSocketBase* meta = (MpTcpSocketBase*)this;
+        uint8_t id = 0;
+        bool ok = meta->AddLocalId (&id, addr);
+        NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
+        NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
 
-        NS_LOG_DEBUG("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
-        InitLocalISN(sidsn);
+        GenerateTokenForKey( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
+        SequenceNumber32 sidsn ( (uint32_t) idsn);
+
+        NS_LOG_DEBUG ("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
+
+        // Setting isn of meta
+        InitLocalISN (sidsn);
+        // Peer ISN is set in MpTcpSubflow::ProcessSynSent scheduled a few lines below
 //              // HACK matt otherwise the new subflow sends the packet on the wroing interface
         master->m_boundnetdevice = boundDev;
         master->m_endPoint = endPoint;
@@ -2022,7 +2046,9 @@ uint32_t localToken;
 //
 //    //      GetMeta ()->AddLocalId ();
 //      }
-        NS_LOG_DEBUG("MATT2 end of upgrade" << this << " "<< GetInstanceTypeId());
+        NS_LOG_DEBUG("MATT2 end of upgrade " << this << " "<< GetInstanceTypeId());
+        NS_LOG_DEBUG("Local/peer ISNs: " << this->GetLocalIsn() << "/"<< this->GetPeerIsn()
+            << "(peer isn set later by processSynSent)");
 //        bool result = m_tcp->AddSocket(master);
 //        NS_ASSERT(result);
 //        master->Bind();
@@ -2034,7 +2060,7 @@ uint32_t localToken;
 
       m_connected = true;
       m_retxEvent.Cancel ();
-      InitPeerISN(tcpHeader.GetSequenceNumber ());
+      InitPeerISN (tcpHeader.GetSequenceNumber ());
 //      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
       m_highTxMark = ++m_nextTxSequence;
       m_txBuffer->SetHeadSequence (m_nextTxSequence);
@@ -2739,8 +2765,8 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   m_cnCount = m_cnRetries;
   SetupCallback ();
   // Set the sequence number and send SYN+ACK
-  InitLocalISN();
-  InitPeerISN(h.GetSequenceNumber ());
+  InitLocalISN ();
+  InitPeerISN (h.GetSequenceNumber ());
 //  if(IsTracingEnabled()) {
 //    SetupTracingIfEnabled();
 //  }
@@ -3568,7 +3594,7 @@ TcpSocketBase::IsTcpOptionAllowed (uint8_t kind) const
 //}
 
 uint64_t
-TcpSocketBase::GenerateUniqueMpTcpKey()
+TcpSocketBase::GenerateUniqueMpTcpKey ()
 {
   NS_LOG_FUNCTION("Generating key");
   NS_ASSERT(m_tcp);
@@ -3582,9 +3608,9 @@ TcpSocketBase::GenerateUniqueMpTcpKey()
   {
     //! arbitrary function, TODO replace with ns3 random gneerator
     localKey = (rand() % 1000 + 1);
-    GenerateTokenForKey( HMAC_SHA1, localKey, localToken, idsn );
+    GenerateTokenForKey ( HMAC_SHA1, localKey, localToken, idsn );
   }
-  while(m_tcp->LookupMpTcpToken(localToken));
+  while (m_tcp->LookupMpTcpToken (localToken));
 
   m_mptcpLocalToken = localToken;
   m_mptcpLocalKey = localKey;

@@ -596,10 +596,10 @@ protected: // protected methods
   \bug convert to uint64_t ?
   \note Setting a remote key has the sideeffect of enabling MPTCP on the socket
   */
-  void SetPeerKey(uint64_t );
+  void SetPeerKey (uint64_t );
 
   virtual void
-  ConnectionSucceeded(void); // Schedule-friendly wrapper for Socket::NotifyConnectionSucceeded()
+  ConnectionSucceeded (void); // Schedule-friendly wrapper for Socket::NotifyConnectionSucceeded()
 
 
   //! disabled

@@ -42,6 +42,10 @@
 #include "ns3/mptcp-socket-base.h"
 #include "ns3/mptcp-subflow.h"
 
+// Test to get netanim working
+#include "ns3/netanim-module.h"
+#include "ns3/constant-position-mobility-model.h"
+
 #include "ns3/ipv4-end-point.h"
 #include "ns3/arp-l3-protocol.h"
 #include "ns3/ipv4-l3-protocol.h"
@@ -55,6 +59,7 @@
 #include "ns3/ipv4-address-helper.h"
 #include "ns3/sequence-number.h"
 #include "ns3/trace-helper.h"
+#include "ns3/global-route-manager.h"
 
 #include <string>
 #include <fstream>
@@ -69,6 +74,15 @@ using namespace ns3;
 // rename to serverPort
 const uint16_t serverPort = 50000;
 
+
+// Check dce-iperf-mptcp
+void setPos (Ptr<Node> n, int x, int y, int z)
+{
+  Ptr<ConstantPositionMobilityModel> loc = CreateObject<ConstantPositionMobilityModel> ();
+  n->AggregateObject (loc);
+  Vector locVec2 (x, y, z);
+  loc->SetPosition (locVec2);
+}
 
 
 class MpTcpMultihomedTestCase : public TestCase
@@ -191,6 +205,7 @@ MpTcpMultihomedTestCase::DoRun (void)
       SetupDefaultSim ();
     }
 
+  AnimationInterface anim ("animation.xml");
   Simulator::Run ();
 
   NS_TEST_EXPECT_MSG_EQ (m_connect_cb_called, true, "Callback was called on successful connection");
@@ -216,7 +231,7 @@ MpTcpMultihomedTestCase::DoTeardown (void)
 Normally this should be called twice ...
 **/
 void
-MpTcpMultihomedTestCase::SourceConnectionSuccessful(Ptr<Socket> sock)
+MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
 {
 
   Ptr<MpTcpSocketBase> meta =  DynamicCast<MpTcpSocketBase>(sock);
@@ -237,15 +252,10 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful(Ptr<Socket> sock)
 
 //  NS_LOG_WARN("TODO check this is called after the receival of 1st DSS !!!");
   m_connect_cb_called = true;
-//  NS_FATAL_ERROR("Connect failed");
-   // TODO now we can create an additionnal subflow
-
-
-//   Ptr<MpTcpSocketBase> sourceMeta = DynamicCast<MpTcpSocketBase>(sock);
-
 
 //   NS_LOG_DEBUG("meta in state " << meta->m_state);
 
+//#if 0
   /*
   first address on 2nd interface
   */
@@ -253,14 +263,12 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful(Ptr<Socket> sock)
   Ipv4Address sourceAddr = m_sourceNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
 
   //! TODO, we should be able to not specify a port but it seems buggy so for now, let's set a port
-//  InetSocketAddress local( sourceAddr);
   InetSocketAddress local(sourceAddr, 4420);
   InetSocketAddress remote(serverAddr, serverPort);
 
-  meta->ConnectNewSubflow(local, remote);
-//  Simulator::Schedule( )
+  meta->ConnectNewSubflow (local, remote);
+//#endif
 
-// TODO la je dois envoyer des donnees
 }
 
 
@@ -522,7 +530,11 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
   m_serverNode = CreateInternetNode ();
   m_sourceNode = CreateInternetNode ();
 
+  // For netanim
+  setPos (m_serverNode, 0,0,0);
+  setPos (m_sourceNode, 100,0,0);
 
+// TODO ptet essayer avec AddSimpleNetDevice
   for(int i = 0; i < nbOfDevices; ++i)
   {
 
@@ -532,11 +544,12 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
     PointToPointHelper p2p;
     p2p.SetDeviceAttribute ("DataRate", StringValue ("100Mbps"));
     p2p.SetChannelAttribute ("Delay", StringValue ("10ms"));
+    p2p.SetChannelAttribute ("AlternateDelay", StringValue ("10ms"));
     NetDeviceContainer cont = p2p.Install(m_serverNode,m_sourceNode);
     p2p.EnablePcapAll("mptcp-multi", true);
 
     Ipv4AddressHelper ipv4;
-    NS_LOG_DEBUG("setting ipv4 base " << netAddr.str());
+    NS_LOG_DEBUG ("setting ipv4 base " << netAddr.str());
     ipv4.SetBase( netAddr.str().c_str(), netmask);
     ipv4.Assign(cont);
     /// Added by matt for debugging purposes
@@ -548,7 +561,9 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
   }
   //pcap.EnablePcapInternal("mptcp",dev,true,true);
 
-
+  // TODO addition
+  GlobalRouteManager::BuildGlobalRoutingDatabase ();
+  GlobalRouteManager::InitializeRoutes ();
 
   Ptr<SocketFactory> sockFactory0 = m_serverNode->GetObject<TcpSocketFactory> ();
   Ptr<SocketFactory> sockFactory1 = m_sourceNode->GetObject<TcpSocketFactory> ();
@@ -712,10 +727,10 @@ public:
     // Arguments to these test cases are 1) totalStreamSize,
     // 2) source write size, 3) source read size
     // 4) server write size, and 5) server read size
-    // with units of bytes
+    // with units of bytes 6/ use ipv6
 	AddTestCase (new MpTcpMultihomedTestCase (13, 200, 200, 200, 200, false), TestCase::QUICK);
-//    AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, false), TestCase::QUICK);
-//    AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, false), TestCase::QUICK);
+    AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, false), TestCase::QUICK);
+    AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, false), TestCase::QUICK);
 
 // here it's a test where I lower streamsize to see where it starts failing.
 // 2100 is ok, 2200 fails

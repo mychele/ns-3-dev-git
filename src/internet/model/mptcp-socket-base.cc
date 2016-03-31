@@ -94,7 +94,7 @@ GetMapping(Ptr<TcpOptionMpTcpDSS> dss)
     uint16_t length;
 
     dss->GetMapping (dsn, ssn, length);
-    mapping.SetHeadDSN( SequenceNumber64(dsn));
+    mapping.SetHeadDSN ( SequenceNumber64(dsn));
     mapping.SetMappingSize(length);
     mapping.MapToSSN( SequenceNumber32(ssn));
     return mapping;
@@ -179,6 +179,7 @@ MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
 }
 
 
+/* Never occurs right ? should prevent it ? */
 MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   TcpSocketBase(sock),
 //  m_tracePrefix(sock.m_tracePrefix),
@@ -422,7 +423,7 @@ MpTcpSocketBase::GetSubflowFromAddressId (uint8_t addrId) const
 
 
 void
-MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
+MpTcpSocketBase::SetPeerKey (uint64_t remoteKey)
 {
 //  NS_ASSERT( m_peerKey == 0);
 //  NS_ASSERT( m_state != CLOSED);
@@ -433,7 +434,7 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 //  NS_LOG_DEBUG("Peer key set to " << );
 
 // TODO use the one  from mptcp-crypo.h
-  GenerateTokenForKey(HMAC_SHA1, m_peerKey, m_peerToken, idsn);
+  GenerateTokenForKey (HMAC_SHA1, m_peerKey, m_peerToken, idsn);
 
   NS_LOG_DEBUG("Peer key/token set to " << m_peerKey << "/" << m_peerToken);
 
@@ -443,7 +444,7 @@ MpTcpSocketBase::SetPeerKey(uint64_t remoteKey)
 
   // + 1 ?
   NS_LOG_DEBUG("Setting idsn=" << idsn << " (thus RxNext=idsn + 1)");
-  InitPeerISN(SequenceNumber32( (uint32_t)idsn ));
+  InitPeerISN (SequenceNumber32( (uint32_t)idsn ));
 //  m_rxBuffer->SetNextRxSequence(SequenceNumber32( (uint32_t)idsn ) + SequenceNumber32(1));
 }
 
@@ -719,7 +720,7 @@ MpTcpSocketBase::OnSubflowRecv(Ptr<MpTcpSubflow> sf)
     /* Todo tell if we stop to extract only between mapping boundaries or if
     Extract
     */
-    p = sf->ExtractAtMostOneMapping(canRead, true, dsn);
+    p = sf->ExtractAtMostOneMapping(canRead, true, &dsn);
 
     if (p->GetSize() == 0)
     {
@@ -732,7 +733,7 @@ MpTcpSocketBase::OnSubflowRecv(Ptr<MpTcpSubflow> sf)
     // TODO use an assert instead
 //    NS_LOG_INFO( "Meta  << "next Rx" << m_rxBuffer->NextRxSequence() );
     // Notify app to receive if necessary
-    NS_LOG_DEBUG( "Before adding to metaRx: RxBufferHead=" << m_rxBuffer->HeadSequence() << " NextRxSequence=" << m_rxBuffer->NextRxSequence());
+    NS_LOG_DEBUG( "Before adding dsn " << dsn << " to metaRx: RxBufferHead=" << m_rxBuffer->HeadSequence() << " NextRxSequence=" << m_rxBuffer->NextRxSequence());
 
     if(!m_rxBuffer->Add(p, SEQ64TO32(dsn)))
     {
@@ -1756,7 +1757,7 @@ MpTcpSocketBase::SendPendingData(bool withAck)
   // dsn, size, and path instead of a unmapped mapping
   // GenerateMapping( sf, );
   // Pb: infinite loop because of
-  while(m_scheduler->GenerateMapping(subflowArrayId, dsnHead, length))
+  while(m_scheduler->GenerateMapping (subflowArrayId, dsnHead, length))
   {
       NS_LOG_DEBUG("Generated mapping for sf=" << subflowArrayId << " dsn=" << dsnHead
                     << " of len=" << length);

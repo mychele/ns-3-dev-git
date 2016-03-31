@@ -38,7 +38,7 @@ PointToPointChannel::GetTypeId (void)
     .AddConstructor<PointToPointChannel> ()
     .AddAttribute ("AlternateDelay",
                     "Transmission delay through the channel in the other direction: has to be set after Delay",
-                   TimeValue (Seconds (42)),
+                   TimeValue (Seconds (0)),
                    MakeTimeAccessor (&PointToPointChannel::m_alternateDelay),
                    MakeTimeChecker ())
     .AddAttribute ("Delay", "Transmission delay through the channel in one direction",

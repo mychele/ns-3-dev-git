@@ -251,7 +251,7 @@ Ipv4StaticRouting::LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)
       Ipv4Address entry = (j)->GetDestNetwork ();
       NS_LOG_LOGIC ("Searching for route to " << dest << ", checking against route to "
                     << entry << "/" << masklen
-                    << " " << j->GetInterface()
+                    << " on interface " << j->GetInterface()
                     );
       if (mask.IsMatch (dest, entry))
         {
@@ -288,10 +288,15 @@ Ipv4StaticRouting::LookupStatic (Ipv4Address dest, Ptr<NetDevice> oif)
           rtentry->SetGateway (route->GetGateway ());
           rtentry->SetOutputDevice (m_ipv4->GetNetDevice (interfaceIdx));
         }
+        else {
+            NS_LOG_LOGIC ("Not a match");
+        }
     }
+
   if (rtentry != 0)
     {
-      NS_LOG_LOGIC ("Matching route via " << rtentry->GetGateway () << " at the end");
+      NS_LOG_LOGIC ("Matching route via gateway " << rtentry->GetGateway () << " at the end");
+//      PrintRoutingTable(std::cout);
     }
   else
     {

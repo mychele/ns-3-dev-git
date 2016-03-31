@@ -382,6 +382,7 @@ MpTcpMappingContainer::GetMappingsStartingFromSSN(SequenceNumber32 ssn, std::set
     return false;
 }
 
+// TODO replace by pointer
 bool
 MpTcpMappingContainer::GetMappingForSSN(const SequenceNumber32& ssn, MpTcpMapping& mapping) const
 {

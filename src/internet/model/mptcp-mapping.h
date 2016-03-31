@@ -109,7 +109,7 @@ public:
    *
    */
   void
-  SetHeadDSN(SequenceNumber64 const&);
+  SetHeadDSN (SequenceNumber64 const&);
 
   /**
    * \brief Set mapping length

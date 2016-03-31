@@ -100,12 +100,12 @@ public:
 //  AvailableWindow(void);      // Return unfilled portion of window
 
   /**
-   * 
+   *
    */
   uint8_t GetLocalId () const;
 
   /**
-   * 
+   *
    */
   uint8_t GetRemoteId () const;
 
@@ -233,7 +233,7 @@ public:
   *
   */
   virtual Ptr<Packet>
-  ExtractAtMostOneMapping(uint32_t maxSize, bool only_full_mappings, SequenceNumber64& dsn);
+  ExtractAtMostOneMapping (uint32_t maxSize, bool only_full_mappings, SequenceNumber64 *dsn);
 
   //  RecvWithMapping(uint32_t maxSize, bool only_full_mappings, SequenceNumber32 &dsn);
 //  Ptr<Packet>
