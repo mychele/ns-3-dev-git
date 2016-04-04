@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2015 Matthieu Coudron
+ * Copyright (c) 2015 Université Pierre et Marie Curie (UPMC)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -1636,7 +1636,8 @@ TcpOptionMpTcpFail::GetSerializedSize (void) const
 ////
 TcpOptionMpTcpDeltaOWD::TcpOptionMpTcpDeltaOWD ()
   : TcpOptionMpTcp (MP_DELTAOWD),
-    m_targetedSubflow (0),
+//    m_targetedSubflow (0),
+    m_cookie (0),
     m_nanoseconds (0)
 {
   NS_LOG_FUNCTION (this);
@@ -1664,7 +1665,9 @@ TcpOptionMpTcpDeltaOWD::~TcpOptionMpTcpDeltaOWD (void)
 void
 TcpOptionMpTcpDeltaOWD::Print (std::ostream &os) const
 {
-  os << "MP_DELTAOWD targeting=" <<  (int)m_targetedSubflow
+  os << "MP_DELTAOWD "
+//    << "targeting=" <<  (int)m_targetedSubflow
+    << " cookie=" << cookie
      << " with a recorded delay of =" << m_nanoseconds ;
 }
 

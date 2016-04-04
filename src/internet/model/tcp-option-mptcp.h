@@ -128,7 +128,7 @@ protected:
    */
   uint32_t
   DeserializeRef (Buffer::Iterator& i) const;
-  
+
 private:
   const uint8_t m_subtype;
 };
@@ -199,7 +199,7 @@ Only sha1 is defined and supported in the standard (same for ns3).
 +---------------------------------------------------------------+
 \endverbatim
  */
-class TcpOptionMpTcpCapable : 
+class TcpOptionMpTcpCapable :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_CAPABLE>
 public TcpOptionMpTcp
 {
@@ -364,7 +364,7 @@ or
                         <-                ACK
 \endverbatim
 **/
-class TcpOptionMpTcpJoin : 
+class TcpOptionMpTcpJoin :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_JOIN>
 public TcpOptionMpTcp
 {
@@ -543,7 +543,7 @@ private:
 
 \endverbatim
 */
-class TcpOptionMpTcpDSS : 
+class TcpOptionMpTcpDSS :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_DSS>
 public TcpOptionMpTcp
 {
@@ -722,7 +722,7 @@ private:
 \endverbatim
 
  */
-class TcpOptionMpTcpAddAddress : 
+class TcpOptionMpTcpAddAddress :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_ADD_ADDR>
 public TcpOptionMpTcp
 {
@@ -815,7 +815,7 @@ private:
 
 \endverbatim
  */
-class TcpOptionMpTcpRemoveAddress : 
+class TcpOptionMpTcpRemoveAddress :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_REMOVE_ADDR>
 public TcpOptionMpTcp
 {
@@ -881,7 +881,7 @@ private:
 \endverbatim
  *
  */
-class TcpOptionMpTcpChangePriority : 
+class TcpOptionMpTcpChangePriority :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_PRIO>
 public TcpOptionMpTcp
 {
@@ -890,7 +890,7 @@ public:
 
   /**
    * This is to help finding bugs in the code where one subflow would have forgotten
-   * 
+   *
    */
   static const uint8_t BAD_ADDRID = 0xff;
 
@@ -991,7 +991,7 @@ private:
 
 \endverbatim
 **/
-class TcpOptionMpTcpFastClose : 
+class TcpOptionMpTcpFastClose :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_FASTCLOSE>
 public TcpOptionMpTcp
 {
@@ -1055,7 +1055,7 @@ private:
 
 \endverbatim
 */
-class TcpOptionMpTcpFail : 
+class TcpOptionMpTcpFail :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_FAIL>
 public TcpOptionMpTcp
 {
@@ -1096,7 +1096,7 @@ private:
 /**
  * We assume a nanosecond resolution.
  * This resolution could be exchanged in a 3WHS manner
- * 
+ *
  *
 \verbatim
                      1                   2                   3
@@ -1111,7 +1111,7 @@ private:
 
 \endverbatim
  */
-class TcpOptionMpTcpDeltaOWD : 
+class TcpOptionMpTcpDeltaOWD :
 //public TcpOptionMpTcp<TcpOptionMpTcp::MP_FAIL>
 public TcpOptionMpTcp
 {
@@ -1126,8 +1126,11 @@ public:
    We don't care if it's hackish anymore, this is our own o/
    we rule the world !
   **/
-  uint8_t m_targetedSubflow;  /**< subflow id from which to compare arrival times */  
+//  uint8_t m_targetedSubflow;  /**< subflow id from which to compare arrival times */
+
+  int m_cookie;     /* to identify option */
   int64_t m_nanoseconds;      /**< assume this resolution Could be passed via the option */
+
   //! Inherited
   virtual void Print (std::ostream &os) const;
   virtual void Serialize (Buffer::Iterator start) const;

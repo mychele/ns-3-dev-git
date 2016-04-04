@@ -1,7 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2007 Georgia Tech Research Corporation
- * Copyright (c) 2009 INRIA
+ * Copyright (c) 2015 Université Pierre et Marie Curie (UPMC)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -16,8 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- * Authors: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
- *          Raj Bhattacharjea <raj.b@gatech.edu>
+ * Author: Matthieu Coudron <matthieu.coudron@lip6.fr>
  */
 
 #include "ns3/test.h"
@@ -85,6 +83,9 @@ void setPos (Ptr<Node> n, int x, int y, int z)
 }
 
 
+/**
+ *
+ */
 class MpTcpMultihomedTestCase : public TestCase
 {
 public:
@@ -93,7 +94,13 @@ public:
                uint32_t sourceReadSize,
                uint32_t serverWriteSize,
                uint32_t serverReadSize,
+               uint8_t nb_of_devices,
+               uint8_t nb_of_subflows_per_device,
                bool useIpv6);
+
+  void HandleSubflowConnected (Ptr<MpTcpSubflow> subflow);
+  void HandleSubflowCreated (Ptr<MpTcpSubflow> subflow);
+
 private:
   virtual void DoRun (void);
   virtual void DoTeardown (void);
@@ -112,6 +119,10 @@ private:
   void SourceConnectionSuccessful (Ptr<Socket> sock);
   void SourceConnectionFailed (Ptr<Socket> sock);
 
+
+
+
+
   uint32_t m_totalBytes;
   uint32_t m_sourceWriteSize;
   uint32_t m_sourceReadSize;
@@ -125,8 +136,15 @@ private:
   uint8_t *m_sourceRxPayload;
   uint8_t* m_serverRxPayload;
 
+  int m_nb_of_successful_connections;
+  int m_nb_of_successful_creations;
+//  int m_nb_of_subflow_connections;
+
   bool m_connect_cb_called;
   bool m_useIpv6;
+
+  uint8_t m_number_of_devices;
+  uint8_t m_number_of_subflow_per_device;
 
   Ptr<Node> m_serverNode;
   Ptr<Node> m_sourceNode;
@@ -160,6 +178,8 @@ MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
                           uint32_t sourceReadSize,
                           uint32_t serverWriteSize,
                           uint32_t serverReadSize,
+                           uint8_t nb_of_devices,
+                           uint8_t nb_of_subflows_per_device,
                           bool useIpv6)
   : TestCase (Name ("Send string data from client to server and back",
                     totalStreamSize,
@@ -173,6 +193,8 @@ MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
     m_sourceReadSize (sourceReadSize),
     m_serverWriteSize (serverWriteSize),
     m_serverReadSize (serverReadSize),
+    m_number_of_devices(nb_of_devices),
+    m_number_of_subflow_per_device(nb_of_subflows_per_device),
     m_connect_cb_called(false),
     m_useIpv6 (useIpv6)
 {
@@ -216,6 +238,13 @@ MpTcpMultihomedTestCase::DoRun (void)
                          "Server received expected data buffers");
   NS_TEST_EXPECT_MSG_EQ (memcmp (m_sourceTxPayload, m_sourceRxPayload, m_totalBytes), 0,
                          "Source received back expected data buffers");
+
+
+  NS_TEST_EXPECT_MSG_EQ ( m_nb_of_successful_connections, m_number_of_devices * m_number_of_subflow_per_device,
+                         "As many successful connections as subflows");
+
+  NS_TEST_EXPECT_MSG_EQ ( m_nb_of_successful_connections, m_nb_of_successful_creations,
+                         "As many successful connections callback calls as creation callback calls.");
 }
 void
 MpTcpMultihomedTestCase::DoTeardown (void)
@@ -473,8 +502,9 @@ Assign (const Ptr<NetDevice> &device)
 //Callback<void, Ptr<MpTcpSubflow> > m_joinConnectionSucceeded;
 
 
+/** Here subflow should already have a correct id */
 void
-HandleSubflowCreated(Ptr<MpTcpSubflow> subflow)
+MpTcpMultihomedTestCase::HandleSubflowCreated (Ptr<MpTcpSubflow> subflow)
 {
   NS_LOG_LOGIC("Created new subflow [" << subflow << "]. Is master: " << subflow->IsMaster());
 
@@ -485,14 +515,21 @@ HandleSubflowCreated(Ptr<MpTcpSubflow> subflow)
   else
   {
     //! ce n'est pas le master donc forcement il s'agit d'un join
-    NS_LOG_LOGIC("successful JOIN of subflow " << subflow );
+    NS_LOG_LOGIC ("successful JOIN of subflow " << subflow );
   }
+
+  NS_LOG_LOGIC ( "Subflow id=" << (int)subflow->GetLocalId() );
+  NS_LOG_LOGIC ( "Subflow =" << subflow );
+
+  // TODO check it's not called several times for the same sf ?
+  m_nb_of_successful_creations++;
 //  subflow->GetMeta()->SetupSubflowTracing(subflow);
 }
 
 
+/** Here subflow should already have a correct id */
 void
-HandleSubflowConnected(Ptr<MpTcpSubflow> subflow)
+MpTcpMultihomedTestCase::HandleSubflowConnected (Ptr<MpTcpSubflow> subflow)
 {
   NS_LOG_LOGIC ("successful connection of a subflow");
 
@@ -505,7 +542,11 @@ HandleSubflowConnected(Ptr<MpTcpSubflow> subflow)
     //! ce n'est pas le master donc forcement il s'agit d'un join
     NS_LOG_LOGIC ("successful JOIN of subflow " << subflow );
   }
+
+
 //  subflow->GetMeta()->SetupSubflowTracing(subflow);
+  // TODO check it's not called several times for the same sf ?
+  m_nb_of_successful_connections++;
 }
 
 
@@ -519,7 +560,7 @@ void
 MpTcpMultihomedTestCase::SetupDefaultSim (void)
 {
   // TODO this number should be made configurable
-  int nbOfDevices = 2;
+
   NS_LOG_UNCOND ("SetupDefaultSim Start ");
 
   const char* netmask = "255.255.255.0";
@@ -534,10 +575,13 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
   setPos (m_serverNode, 0,0,0);
   setPos (m_sourceNode, 100,0,0);
 
+  int nbOfDevices = m_number_of_devices;
+
 // TODO ptet essayer avec AddSimpleNetDevice
   for(int i = 0; i < nbOfDevices; ++i)
   {
-
+    // Use 10.0. instead !
+    // TODO use SimpleNetDevice instead !
     std::stringstream netAddr;
     netAddr << "192.168." << i << ".0";
 
@@ -720,17 +764,39 @@ public:
     // TODO addition by matt
 //    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCCOlia") );
 //    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCCLia") );
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::TcpNewReno") );
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType",  StringValue("ns3::TcpNewReno") );
   Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true));
-  Config::SetDefault ("ns3::TcpSocketBase::NullISN", BooleanValue(false));
+  Config::SetDefault ("ns3::TcpSocketBase::NullISN",    BooleanValue(false));
 //    Time::SetResolution (Time::MS);
     // Arguments to these test cases are 1) totalStreamSize,
-    // 2) source write size, 3) source read size
-    // 4) server write size, and 5) server read size
-    // with units of bytes 6/ use ipv6
-	AddTestCase (new MpTcpMultihomedTestCase (13, 200, 200, 200, 200, false), TestCase::QUICK);
-    AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, false), TestCase::QUICK);
-    AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, false), TestCase::QUICK);
+
+
+    // with units of bytes
+    static const int MaxNbOfDevices = 3;
+    static const int SubflowPerDevice = 1;
+    for (int nb_of_devices = 1; nb_of_devices < MaxNbOfDevices; ++nb_of_devices) {
+
+        for (int subflow_per_device = 1; subflow_per_device < SubflowPerDevice; ++subflow_per_device) {
+
+            AddTestCase (
+                new MpTcpMultihomedTestCase (
+                    13,     // 1) totalStreamSize (everything in bytes)
+                    200,    // 2) source write size,
+                    200,    // 3) source read size
+                    200,    // 4) server write size
+                    200,    // 5) server read size
+                    nb_of_devices,
+                    subflow_per_device,
+                    false       // 6/ use ipv6
+                    ),
+                TestCase::QUICK
+            );
+
+            AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
+            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
+        }
+    }
+
 
 // here it's a test where I lower streamsize to see where it starts failing.
 // 2100 is ok, 2200 fails

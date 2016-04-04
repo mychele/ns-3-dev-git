@@ -812,7 +812,7 @@ protected:
 
   /***
   TODO the scheduler is so closely
-  Rename into MpTcpScheduler
+  Woiuld be nice if could be changed online ?
   ***/
   Ptr<MpTcpScheduler> m_scheduler;  //!<
 

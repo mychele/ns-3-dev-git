@@ -33,8 +33,21 @@
 namespace ns3
 {
 
+
+
+class RttEstimator;
 class MpTcpSocketBase;
 class MpTcpSubflow;
+
+
+/**
+This class contains characteristics of a pair of subflows
+*/
+class SubflowPair
+{
+
+
+};
 
 class MpTcpSchedulerOwd
 //: public Object
@@ -74,8 +87,11 @@ public:
   /**
   Return Index of subflow to use
   */
-  virtual Ptr<MpTcpSubflow> GetSubflowToUseForEmptyPacket();
+  virtual Ptr<MpTcpSubflow> GetSubflowToUseForEmptyPacket ();
 
+
+//  std::map<> ;
+  std::list<EventId> m_timers;  /**< */
 protected:
   uint8_t  m_lastUsedFlowId;        //!< keep track of last used subflow
   Ptr<MpTcpSocketBase> m_metaSock;  //!<
