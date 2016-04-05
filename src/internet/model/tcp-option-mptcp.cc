@@ -157,7 +157,7 @@ TcpOptionMpTcp::CreateMpTcpOption (const uint8_t& subtype)
     case MP_ADD_ADDR:
       return CreateObject<TcpOptionMpTcpAddAddress>();
     case MP_DELTAOWD:
-      return CreateObject<TcpOptionMpTcpAddAddress>();
+      return CreateObject<TcpOptionMpTcpDeltaOWD>();
     default:
       break;
     }

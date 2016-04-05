@@ -43,6 +43,7 @@ class MpTcpPathIdManager;
 class MpTcpSubflow;
 //class MpTcpSchedulerRoundRobin;
 //class MpTcpCongestionControl;
+class SubflowPair;
 class TcpOptionMpTcpDSS;
 class TcpOptionMpTcpJoin;
 class OutputStreamWrapper;
@@ -820,6 +821,25 @@ protected:
   // should be able to rmeove one
   bool m_server;  //!< True if this socket is the result of a fork, ie it was originally LISTENing
 
+  /*******************************************/
+  /***   this part is not RFC compliant    ***/
+  /***   it's a custom toy implementation  ***/
+  /*******************************************/
+  
+  /** for each key <localIdLow, localIdMax>, we maintain a SubflowPair that 
+  * records characteristics to 2 subflows.
+  */
+  std::map<std::pair<uint8_t, uint8_t>, SubflowPair > m_couplings;
+  
+  /** **/
+  void AddCoupling (uint8_t localId0, uint8_t localId1);
+  
+  // remove couplings related to subflow with localID
+  void RemoveCoupling (uint8_t localID);
+
+  /*******************************************/
+  /******              END               *****/
+  /*******************************************/
 private:
   // TODO rename into m_localKey  and move tokens into subflow (maybe not even needed)
 //  uint64_t m_localKey;    //!< Store local host token, generated during the 3-way handshake
@@ -842,7 +862,7 @@ private:
    *  Research of the subflow is done
    * \warn This function does not check if the destination container is
    */
-  void MoveSubflow(Ptr<MpTcpSubflow> sf, mptcp_container_t to);
+  void MoveSubflow (Ptr<MpTcpSubflow> sf, mptcp_container_t to);
 
   /**
    * Asserts if from == to

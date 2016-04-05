@@ -110,7 +110,7 @@ MpTcpSocketBase::GetTypeId(void)
       .SetParent<TcpSocketBase>()
       .AddConstructor<MpTcpSocketBase>()
       .AddAttribute ("SocketType",
-               "Socket type of TCP objects.",
+               "MPTCP subflow type.",
                TypeIdValue (MpTcpSubflow::GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_subflowTypeId),
                MakeTypeIdChecker ())
@@ -2341,6 +2341,44 @@ MpTcpSocketBase::SetNewAddrCallback (Callback<bool, Ptr<Socket>, Address, uint8_
 
 
 void
+MpTcpSocketBase::AddCoupling (uint8_t localId0)
+{
+  NS_LOG_LOGIC ("Add coupling(s) for localId=" << localId0)
+  /* generate */
+  for ( auto it = m_subflows[Established].begin(); it != m_subflows[Established].end(); ++it) 
+  {
+    
+    Ptr<MpTcpSubflow> ssf = (*it);
+    uint8_t localId1 = sf->GetLocalId ()
+    
+    // Generate a pair <lowestId, highestId>
+    std::pair<uint8_t, uint8_t> key = std::make_pair ( 
+        std::min(localId0, localId1),
+        std::max(localId0, localId1),
+    );
+//    Ptr<SubflowPair> CreateObject
+    SubflowPair temp;
+    auto res = m_couplings.insert( key, temp);
+    NS_ASSERT (res.second == false);
+  }
+}
+
+void
+MpTcpSocketBase::RemoveCoupling( uint8_t localId)
+{
+  NS_LOG_LOGIC ("Remove coupling for localId " << (int)localId);
+  for ( auto it = m_couplings.begin(); it != m_couplings.end(); ++it)
+  {
+    //! if either of the id in the key belongs to this subflow, then kill it !
+    if(it->first.first == localId || it->first.second) 
+    {
+      NS_LOG_DEBUG ("key is composed of localId " << (int)localId);
+      m_couplings.remove (it->first);
+    }
+  }
+}
+
+void
 MpTcpSocketBase::MoveSubflow (Ptr<MpTcpSubflow> subflow, mptcp_container_t from, mptcp_container_t to)
 {
 
@@ -2351,11 +2389,21 @@ MpTcpSocketBase::MoveSubflow (Ptr<MpTcpSubflow> subflow, mptcp_container_t from,
   if(it == m_subflows[from].end())
   {
     NS_LOG_ERROR("Could not find subflow in *from* container. It may have already been moved by another callback ");
-    DumpSubflows(std::cout);
+    DumpSubflows (std::cout);
     return;
   }
 
   m_subflows[to].push_back(*it);
+  m_scheduler->NotifyOfMove (to, subflow);
+  if (to == Established) 
+  {
+    AddCoupling (sf->GetLocalId());
+  }
+  else if (to == Closing) 
+  {
+    RemoveCoupling (sf->GetLocalId());
+  }
+  
   m_subflows[from].erase(it);
 }
 
@@ -2393,7 +2441,7 @@ MpTcpSocketBase::MoveSubflow(Ptr<MpTcpSubflow> subflow, mptcp_container_t to)
       if(it != m_subflows[i].end())
       {
           NS_LOG_DEBUG("Found sf in container [" << containerNames[i] << "]");
-          MoveSubflow(subflow, static_cast<mptcp_container_t>(i), to);
+          MoveSubflow (subflow, static_cast<mptcp_container_t>(i), to);
           return;
       }
 
@@ -2565,7 +2613,7 @@ MpTcpSocketBase::OnSubflowClosing(Ptr<MpTcpSubflow> sf)
 //  };
 
 
-  MoveSubflow(sf, Established, Closing);
+  MoveSubflow (sf, Established, Closing);
   //      #TODO I need to Ack the DataFin in (DoPeerCLose)
 }
 

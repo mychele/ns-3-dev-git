@@ -33,9 +33,7 @@
 namespace ns3
 {
 
-
-
-class RttEstimator;
+class RttMeanDeviation;
 class MpTcpSocketBase;
 class MpTcpSubflow;
 
@@ -45,8 +43,13 @@ This class contains characteristics of a pair of subflows
 */
 class SubflowPair
 {
+  public:
+    
+    
+    EventId m_timer;
 
-
+    // TODO utiliser un estimator qui 
+    RttMeanDeviation m_estimator; /* rename into DelayEstimator ? */
 };
 
 class MpTcpSchedulerOwd

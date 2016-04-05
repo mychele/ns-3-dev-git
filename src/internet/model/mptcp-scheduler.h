@@ -32,6 +32,7 @@ namespace ns3
 {
 
 class MpTcpSocketBase;
+class MpTcpSubflow;
 
 /**
  * This class is responsible for
@@ -68,6 +69,14 @@ public:
 //  ;
 //  return tid;
 //}
+
+  /**
+   * Warns scheduler when 
+   */
+  virtual void NotifyOfMove (Ptr<MpTcpSubflow> subflow) 
+  {
+    //! empty
+  }
 
   /**
    * \param activeSubflowArrayId
