@@ -47,6 +47,7 @@
 #include "ns3/tcp-option-mptcp.h"
 #include "ns3/callback.h"
 #include "ns3/trace-helper.h"
+#include "ns3/mptcp-scheduler-owd.h"
 
 
 using namespace std;
@@ -2343,38 +2344,43 @@ MpTcpSocketBase::SetNewAddrCallback (Callback<bool, Ptr<Socket>, Address, uint8_
 void
 MpTcpSocketBase::AddCoupling (uint8_t localId0)
 {
-  NS_LOG_LOGIC ("Add coupling(s) for localId=" << localId0)
+  NS_LOG_LOGIC ("Add coupling(s) for localId=" << localId0);
   /* generate */
-  for ( auto it = m_subflows[Established].begin(); it != m_subflows[Established].end(); ++it) 
+  for ( auto it = m_subflows[Established].begin(); it != m_subflows[Established].end(); ++it)
   {
-    
-    Ptr<MpTcpSubflow> ssf = (*it);
-    uint8_t localId1 = sf->GetLocalId ()
-    
+
+    Ptr<MpTcpSubflow> sf = (*it);
+    uint8_t localId1 = sf->GetLocalId ();
+
     // Generate a pair <lowestId, highestId>
-    std::pair<uint8_t, uint8_t> key = std::make_pair ( 
+    std::pair<uint8_t, uint8_t> key = std::make_pair (
         std::min(localId0, localId1),
-        std::max(localId0, localId1),
+        std::max(localId0, localId1)
     );
 //    Ptr<SubflowPair> CreateObject
     SubflowPair temp;
-    auto res = m_couplings.insert( key, temp);
+    auto res = m_couplings.insert( std::make_pair(key, temp));
     NS_ASSERT (res.second == false);
   }
 }
 
 void
-MpTcpSocketBase::RemoveCoupling( uint8_t localId)
+MpTcpSocketBase::RemoveCoupling ( uint8_t localId)
 {
   NS_LOG_LOGIC ("Remove coupling for localId " << (int)localId);
-  for ( auto it = m_couplings.begin(); it != m_couplings.end(); ++it)
+  for ( auto it = m_couplings.cbegin(); it != m_couplings.cend(); )
   {
     //! if either of the id in the key belongs to this subflow, then kill it !
-    if(it->first.first == localId || it->first.second) 
+    if(it->first.first == localId || it->first.second == localId )
     {
       NS_LOG_DEBUG ("key is composed of localId " << (int)localId);
-      m_couplings.remove (it->first);
+      m_couplings.erase(it++);
+//      std::remove (m_couplings.begin(), m_couplings.end(), it->first.first);
     }
+    else {
+        ++it;
+    }
+
   }
 }
 
@@ -2394,16 +2400,16 @@ MpTcpSocketBase::MoveSubflow (Ptr<MpTcpSubflow> subflow, mptcp_container_t from,
   }
 
   m_subflows[to].push_back(*it);
-  m_scheduler->NotifyOfMove (to, subflow);
-  if (to == Established) 
+//  m_scheduler->NotifyOfMove (to, subflow);
+  if (to == Established)
   {
-    AddCoupling (sf->GetLocalId());
+    AddCoupling (subflow->GetLocalId());
   }
-  else if (to == Closing) 
+  else if (to == Closing)
   {
-    RemoveCoupling (sf->GetLocalId());
+    RemoveCoupling (subflow->GetLocalId());
   }
-  
+
   m_subflows[from].erase(it);
 }
 

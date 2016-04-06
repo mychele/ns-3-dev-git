@@ -1667,7 +1667,7 @@ TcpOptionMpTcpDeltaOWD::Print (std::ostream &os) const
 {
   os << "MP_DELTAOWD "
 //    << "targeting=" <<  (int)m_targetedSubflow
-    << " cookie=" << cookie
+    << " cookie=" << m_cookie
      << " with a recorded delay of =" << m_nanoseconds ;
 }
 
@@ -1676,7 +1676,8 @@ bool
 TcpOptionMpTcpDeltaOWD::operator== (const TcpOptionMpTcpDeltaOWD& opt) const
 {
   return (m_nanoseconds == opt.m_nanoseconds
-        && m_targetedSubflow == opt.m_targetedSubflow
+//        && m_targetedSubflow == opt.m_targetedSubflow
+        && m_cookie == opt.m_cookie
         );
 }
 
@@ -1687,7 +1688,8 @@ TcpOptionMpTcpDeltaOWD::Serialize (Buffer::Iterator i) const
   TcpOptionMpTcp::SerializeRef (i, 0);
 
 //  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
-  i.WriteU8 ( m_targetedSubflow );
+//  i.WriteU8 ( m_targetedSubflow );
+  i.WriteU8 ( m_cookie );
   i.WriteHtonU64 ( m_nanoseconds );
 }
 

@@ -27,6 +27,8 @@
 #include "ns3/object.h"
 #include "ns3/ptr.h"
 #include "ns3/mptcp-scheduler-round-robin.h"
+#include "ns3/rtt-estimator.h"
+#include "ns3/event-id.h"
 #include <vector>
 #include <list>
 
@@ -44,11 +46,11 @@ This class contains characteristics of a pair of subflows
 class SubflowPair
 {
   public:
-    
-    
+
+
     EventId m_timer;
 
-    // TODO utiliser un estimator qui 
+    // TODO utiliser un estimator qui
     RttMeanDeviation m_estimator; /* rename into DelayEstimator ? */
 };
 

@@ -825,15 +825,16 @@ protected:
   /***   this part is not RFC compliant    ***/
   /***   it's a custom toy implementation  ***/
   /*******************************************/
-  
-  /** for each key <localIdLow, localIdMax>, we maintain a SubflowPair that 
+
+  /** for each key <localIdLow, localIdMax>, we maintain a SubflowPair that
   * records characteristics to 2 subflows.
   */
   std::map<std::pair<uint8_t, uint8_t>, SubflowPair > m_couplings;
-  
+
   /** **/
-  void AddCoupling (uint8_t localId0, uint8_t localId1);
-  
+  void AddCoupling (uint8_t localId0);
+//  void AddCoupling (uint8_t localId0, uint8_t localId1);
+
   // remove couplings related to subflow with localID
   void RemoveCoupling (uint8_t localID);
 
