@@ -53,6 +53,7 @@ class MpTcpSocketBase;
 class MpTcpPathIdManager;
 class TcpOptionMpTcpDSS;
 class TcpOptionMpTcp;
+class TcpOptionMpTcpDeltaOWD;
 
 /**
  * \class MpTcpSubflow
@@ -332,6 +333,11 @@ TODO move this up to TcpSocketBase
   virtual int ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option);
 //  virtual int ProcessTcpOptionMpTcpDSS(Ptr<const TcpOptionMpTcpDSS> dss);
 
+  // TODO move this one to MptcpSubflowOwd
+  int ProcessOptionMpTcpDeltaOWD (const Ptr<const TcpOptionMpTcpDeltaOWD> option);
+
+
+
   Ptr<MpTcpPathIdManager> GetIdManager();
 
   /**
@@ -419,6 +425,13 @@ protected:
   virtual void
   ProcessClosing(Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
+
+  /**
+   * \brief Should be able to process any kind of MPTCP options.
+   *
+   * \warn When overriding this member function, call it last as
+   *       it throws a fatal exception upon unknown options
+   */
   virtual int ProcessOptionMpTcp (const Ptr<const TcpOption> option);
 
   /**

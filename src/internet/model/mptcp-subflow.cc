@@ -1276,6 +1276,33 @@ MpTcpSubflow::ProcessOptionMpTcpJoin (const Ptr<const TcpOptionMpTcp> option)
   return 0;
 }
 
+int
+MpTcpSubflow::ProcessOptionMpTcpDeltaOWD (const Ptr<const TcpOptionMpTcpDeltaOWD> option)
+{
+   NS_LOG_FUNCTION(this << option);
+
+//   uint8_t addressId = 0; //!< each mptcp subflow has a uid assigned
+//
+//    NS_LOG_DEBUG("Expecting MP_JOIN...");
+//
+//    Ptr<const TcpOptionMpTcpJoin> join = DynamicCast<const TcpOptionMpTcpJoin>(option);
+//    // TODO should be less restrictive in case there is a loss
+//
+//    NS_ASSERT_MSG( join, "There must be an MP_JOIN option in the SYN Packet" );
+//    NS_ASSERT_MSG( join && join->GetMode() == TcpOptionMpTcpJoin::SynAck, "the MPTCP join option received is not of the expected 1 out of 3 MP_JOIN types." );
+//
+//    addressId = join->GetAddressId();
+//    // TODO Here we should check the tokens
+////        uint8_t buf[20] =
+////        opt3->GetTruncatedHmac();
+//  NS_LOG_DEBUG ("Id manager");
+//  InetSocketAddress address ( m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
+//  bool res = GetMeta ()->AddRemoteId (addressId, address);
+//  NS_ASSERT_MSG (res, "Address id should have been registered correctly");
+
+  return 0;
+}
+
 
 int
 MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
@@ -1305,8 +1332,17 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
         case TcpOptionMpTcp::MP_REMOVE_ADDR:
         case TcpOptionMpTcp::MP_FASTCLOSE:
         case TcpOptionMpTcp::MP_FAIL:
+
+        case TcpOptionMpTcp::MP_DELTAOWD:
+            {
+                Ptr<const TcpOptionMpTcpDeltaOWD> delta = DynamicCast<const TcpOptionMpTcpDeltaOWD>(option);
+                NS_ASSERT(delta);
+                ProcessOptionMpTcpDeltaOWD (delta);
+            }
+            break;
+
         default:
-            NS_FATAL_ERROR ("Unsupported yet");
+            NS_FATAL_ERROR ("Unrecognized mptcp option in the base class MpTcpSubflow.");
             break;
 
 
