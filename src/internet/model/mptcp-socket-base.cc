@@ -2342,13 +2342,21 @@ MpTcpSocketBase::SetNewAddrCallback (Callback<bool, Ptr<Socket>, Address, uint8_
 
 
 void
+MpTcpSocketBase::AddProbingRequest (uint8_t cookie, Ptr<MpTcpSubflow> sf)
+{
+    NS_LOG_LOGIC (cookie << sf);
+
+}
+
+void
 MpTcpSocketBase::AddCoupling (uint8_t localId0)
 {
   NS_LOG_LOGIC ("Add coupling(s) for localId=" << localId0);
+
   /* generate */
   for ( auto it = m_subflows[Established].begin(); it != m_subflows[Established].end(); ++it)
   {
-
+    // Create one coupling
     Ptr<MpTcpSubflow> sf = (*it);
     uint8_t localId1 = sf->GetLocalId ();
 
@@ -2357,9 +2365,11 @@ MpTcpSocketBase::AddCoupling (uint8_t localId0)
         std::min(localId0, localId1),
         std::max(localId0, localId1)
     );
-//    Ptr<SubflowPair> CreateObject
-    SubflowPair temp;
-    auto res = m_couplings.insert( std::make_pair(key, temp));
+    Ptr<SubflowPair> couple = CreateObject<SubflowPair> ();
+//    SubflowPair temp;
+    // TODO we should arm the timer ?
+//    std::map<std::pair<uint8_t, uint8_t>, Ptr<SubflowPair> >::iterator
+    auto res = m_couplings.insert( std::make_pair(key, couple));
     NS_ASSERT (res.second == false);
   }
 }

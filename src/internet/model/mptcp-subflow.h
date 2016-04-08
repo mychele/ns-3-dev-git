@@ -42,6 +42,7 @@
 #include "ns3/tcp-socket-base.h"
 #include "ns3/tcp-header.h"
 #include "ns3/mptcp-mapping.h"
+#include "ns3/tcp-option-mptcp.h"
 //#include "ns3/tcp-option-mptcp.h"
 
 using namespace std;
@@ -54,6 +55,7 @@ class MpTcpPathIdManager;
 class TcpOptionMpTcpDSS;
 class TcpOptionMpTcp;
 class TcpOptionMpTcpDeltaOWD;
+class SubflowPair;
 
 /**
  * \class MpTcpSubflow
@@ -439,7 +441,7 @@ protected:
    */
 //  virtual int ProcessOptionMpTcpSynSent(const Ptr<const TcpOption> optionMapTo);
 
-
+    void StartOwdProbe ();
 public:
   /**
    *
@@ -454,6 +456,10 @@ public:
 
 protected:
 
+  /** probe mechanism , check before sending a packet if we should */
+  TcpOptionMpTcpDeltaOWD::State m_probeState;
+//  Time m_probeStartTime;    /**!< Record */
+  Ptr<SubflowPair> m_probingStats;
 
 //  void DumpInfo () const;
   /////////////////////////////////////////////
@@ -468,7 +474,7 @@ protected:
    *
    * \param dsnHead
    */
-  bool AddLooseMapping(SequenceNumber64 dsnHead, uint16_t length);
+  bool AddLooseMapping (SequenceNumber64 dsnHead, uint16_t length);
 
   /**
    * If no mappings set yet, then it returns the tail ssn of the Tx buffer.

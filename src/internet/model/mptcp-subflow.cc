@@ -19,9 +19,9 @@
  * Author:  Matthieu Coudron <matthieu.coudron@lip6.fr>
  *          Morteza Kheirkhah <m.kheirkhah@sussex.ac.uk>
  */
-#undef NS_LOG_APPEND_CONTEXT
-#define NS_LOG_APPEND_CONTEXT \
-  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << ": sf " << "] "; }
+//#undef NS_LOG_APPEND_CONTEXT
+//#define NS_LOG_APPEND_CONTEXT \
+//  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << ": sf " << "] "; }
 //<< TcpStateName[m_node->GetTcp()->GetState()] <<
 
 #include <iostream>
@@ -40,6 +40,7 @@
 #include "ns3/ptr.h"
 #include "ns3/tcp-option-mptcp.h"
 #include "ns3/mptcp-id-manager.h"
+#include "ns3/mptcp-scheduler-owd.h"    // for subflowpair
 //#include "ns3/ipv4-address.h"
 #include "ns3/trace-helper.h"
 #include <algorithm>
@@ -928,6 +929,26 @@ MpTcpSubflow::AddMpTcpOptions (TcpHeader& header)
         AddMpTcpOptionDSS(header);
     }
 
+    // if we should probe
+    if (m_probeState == TcpOptionMpTcpDeltaOWD::PendingSend)
+    {
+        // We should have one configured
+//        NS_ASSERT (m_probeState );
+//        m_probeState == Object
+        Ptr<TcpOptionMpTcpDeltaOWD> delta =  Create<TcpOptionMpTcpDeltaOWD>();
+
+        Time t = Simulator::Now();
+
+        static int cookie_counter = 0;
+//        ;
+        delta->m_cookie = cookie_counter++;
+        delta->m_nanoseconds = t.GetNanoSeconds();
+        delta->m_type = TcpOptionMpTcpDeltaOWD::Request;
+
+        header.AppendOption( delta );
+
+    }
+
 }
 
 
@@ -1276,10 +1297,52 @@ MpTcpSubflow::ProcessOptionMpTcpJoin (const Ptr<const TcpOptionMpTcp> option)
   return 0;
 }
 
+void
+MpTcpSubflow::StartOwdProbe ()
+{
+    NS_ASSERT_MSG (m_probeState == TcpOptionMpTcpDeltaOWD::ExpectingAnswer, "Can't update state while waiting for answer" );
+    m_probeState = TcpOptionMpTcpDeltaOWD::PendingSend;
+}
+
+//MpTcpSubflow::SetOwdProbing (TcpOptionMpTcpDeltaOWD::State state)
+//{
+//    NS_LOG_DEBUG (state << m_probeState);
+//    NS_ASSERT_MSG (m_probeState == ExpectingAnswer, "Can't update state while waiting for answer" )
+//
+//    if(m_probeState == WaitingAnswer)
+//}
+
 int
 MpTcpSubflow::ProcessOptionMpTcpDeltaOWD (const Ptr<const TcpOptionMpTcpDeltaOWD> option)
 {
    NS_LOG_FUNCTION(this << option);
+
+
+   switch (option->GetType())
+   {
+      case TcpOptionMpTcpDeltaOWD::Answer:
+        NS_ASSERT_MSG (TcpOptionMpTcpDeltaOWD::ExpectingAnswer, "Should receive an answer only in this mode");
+        NS_ASSERT (m_probingStats);
+        // cookie should be ok :
+        // TODO should check the cookie option.m_cookie
+//        NS_ASSERT (cookie == );
+        m_probingStats->FinishRound ( this, option->m_cookie, option->m_nanoseconds);
+        break;
+
+      case TcpOptionMpTcpDeltaOWD::Request:
+        /* TODO look for matching request
+        */
+        break;
+
+      default:
+        NS_FATAL_ERROR ("Unhandled case");
+   };
+
+//   if (m_probeState == TcpOptionMpTcpDeltaOWD::PendingSend)
+//   {
+//    //!
+//   }
+//   else if ()
 
 //   uint8_t addressId = 0; //!< each mptcp subflow has a uid assigned
 //
@@ -2222,51 +2285,6 @@ MpTcpSubflow::ClosingOnEmpty(TcpHeader& header)
     GetMeta()->OnSubflowClosing(this);
 }
 
-//! TODO call directly parent
-//void
-//MpTcpSubflow::ParseDSS(Ptr<Packet> p, const TcpHeader& header,Ptr<TcpOptionMpTcpDSS> dss)
-//{
-//  //!
-////  NS_FATAL_ERROR("TO REMOVE. Use meta->ProcessDSS")
-//  NS_ASSERT(dss);
-//  GetMeta()->ProcessDSS(header, dss, Ptr<MpTcpSubflow>(this));
-//
-//}
-
-//
-//int
-//MpTcpSubflow::ProcessOptionMpTcpEstablished(const Ptr<const TcpOption> option)
-//{
-//    NS_LOG_FUNCTION(this << option);
-//    //! Just looking for DSS
-////    Ptr<TcpOptionMpTcpFastClose> fastClose;
-////    GetTcpOption(fastClose)
-////    Ptr<const TcpOptionMpTcpFastClose> fastClose = DynamicCast<const TcpOptionMpTcpFastClose>(option);
-//    Ptr<const TcpOptionMpTcpDSS> dss = DynamicCast<const TcpOptionMpTcpDSS>(option);
-//    if(dss)
-//    {
-//        ProcessOptionMpTcpDSSEstablished(dss);
-//    }
-//
-//}
-
-//int
-//MpTcpSubflow::ProcessOptionMpTcpClosing(const Ptr<const TcpOption> option)
-//{
-//    NS_LOG_FUNCTION(this << option);
-//
-//    // Just DSS ?
-//    ProcessTcpOptionMpTcpDSS
-//}
-//
-//int
-//MpTcpSubflow::ProcessOptionTimeWait(const Ptr<const TcpOption> option)
-//{
-//    NS_LOG_FUNCTION(this << option);
-//
-//}
-
-
 /*
 Quote from rfc 6824:
     Because of this, an implementation MUST NOT use the RCV.WND
@@ -2523,7 +2541,7 @@ MpTcpSubflow::ProcessDSSWait( Ptr<TcpOptionMpTcpDSS> dss)
 #endif
 
 int
-MpTcpSubflow::ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS> dss)
+MpTcpSubflow::ProcessOptionMpTcpDSSEstablished (const Ptr<const TcpOptionMpTcpDSS> dss)
 {
   NS_LOG_FUNCTION (this << dss << " from subflow ");
 

@@ -114,6 +114,8 @@ protected:
   /**
    * \brief Serialize TCP option type & length of the option
    *
+   * \param lower_bits Only 4 rightmost bits will be kept
+   *
    * Let children write the subtype since Buffer iterators
    * can't write less than 1 byte
    * Should be called at the start of every subclass Serialize call
@@ -1102,7 +1104,7 @@ private:
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +---------------+---------------+-------+-----+-+--------------+
-|     Kind      |     Length    |Subtype|     |B| AddrID (opt) |
+|     Kind      |     Length    |Subtype|  type |    cookie    |
 +---------------+---------------+-------+----------------------+
 |                                                              |
 |                 Departure time       (8 octets)              |
@@ -1122,14 +1124,29 @@ public:
 
   virtual bool operator== (const TcpOptionMpTcpDeltaOWD& ) const;
 
+  enum State {
+  None,
+  ExpectingAnswer,  /**!< Probe was sent, waiting for answer */
+//  ExpectingCoupledSubflow,  /**!< Probe was sent, waiting for answer */
+  PendingSend   /**!< Ready to send a new probe */
+  };
   /**
    We don't care if it's hackish anymore, this is our own o/
    we rule the world !
   **/
 //  uint8_t m_targetedSubflow;  /**< subflow id from which to compare arrival times */
 
+  enum Type {
+    Answer,
+    Request
+  };
+
+//  bool m_type;     /* to identify option */
+  Type m_type;     /* answer/request */
   int m_cookie;     /* to identify option */
   int64_t m_nanoseconds;      /**< assume this resolution Could be passed via the option */
+
+  Type GetType () const;
 
   //! Inherited
   virtual void Print (std::ostream &os) const;

@@ -171,7 +171,7 @@ TcpOptionMpTcp::SerializeRef (Buffer::Iterator& i, uint8_t lower_bits) const
 {
   i.WriteU8 (GetKind ());
   i.WriteU8 (GetSerializedSize ());
-  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)lower_bits);
+  i.WriteU8 ( (GetSubType () << 4) + (lower_bits & 0x0f));
 }
 
 uint32_t
@@ -1678,6 +1678,7 @@ TcpOptionMpTcpDeltaOWD::operator== (const TcpOptionMpTcpDeltaOWD& opt) const
   return (m_nanoseconds == opt.m_nanoseconds
 //        && m_targetedSubflow == opt.m_targetedSubflow
         && m_cookie == opt.m_cookie
+        && m_type == opt.m_type
         );
 }
 
@@ -1685,7 +1686,7 @@ TcpOptionMpTcpDeltaOWD::operator== (const TcpOptionMpTcpDeltaOWD& opt) const
 void
 TcpOptionMpTcpDeltaOWD::Serialize (Buffer::Iterator i) const
 {
-  TcpOptionMpTcp::SerializeRef (i, 0);
+  TcpOptionMpTcp::SerializeRef (i, m_type);
 
 //  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
 //  i.WriteU8 ( m_targetedSubflow );
@@ -1693,6 +1694,12 @@ TcpOptionMpTcpDeltaOWD::Serialize (Buffer::Iterator i) const
   i.WriteHtonU64 ( m_nanoseconds );
 }
 
+TcpOptionMpTcpDeltaOWD::Type
+TcpOptionMpTcpDeltaOWD::GetType () const
+{
+
+    return m_type;
+}
 
 uint32_t
 TcpOptionMpTcpDeltaOWD::Deserialize (Buffer::Iterator i)
@@ -1704,6 +1711,7 @@ TcpOptionMpTcpDeltaOWD::Deserialize (Buffer::Iterator i)
   uint8_t subtype_and_flags = i.ReadU8 ();
   NS_ASSERT ( subtype_and_flags >> 4 == GetSubType ()  );
 
+  m_cookie = i.ReadU8 ();
   m_nanoseconds = i.ReadNtohU64 ();
 
   return GetSerializedSize ();

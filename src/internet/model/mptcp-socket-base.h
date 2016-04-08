@@ -29,7 +29,7 @@
 
 //#include "ns3/mp-tcp-cc.h"
 #include "ns3/inet-socket-address.h"
-#include "ns3/mptcp-scheduler-round-robin.h"
+//#include "ns3/mptcp-scheduler-round-robin.h"
 
 //using namespace std;
 
@@ -46,6 +46,7 @@ class MpTcpSubflow;
 class SubflowPair;
 class TcpOptionMpTcpDSS;
 class TcpOptionMpTcpJoin;
+class MpTcpScheduler;
 class OutputStreamWrapper;
 
 
@@ -829,7 +830,9 @@ protected:
   /** for each key <localIdLow, localIdMax>, we maintain a SubflowPair that
   * records characteristics to 2 subflows.
   */
-  std::map<std::pair<uint8_t, uint8_t>, SubflowPair > m_couplings;
+  std::map<std::pair<uint8_t, uint8_t>, Ptr<SubflowPair> > m_couplings;
+
+  void AddProbingRequest (uint8_t cookie, Ptr<MpTcpSubflow> sf);
 
   /** **/
   void AddCoupling (uint8_t localId0);

@@ -64,7 +64,7 @@ MpTcpMapping::SetMappingSize(uint16_t const& length)
 bool
 MpTcpMapping::TranslateSSNToDSN(const SequenceNumber32& ssn, SequenceNumber64& dsn) const
 {
-  if(IsSSNInRange(ssn))
+  if (IsSSNInRange(ssn))
   {
 //      dsn =
 //    NS_FATAL_ERROR("TODO");
