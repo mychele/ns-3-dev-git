@@ -684,6 +684,12 @@ private:
   /** @} */
 
   /**
+   * Changes the sign of the current duration
+   * \returns Same value with opposite sign of the current instance
+   */
+  friend Time operator - (const Time & lhs);
+
+  /**
    *  Absolute value function for Time
    *  \param [in] time The input value
    *  \returns The absolute value of the input value.
@@ -799,7 +805,11 @@ inline Time & operator -= (Time & lhs, const Time & rhs)
   return lhs;
 }
 /**@}*/
-  
+
+inline Time operator - (const Time & lhs)
+{
+  return Time (-lhs.m_data);
+}
 inline Time Abs (const Time & time)
 {
   return Time ((time.m_data < 0) ? -time.m_data : time.m_data);
