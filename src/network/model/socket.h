@@ -24,6 +24,7 @@
 #define NS3_SOCKET_H
 
 #include "ns3/callback.h"
+#include "ns3/traced-callback.h"
 #include "ns3/ptr.h"
 #include "ns3/tag.h"
 #include "ns3/object.h"
@@ -969,7 +970,9 @@ protected:
   Ipv6Address m_ipv6MulticastGroupAddress; //!< IPv6 multicast group address.
 
 private:
-  Callback<void, Ptr<Socket> >                   m_connectionSucceeded;  //!< connection succeeded callback
+  // MATT: Add TracedCallback
+//  Callback<void, Ptr<Socket> >                   m_connectionSucceeded;  //!< connection succeeded callback
+  TracedCallback<Ptr<Socket> >                   m_connectionSucceeded;  //!< connection succeeded callback
   Callback<void, Ptr<Socket> >                   m_connectionFailed;     //!< connection failed callback
   Callback<void, Ptr<Socket> >                   m_normalClose;          //!< connection closed callback
   Callback<void, Ptr<Socket> >                   m_errorClose;           //!< connection closed due to errors callback

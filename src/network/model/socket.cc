@@ -86,7 +86,8 @@ Socket::SetConnectCallback (
   Callback<void, Ptr<Socket> > connectionFailed)
 {
   NS_LOG_FUNCTION (this << &connectionSucceeded << &connectionFailed);
-  m_connectionSucceeded = connectionSucceeded;
+  // DisconnectWithoutContext
+  m_connectionSucceeded.ConnectWithoutContext (connectionSucceeded);
   m_connectionFailed = connectionFailed;
 }
 
@@ -217,10 +218,10 @@ void
 Socket::NotifyConnectionSucceeded (void)
 {
   NS_LOG_FUNCTION (this);
-  if (!m_connectionSucceeded.IsNull ())
-    {
+//  if (!m_connectionSucceeded.IsNull ())
+//    {
       m_connectionSucceeded (this);
-    }
+//    }
 }
 
 void 
@@ -315,7 +316,7 @@ void
 Socket::DoDispose (void)
 {
   NS_LOG_FUNCTION (this);
-  m_connectionSucceeded = MakeNullCallback<void,Ptr<Socket> > ();
+//  m_connectionSucceeded = MakeNullCallback<void,Ptr<Socket> > ();
   m_connectionFailed = MakeNullCallback<void,Ptr<Socket> > ();
   m_normalClose = MakeNullCallback<void,Ptr<Socket> > ();
   m_errorClose = MakeNullCallback<void,Ptr<Socket> > ();
