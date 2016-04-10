@@ -40,6 +40,13 @@ class MpTcpSocketBase;
 class MpTcpSubflow;
 
 
+class ProbingRequest : public Object
+{
+public:
+    ProbingRequest ();
+    ~ProbingRequest ();
+};
+
 /**
  * This class contains characteristics of a pair of subflows
  * Estimations are always made from low to high id,

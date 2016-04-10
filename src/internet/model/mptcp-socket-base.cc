@@ -2342,9 +2342,20 @@ MpTcpSocketBase::SetNewAddrCallback (Callback<bool, Ptr<Socket>, Address, uint8_
 
 
 void
-MpTcpSocketBase::AddProbingRequest (uint8_t cookie, Ptr<MpTcpSubflow> sf)
+MpTcpSocketBase::AddProbingRequest (uint8_t cookie, Time , Ptr<MpTcpSubflow> sf)
 {
     NS_LOG_LOGIC (cookie << sf);
+
+    auto it = std::find(m_probingRequests.begin(), m_probingRequests.end(), cookie);
+    if(it == m_probingRequests.end())
+    {
+        //!
+        NS_LOG_DEBUG ("A request was pending");
+        m_probingRequests.insert ()
+    }
+    else
+    {
+    }
 
 }
 
