@@ -62,6 +62,8 @@ NS_LOG_COMPONENT_DEFINE("MpTcpSubflow");
 NS_OBJECT_ENSURE_REGISTERED(MpTcpSubflow);
 
 
+
+
 static inline
 SequenceNumber32 SEQ64TO32(SequenceNumber64 seq)
 {
@@ -258,6 +260,7 @@ MpTcpSubflow::Close(void)
  */
 MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
     : TcpSocketBase(sock),
+    m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
     m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
     m_dssFlags (0),
     m_masterSocket(true),
@@ -271,6 +274,10 @@ MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
     // instead of the abstract meta
     // this is necessary for the client socket
     NS_LOG_UNCOND("Cb=" << m_sendCb.IsNull () << " endPoint=" << m_endPoint);
+
+    m_owd[0] = CreateObject<RttMeanDeviation> ();
+    m_owd[1] = CreateObject<RttMeanDeviation> ();
+
     m_endPoint = (sock.m_endPoint);
     m_endPoint6 = (sock.m_endPoint6);
     SetupCallback();
@@ -280,6 +287,7 @@ MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
 // Does this constructor even make sense ? no ? to remove ?
 MpTcpSubflow::MpTcpSubflow(const MpTcpSubflow& sock)
   : TcpSocketBase(sock),
+  m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
   m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
   m_dssFlags(0),
   m_masterSocket(sock.m_masterSocket),  //!false
@@ -289,12 +297,16 @@ MpTcpSubflow::MpTcpSubflow(const MpTcpSubflow& sock)
 {
   NS_LOG_FUNCTION (this << &sock);
   NS_LOG_LOGIC ("Invoked the copy constructor");
+//  if (sock.m_owd) {
+//    m_owd = sock.m_owd->Copy ();
+//  }
 }
 
 MpTcpSubflow::MpTcpSubflow(
 //Ptr<MpTcpSocketBase> metaSocket
 ) :
     TcpSocketBase(),
+    m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
     m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
     m_metaSocket (0),
     m_dssFlags (0),
@@ -305,6 +317,9 @@ MpTcpSubflow::MpTcpSubflow(
 
 {
   NS_LOG_FUNCTION(this);
+  // m_rtt is created through a factory in TcpL4Protocol::CreateSocket
+    m_owd[0] = CreateObject<RttMeanDeviation> ();
+    m_owd[1] = CreateObject<RttMeanDeviation> ();
 }
 
 MpTcpSubflow::~MpTcpSubflow()
@@ -816,7 +831,7 @@ It is also encouraged to
 Move TCP to Time_Wait state and schedule a transition to Closed state
 */
 void
-MpTcpSubflow::TimeWait()
+MpTcpSubflow::TimeWait ()
 {
   NS_LOG_INFO (TcpStateName[m_state] << " -> TIME_WAIT");
   m_state = TIME_WAIT;
@@ -848,7 +863,7 @@ MpTcpSubflow::TimeWait()
 //}
 
 void
-MpTcpSubflow::AddMpTcpOptionDSS(TcpHeader& header)
+MpTcpSubflow::AddMpTcpOptionDSS (TcpHeader& header)
 {
   NS_LOG_FUNCTION(this);
   Ptr<TcpOptionMpTcpDSS> dss = Create<TcpOptionMpTcpDSS>();
@@ -881,18 +896,18 @@ MpTcpSubflow::AddMpTcpOptionDSS(TcpHeader& header)
     // TODO explain
 //    + SequenceNumber32(1)
     // +1 ?
-    m_dssMapping.MapToSSN(
+    m_dssMapping.MapToSSN (
         SequenceNumber32(m_dssMapping.HeadSSN().GetValue() - GetLocalIsn().GetValue()
                          )
                           );
-    NS_LOG_DEBUG("Converting to relative SSN " << m_dssMapping.HeadSSN());
+    NS_LOG_DEBUG ("Converting to relative SSN " << m_dssMapping.HeadSSN());
   }
 
   // if there is a mapping to send
   if(m_dssFlags & TcpOptionMpTcpDSS::DSNMappingPresent)
   {
 
-      dss->SetMapping(m_dssMapping.HeadDSN().GetValue(),
+      dss->SetMapping (m_dssMapping.HeadDSN().GetValue(),
                       /** SSN should be relative **/
                       m_dssMapping.HeadSSN().GetValue(),
                       m_dssMapping.GetLength(),
@@ -918,7 +933,7 @@ MpTcpSubflow::AddMpTcpOptions (TcpHeader& header)
     // send an MP_CAPABLE with both keys
     else if(!GetMeta()->FullyEstablished())
     {
-        AddOptionMpTcp3WHS(header);
+        AddOptionMpTcp3WHS (header);
     }
 
 
@@ -926,9 +941,10 @@ MpTcpSubflow::AddMpTcpOptions (TcpHeader& header)
   /////////////////////////////////////////
     if(m_dssFlags)
     {
-        AddMpTcpOptionDSS(header);
+        AddMpTcpOptionDSS (header);
     }
 
+    #if 0
     // if we should probe
     if (m_probeState == TcpOptionMpTcpDeltaOWD::PendingSend)
     {
@@ -948,12 +964,42 @@ MpTcpSubflow::AddMpTcpOptions (TcpHeader& header)
         header.AppendOption( delta );
 
     }
+    #endif
+    if (m_probeState == TcpOptionMpTcpOwdTimeStamp::PendingSend && m_state == ESTABLISHED)
+    {
+        // We should have one configured
+//        NS_ASSERT (m_probeState );
+//        m_probeState == Object
+        NS_LOG_LOGIC ("Crafting a MP_OWDTS probe");
+        Ptr<TcpOptionMpTcpOwdTimeStamp> owd_ts =  Create<TcpOptionMpTcpOwdTimeStamp>();
 
+        Time t = Simulator::Now();
+
+        static int cookie_counter = 0;
+//        ;
+        owd_ts->Setup (TcpOptionMpTcpOwdTimeStamp::Request, cookie_counter++, t.GetNanoSeconds());
+//        owd_ts->m_nanoseconds = ;
+//        owd_ts->m_type = ;
+        
+        header.AppendOption( owd_ts );
+
+        m_probeState = TcpOptionMpTcpOwdTimeStamp::ExpectingAnswer;
+    }
+    
+    // if we need to answer a probe
+    if (m_owdProbeAnswer.first == true) {
+    
+        NS_LOG_LOGIC ("Crafting answer to MP_OWDTS");
+        m_owdProbeAnswer.first = false;
+
+
+        header.AppendOption( m_owdProbeAnswer.second);
+    }
 }
 
 
 void
-MpTcpSubflow::ProcessClosing(Ptr<Packet> packet, const TcpHeader& tcpHeader)
+MpTcpSubflow::ProcessClosing (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
@@ -962,7 +1008,7 @@ MpTcpSubflow::ProcessClosing(Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
 /** Received a packet upon CLOSE_WAIT, FIN_WAIT_1, or FIN_WAIT_2 states */
 void
-MpTcpSubflow::ProcessWait(Ptr<Packet> packet, const TcpHeader& tcpHeader)
+MpTcpSubflow::ProcessWait (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
@@ -1300,8 +1346,8 @@ MpTcpSubflow::ProcessOptionMpTcpJoin (const Ptr<const TcpOptionMpTcp> option)
 void
 MpTcpSubflow::StartOwdProbe ()
 {
-    NS_ASSERT_MSG (m_probeState == TcpOptionMpTcpDeltaOWD::ExpectingAnswer, "Can't update state while waiting for answer" );
-    m_probeState = TcpOptionMpTcpDeltaOWD::PendingSend;
+//    NS_ASSERT_MSG (m_probeState == TcpOptionMpTcpDeltaOWD::ExpectingAnswer, "Can't update state while waiting for answer" );
+//    m_probeState = TcpOptionMpTcpDeltaOWD::PendingSend;
 }
 
 //MpTcpSubflow::SetOwdProbing (TcpOptionMpTcpDeltaOWD::State state)
@@ -1317,8 +1363,8 @@ MpTcpSubflow::ProcessOptionMpTcpDeltaOWD (const Ptr<const TcpOptionMpTcpDeltaOWD
 {
    NS_LOG_FUNCTION(this << option);
 
-
-   switch (option->GetType())
+#if 0
+   switch (option->GetType ())
    {
       case TcpOptionMpTcpDeltaOWD::Answer:
         NS_ASSERT_MSG (TcpOptionMpTcpDeltaOWD::ExpectingAnswer, "Should receive an answer only in this mode");
@@ -1337,32 +1383,49 @@ MpTcpSubflow::ProcessOptionMpTcpDeltaOWD (const Ptr<const TcpOptionMpTcpDeltaOWD
       default:
         NS_FATAL_ERROR ("Unhandled case");
    };
+   #endif 
+  return 0;
+}
 
-//   if (m_probeState == TcpOptionMpTcpDeltaOWD::PendingSend)
-//   {
-//    //!
-//   }
-//   else if ()
+int
+MpTcpSubflow::ProcessOptionMpTcpOwdTimeStamp (const Ptr<const TcpOptionMpTcpOwdTimeStamp> option)
+{
+   NS_LOG_FUNCTION(this << option);
 
-//   uint8_t addressId = 0; //!< each mptcp subflow has a uid assigned
-//
-//    NS_LOG_DEBUG("Expecting MP_JOIN...");
-//
-//    Ptr<const TcpOptionMpTcpJoin> join = DynamicCast<const TcpOptionMpTcpJoin>(option);
-//    // TODO should be less restrictive in case there is a loss
-//
-//    NS_ASSERT_MSG( join, "There must be an MP_JOIN option in the SYN Packet" );
-//    NS_ASSERT_MSG( join && join->GetMode() == TcpOptionMpTcpJoin::SynAck, "the MPTCP join option received is not of the expected 1 out of 3 MP_JOIN types." );
-//
-//    addressId = join->GetAddressId();
-//    // TODO Here we should check the tokens
-////        uint8_t buf[20] =
-////        opt3->GetTruncatedHmac();
-//  NS_LOG_DEBUG ("Id manager");
-//  InetSocketAddress address ( m_endPoint->GetPeerAddress(), m_endPoint->GetPeerPort() );
-//  bool res = GetMeta ()->AddRemoteId (addressId, address);
-//  NS_ASSERT_MSG (res, "Address id should have been registered correctly");
 
+   switch (option->GetType())
+   {
+      case TcpOptionMpTcpOwdTimeStamp::Answer:
+        NS_ASSERT_MSG (TcpOptionMpTcpOwdTimeStamp::ExpectingAnswer, "Should receive an answer only in this mode");
+        // cookie should be ok :
+//        NS_ASSERT (cookie == );
+        {
+            Time m = Time(option->m_nanoseconds);
+            m_owd[LocalOwdEstimator]->Measurement(m);
+            NS_LOG_DEBUG ("Owd of this subflow = " << m);
+            m_probeState = TcpOptionMpTcpOwdTimeStamp::PendingSend;
+        }
+        break;
+
+      case TcpOptionMpTcpOwdTimeStamp::Request:
+        {
+            //! Craft packet and send it next.
+            Time now = Simulator::Now ();
+            Time m =  now - Time (option->m_nanoseconds);
+            m_owd[RemoteOwdEstimator]->Measurement(m);
+            NS_LOG_DEBUG ("Owd of the remote subflow = " << m);
+            // TODO MATT prepare an answer 
+            Ptr<TcpOptionMpTcpOwdTimeStamp> owd_ts =  Create<TcpOptionMpTcpOwdTimeStamp>();
+            // TODO remember the cookie and reuse it ?
+            owd_ts->Setup (TcpOptionMpTcpOwdTimeStamp::Answer, option->m_cookie, m.GetNanoSeconds());
+            m_owdProbeAnswer = std::make_pair (true, owd_ts);
+        }
+        
+        break;
+
+      default:
+        NS_FATAL_ERROR ("Unhandled case");
+   };
   return 0;
 }
 
@@ -1391,11 +1454,6 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
             }
             break;
 
-        case TcpOptionMpTcp::MP_ADD_ADDR:
-        case TcpOptionMpTcp::MP_REMOVE_ADDR:
-        case TcpOptionMpTcp::MP_FASTCLOSE:
-        case TcpOptionMpTcp::MP_FAIL:
-
         case TcpOptionMpTcp::MP_DELTAOWD:
             {
                 Ptr<const TcpOptionMpTcpDeltaOWD> delta = DynamicCast<const TcpOptionMpTcpDeltaOWD>(option);
@@ -1404,6 +1462,21 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
             }
             break;
 
+        case TcpOptionMpTcp::MP_OWDTS:
+            {
+                Ptr<const TcpOptionMpTcpOwdTimeStamp> owdts= DynamicCast<const TcpOptionMpTcpOwdTimeStamp>(option);
+                NS_ASSERT (owdts);
+                ProcessOptionMpTcpOwdTimeStamp (owdts);
+            }
+            break;
+
+
+        case TcpOptionMpTcp::MP_ADD_ADDR:
+        case TcpOptionMpTcp::MP_REMOVE_ADDR:
+        
+        case TcpOptionMpTcp::MP_FASTCLOSE:
+        case TcpOptionMpTcp::MP_FAIL:
+            
         default:
             NS_FATAL_ERROR ("Unrecognized mptcp option in the base class MpTcpSubflow.");
             break;
@@ -2033,6 +2106,14 @@ MpTcpSubflow::AppendDSSFin()
     m_dssFlags |= TcpOptionMpTcpDSS::DataFin;
 }
 
+
+Ptr<RttEstimator> 
+MpTcpSubflow::GetOwd (OwdEstimator estimator)
+{
+    NS_ASSERT (m_owd);
+    return m_owd[estimator];
+}
+
 /**
 TODO here I should look for an associated mapping.
 
@@ -2046,7 +2127,7 @@ TODO I should also notify the meta, maybe with an enum saying if it's new data/o
 TODO merge with TcpSocketBase
 */
 void
-MpTcpSubflow::ReceivedData(Ptr<Packet> p, const TcpHeader& tcpHeader)
+MpTcpSubflow::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 //  NS_LOG_FUNCTION (this << tcpHeader);NS_LOG_LOGIC ("seq " << tcpHeader.GetSequenceNumber () <<

@@ -871,7 +871,7 @@ private:
   /**
    * Asserts if from == to
    */
-  void MoveSubflow(Ptr<MpTcpSubflow> sf, mptcp_container_t from, mptcp_container_t to);
+  void MoveSubflow (Ptr<MpTcpSubflow> sf, mptcp_container_t from, mptcp_container_t to);
 
   Callback<void, Ptr<MpTcpSubflow> > m_subflowConnectionSucceeded;  //!< connection succeeded callback
   Callback<void, Ptr<MpTcpSubflow> > m_subflowConnectionFailure;     //!< connection failed callback

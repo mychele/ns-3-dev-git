@@ -105,7 +105,7 @@ TcpOptionMpTcp::Print (std::ostream &os) const
 std::string
 TcpOptionMpTcp::SubTypeToString (const uint8_t& flags, const std::string& delimiter)
 {
-  static const char* flagNames[8] = {
+  static const char* flagNames[MP_LAST] = {
     "CAPABLE",
     "JOIN",
     "DSS",
@@ -113,7 +113,9 @@ TcpOptionMpTcp::SubTypeToString (const uint8_t& flags, const std::string& delimi
     "REM_ADDR",
     "CHANGE_PRIORITY",
     "MP_FAIL",
-    "MP_FASTCLOSE"
+    "MP_FASTCLOSE",
+    "MP_DELTAOWD",
+    "MP_OWDTS"
   };
 
   std::string flagsDescription = "";
@@ -157,7 +159,9 @@ TcpOptionMpTcp::CreateMpTcpOption (const uint8_t& subtype)
     case MP_ADD_ADDR:
       return CreateObject<TcpOptionMpTcpAddAddress>();
     case MP_DELTAOWD:
-      return CreateObject<TcpOptionMpTcpDeltaOWD>();
+      return CreateObject<TcpOptionMpTcpDeltaOWD>();    
+    case MP_OWDTS:
+      return CreateObject<TcpOptionMpTcpOwdTimeStamp>();
     default:
       break;
     }
@@ -1723,6 +1727,109 @@ TcpOptionMpTcpDeltaOWD::GetSerializedSize (void) const
   return 12;
 }
 
+
+///////////////////////////////////////////////////
+//// MP_FAIL to totally stop a flow of data
+////
+TcpOptionMpTcpOwdTimeStamp::TcpOptionMpTcpOwdTimeStamp ()
+  : TcpOptionMpTcp (MP_OWDTS),
+    m_type (Request),
+    m_cookie (0),
+    m_nanoseconds (0)
+{
+  NS_LOG_FUNCTION (this);
+}
+
+
+TcpOptionMpTcpOwdTimeStamp::~TcpOptionMpTcpOwdTimeStamp (void)
+{
+  NS_LOG_FUNCTION (this);
+}
+//
+//void
+//TcpOptionMpTcpOwdTimeStamp::SetDSN (const uint64_t& dsn)
+//{
+//  NS_LOG_FUNCTION (dsn);
+//  m_dsn = dsn;
+//}
+//uint64_t
+//TcpOptionMpTcpOwdTimeStamp::GetDSN (void) const
+//{
+//  return m_dsn;
+//}
+
+
+void
+TcpOptionMpTcpOwdTimeStamp::Print (std::ostream &os) const
+{
+  os << "MP_OWDTS"
+//    << "targeting=" <<  (int)m_targetedSubflow
+    << " cookie=" << m_cookie
+     << " with a recorded delay of =" << m_nanoseconds ;
+}
+
+
+bool
+TcpOptionMpTcpOwdTimeStamp::operator== (const TcpOptionMpTcpOwdTimeStamp& opt) const
+{
+  return (m_nanoseconds == opt.m_nanoseconds
+//        && m_targetedSubflow == opt.m_targetedSubflow
+        && m_cookie == opt.m_cookie
+        && m_type == opt.m_type
+        );
+}
+
+void
+TcpOptionMpTcpOwdTimeStamp::Serialize (Buffer::Iterator i) const
+{
+  TcpOptionMpTcp::SerializeRef (i, m_type);
+
+//  i.WriteU8 ( (GetSubType () << 4) + (uint8_t)0 );
+//  i.WriteU8 ( m_targetedSubflow );
+  i.WriteU8 ( m_cookie );
+  i.WriteHtonU64 ( m_nanoseconds );
+}
+
+TcpOptionMpTcpOwdTimeStamp::Type
+TcpOptionMpTcpOwdTimeStamp::GetType () const
+{
+
+    return m_type;
+}
+
+void
+TcpOptionMpTcpOwdTimeStamp::Setup (Type type, uint8_t cookie, int64_t nanoseconds)
+{
+  NS_LOG_FUNCTION (type << (int) cookie << nanoseconds);
+  m_type = type;
+  m_cookie = cookie;
+  m_nanoseconds = nanoseconds;
+}
+
+uint32_t
+TcpOptionMpTcpOwdTimeStamp::Deserialize (Buffer::Iterator i)
+{
+
+  uint32_t length = TcpOptionMpTcp::DeserializeRef (i);
+  NS_ASSERT ( length == 12 );
+
+  uint8_t subtype_and_flags = i.ReadU8 ();
+  NS_ASSERT ( subtype_and_flags >> 4 == GetSubType ()  );
+
+  m_type = static_cast<Type> (subtype_and_flags & 0x0f);
+  NS_ASSERT (m_type == Answer || m_type == Request);
+  
+  m_cookie = i.ReadU8 ();
+  m_nanoseconds = i.ReadNtohU64 ();
+
+  return GetSerializedSize ();
+}
+
+uint32_t
+TcpOptionMpTcpOwdTimeStamp::GetSerializedSize (void) const
+{
+  return 12;
+}
 
 
 } // namespace ns3

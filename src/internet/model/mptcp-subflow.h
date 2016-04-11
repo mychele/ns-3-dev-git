@@ -55,7 +55,13 @@ class MpTcpPathIdManager;
 class TcpOptionMpTcpDSS;
 class TcpOptionMpTcp;
 class TcpOptionMpTcpDeltaOWD;
+class TcpOptionMpTcpOwdTimeStamp;
 class SubflowPair;
+
+enum OwdEstimator {
+LocalOwdEstimator = 0,
+RemoteOwdEstimator = 1,
+};
 
 /**
  * \class MpTcpSubflow
@@ -335,12 +341,13 @@ TODO move this up to TcpSocketBase
   virtual int ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option);
 //  virtual int ProcessTcpOptionMpTcpDSS(Ptr<const TcpOptionMpTcpDSS> dss);
 
-  // TODO move this one to MptcpSubflowOwd
+  /** WIP TODO move this one to MptcpSubflowOwd */
   int ProcessOptionMpTcpDeltaOWD (const Ptr<const TcpOptionMpTcpDeltaOWD> option);
+  int ProcessOptionMpTcpOwdTimeStamp (const Ptr<const TcpOptionMpTcpOwdTimeStamp> option);
 
 
-
-  Ptr<MpTcpPathIdManager> GetIdManager();
+    // TODO rename to get remote or local
+  Ptr<MpTcpPathIdManager> GetIdManager ();
 
   /**
   Temporary, for debug
@@ -453,13 +460,19 @@ public:
    * \return false
    */
   bool IsInfiniteMappingEnabled() const;
-
+    
+  Ptr<RttEstimator> GetOwd (OwdEstimator);
 protected:
 
   /** probe mechanism , check before sending a packet if we should */
-  TcpOptionMpTcpDeltaOWD::State m_probeState;
+  TcpOptionMpTcpOwdTimeStamp::State m_probeState;
+
+  /**!< True if should add an MP_OWDTS option*/
+  std::pair<bool, Ptr<TcpOptionMpTcpOwdTimeStamp> > m_owdProbeAnswer;
+
 //  Time m_probeStartTime;    /**!< Record */
-  Ptr<SubflowPair> m_probingStats;
+//  Ptr<SubflowPair> m_probingStats;
+  Ptr<RttEstimator> m_owd[2];   /** 0 => local, 1 = remote */
 
 //  void DumpInfo () const;
   /////////////////////////////////////////////

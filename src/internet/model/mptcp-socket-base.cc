@@ -2342,10 +2342,10 @@ MpTcpSocketBase::SetNewAddrCallback (Callback<bool, Ptr<Socket>, Address, uint8_
 
 
 void
-MpTcpSocketBase::AddProbingRequest (uint8_t cookie, Time , Ptr<MpTcpSubflow> sf)
+MpTcpSocketBase::AddProbingRequest (uint8_t cookie,  Ptr<MpTcpSubflow> sf)
 {
     NS_LOG_LOGIC (cookie << sf);
-
+#if 0
     auto it = std::find(m_probingRequests.begin(), m_probingRequests.end(), cookie);
     if(it == m_probingRequests.end())
     {
@@ -2356,7 +2356,7 @@ MpTcpSocketBase::AddProbingRequest (uint8_t cookie, Time , Ptr<MpTcpSubflow> sf)
     else
     {
     }
-
+#endif
 }
 
 void
@@ -2422,6 +2422,7 @@ MpTcpSocketBase::MoveSubflow (Ptr<MpTcpSubflow> subflow, mptcp_container_t from,
 
   m_subflows[to].push_back(*it);
 //  m_scheduler->NotifyOfMove (to, subflow);
+#if 0
   if (to == Established)
   {
     AddCoupling (subflow->GetLocalId());
@@ -2430,7 +2431,7 @@ MpTcpSocketBase::MoveSubflow (Ptr<MpTcpSubflow> subflow, mptcp_container_t from,
   {
     RemoveCoupling (subflow->GetLocalId());
   }
-
+#endif 
   m_subflows[from].erase(it);
 }
 
