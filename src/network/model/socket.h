@@ -919,7 +919,7 @@ protected:
 //Hack matt to pass callbacks from master to meta
 //private:
 protected:
-
+  // TODO matt : use TracedCallback instead !
   Callback<void, Ptr<Socket> >                   m_connectionSucceeded;  //!< connection succeeded callback
   Callback<void, Ptr<Socket> >                   m_connectionFailed;     //!< connection failed callback
   Callback<void, Ptr<Socket> >                   m_normalClose;          //!< connection closed callback

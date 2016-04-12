@@ -1602,7 +1602,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
         Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
 
       bool result = m_tcp->AddSocket(newSock);
-      NS_ASSERT_MSG(result, "could not register meta");
+      NS_ASSERT_MSG (result, "could not register meta");
       uint64_t localKey = meta->GenerateUniqueMpTcpKey();
         uint32_t localToken;
         uint64_t idsn;

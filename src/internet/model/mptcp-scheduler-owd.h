@@ -40,18 +40,49 @@ class MpTcpSocketBase;
 class MpTcpSubflow;
 
 
+class ProbingRequest : public Object
+{
+public:
+    ProbingRequest ();
+    ~ProbingRequest ();
+};
+
 /**
-This class contains characteristics of a pair of subflows
-*/
-class SubflowPair
+ * This class contains characteristics of a pair of subflows
+ * Estimations are always made from low to high id,
+ * TODO copy latex code here
+ */
+class SubflowPair : public Object
 {
   public:
+    SubflowPair ();
 
+//    RecordResult ();
+    /**
+     *
+     * \param cookie Returned cookie to use
+     *
+     * \return True if it's ok to start
+     */
+    bool RecordStart (Ptr<MpTcpSubflow> sf, Time start,int *cookie);
+
+
+    /**
+     * Called upon reception of a DeltaOWD option answer
+     * should be received on subflow which
+     * \param sf To be able to rearm timer
+     */
+    void FinishRound (Ptr<MpTcpSubflow> sf, int cookie, uint64_t nanosec);
 
     EventId m_timer;
-
     // TODO utiliser un estimator qui
     RttMeanDeviation m_estimator; /* rename into DelayEstimator ? */
+  protected:
+
+
+    std::pair<Ptr<MpTcpSubflow>, Time> m_subflows[2];    /* */
+    int m_index;    /**!< current index of m_subflows */
+
 };
 
 class MpTcpSchedulerOwd

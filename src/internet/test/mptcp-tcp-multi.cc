@@ -290,6 +290,7 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
 //#if 0
   /*
   first address on 2nd interface
+  TODO this should depend on the number of interfaces
   */
   
 //    static const int MaxNbOfDevices = 3;
@@ -820,11 +821,11 @@ public:
 
 
     // with units of bytes
-    static const int MaxNbOfDevices = 3;
+    static const int MaxNbOfDevices = 1;
     static const int SubflowPerDevice = 1;
-    for (int nb_of_devices = 1; nb_of_devices < MaxNbOfDevices; ++nb_of_devices) {
+    for (int nb_of_devices = 1; nb_of_devices <= MaxNbOfDevices; nb_of_devices++) {
 
-        for (int subflow_per_device = 1; subflow_per_device < SubflowPerDevice; ++subflow_per_device) {
+        for (int subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
 
             AddTestCase (
                 new MpTcpMultihomedTestCase (

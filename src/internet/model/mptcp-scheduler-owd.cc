@@ -31,6 +31,71 @@ namespace ns3
 
 NS_OBJECT_ENSURE_REGISTERED (MpTcpSchedulerOwd);
 
+
+SubflowPair::SubflowPair () :
+    m_index (0)
+{
+    NS_LOG_FUNCTION_NOARGS ();
+}
+
+bool
+SubflowPair::RecordStart (Ptr<MpTcpSubflow> sf, Time start, int *cookie)
+{
+    NS_ASSERT_MSG (m_index < 1, "too many RecordStart calls");
+
+    m_subflows[m_index++] = std::make_pair (sf, start);
+}
+
+
+void
+SubflowPair::FinishRound (Ptr<MpTcpSubflow> sf, int cookie, uint64_t nanosecs)
+{
+
+
+    /*
+        m_subflows[0] (m_subflows[1]) should contain lowest (highest) id
+    */
+    NS_LOG_FUNCTION (cookie << nanosecs);
+
+    NS_ASSERT_MSG ( m_index == 2, "RecordStart should have been called exactly twice !" );
+    //! need to compute delta,
+
+
+    Time remoteDelta =  NanoSeconds(nanosecs);
+
+    // order the m_subflows
+    // m_subflows[0] (m_subflows[1]) should contain lowest (highest) id
+    // so that computations make sense between iterations
+    if(m_subflows[0].first->GetLocalId() > m_subflows[1].first->GetLocalId())
+    {
+        std::swap (m_subflows[0], m_subflows[1]);
+    }
+
+    if (m_subflows[0].first == sf) {
+        remoteDelta = -remoteDelta;
+    }
+
+    Time delta = (m_subflows[1].second - m_subflows[0].second);
+
+    NS_LOG_DEBUG ("Computed delta = " << delta);
+    // adding a new measurement
+    m_estimator.Measurement (delta);
+
+    m_index = 0;
+}
+
+
+
+//m_timer = Simulator::Schedule ();
+
+
+
+
+
+
+
+
+
 TypeId
 MpTcpSchedulerOwd::GetTypeId (void)
 {
@@ -60,7 +125,7 @@ MpTcpSchedulerOwd::~MpTcpSchedulerOwd (void)
 
 
 void
-MpTcpSchedulerOwd::SetMeta(Ptr<MpTcpSocketBase> metaSock)
+MpTcpSchedulerOwd::SetMeta (Ptr<MpTcpSocketBase> metaSock)
 {
   NS_ASSERT(metaSock);
   NS_ASSERT_MSG(m_metaSock == 0, "SetMeta already called");
@@ -70,7 +135,7 @@ MpTcpSchedulerOwd::SetMeta(Ptr<MpTcpSocketBase> metaSock)
 
 //uint16_t
 Ptr<MpTcpSubflow>
-MpTcpSchedulerOwd::GetSubflowToUseForEmptyPacket()
+MpTcpSchedulerOwd::GetSubflowToUseForEmptyPacket ()
 {
   NS_ASSERT(m_metaSock->GetNActiveSubflows() > 0 );
   return  m_metaSock->GetSubflow(0);
@@ -79,7 +144,7 @@ MpTcpSchedulerOwd::GetSubflowToUseForEmptyPacket()
 }
 
 //void
-//MpTcpSchedulerOwd::NotifyOfMove (Ptr<MpTcpSubflow> subflow) 
+//MpTcpSchedulerOwd::NotifyOfMove (Ptr<MpTcpSubflow> subflow)
 //{
 //
 //
@@ -119,14 +184,14 @@ MpTcpSchedulerOwd::GenerateMapping(
     }
 
 
-    if(metaWindow <= 0)
+    if (metaWindow <= 0)
     {
         NS_LOG_DEBUG("No meta window available (TODO should be in persist state ?)");
         return false; // TODO ?
     }
 
     NS_LOG_DEBUG ("Able to choose between [" << nbOfSubflows << "] subflows");
-    while(attempt < nbOfSubflows)
+    while (attempt < nbOfSubflows)
     {
         attempt++;
         m_lastUsedFlowId = (m_lastUsedFlowId + 1) % nbOfSubflows;

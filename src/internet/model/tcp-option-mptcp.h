@@ -64,7 +64,13 @@ public:
     MP_PRIO,
     MP_FAIL,
     MP_FASTCLOSE,
-    MP_DELTAOWD
+
+    /** Non standard ones */
+    MP_DELTAOWD,    /**!< Incomplete implementation */
+    MP_OWDTS,       /**!< to retrieve OWDs */
+    
+    /** To retrieve length of the enum (keep last) */
+    MP_LAST
   };
 
 
@@ -113,6 +119,8 @@ public:
 protected:
   /**
    * \brief Serialize TCP option type & length of the option
+   *
+   * \param lower_bits Only 4 rightmost bits will be kept
    *
    * Let children write the subtype since Buffer iterators
    * can't write less than 1 byte
@@ -1093,6 +1101,7 @@ private:
 };
 
 
+
 /**
  * We assume a nanosecond resolution.
  * This resolution could be exchanged in a 3WHS manner
@@ -1102,7 +1111,7 @@ private:
                      1                   2                   3
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +---------------+---------------+-------+-----+-+--------------+
-|     Kind      |     Length    |Subtype|     |B| AddrID (opt) |
+|     Kind      |     Length    |Subtype|  type |    cookie    |
 +---------------+---------------+-------+----------------------+
 |                                                              |
 |                 Departure time       (8 octets)              |
@@ -1122,14 +1131,109 @@ public:
 
   virtual bool operator== (const TcpOptionMpTcpDeltaOWD& ) const;
 
+  enum State {
+  None,
+  ExpectingAnswer,          /**!< Probe was sent, waiting for answer */
+//  ExpectingOtherSubflow,    /**!< Probe was sent, waiting for answer */
+  ExpectingCoupledSubflow,  /**!< answer was received on this subflow only */
+  PendingSend   /**!< Ready to send a new probe */
+  };
   /**
    We don't care if it's hackish anymore, this is our own o/
    we rule the world !
   **/
 //  uint8_t m_targetedSubflow;  /**< subflow id from which to compare arrival times */
 
+  enum Type {
+    Answer,
+    Request
+  };
+
+
   int m_cookie;     /* to identify option */
   int64_t m_nanoseconds;      /**< assume this resolution Could be passed via the option */
+
+  Type GetType () const;
+  
+  void Setup (Type type, uint8_t cookie, int64_t nanoseconds);
+  
+  //! Inherited
+  virtual void Print (std::ostream &os) const;
+  virtual void Serialize (Buffer::Iterator start) const;
+  virtual uint32_t Deserialize (Buffer::Iterator start);
+  virtual uint32_t GetSerializedSize (void) const;
+
+protected:
+//  bool m_type;     /* to identify option */
+  Type m_type;     /* answer/request */
+private:
+  //! Defined and unimplemented to avoid misuse
+  TcpOptionMpTcpDeltaOWD (const TcpOptionMpTcpDeltaOWD&);
+  TcpOptionMpTcpDeltaOWD& operator= (const TcpOptionMpTcpDeltaOWD&);
+
+
+//  uint64_t m_dsn; /**< Last acked dsn */
+};
+
+
+/**
+ * We assume a nanosecond resolution.
+ * This resolution could be exchanged in a 3WHS manner
+ *
+ *
+\verbatim
+                     1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++---------------+---------------+-------+-----+-+--------------+
+|     Kind      |     Length    |Subtype|  type |    cookie    |
++---------------+---------------+-------+----------------------+
+|                                                              |
+|                 Departure time       (8 octets)              |
+|                                                              |
++--------------------------------------------------------------+
+
+\endverbatim
+ */
+class TcpOptionMpTcpOwdTimeStamp :
+//public TcpOptionMpTcp<TcpOptionMpTcp::MP_FAIL>
+public TcpOptionMpTcp
+{
+
+public:
+  TcpOptionMpTcpOwdTimeStamp (void);
+  virtual ~TcpOptionMpTcpOwdTimeStamp (void);
+
+  virtual bool operator== (const TcpOptionMpTcpOwdTimeStamp& ) const;
+
+  enum State {
+  None,
+  ExpectingAnswer,          /**!< Probe was sent, waiting for answer */
+//  ExpectingOtherSubflow,    /**!< Probe was sent, waiting for answer */
+//  ExpectingCoupledSubflow,  /**!< answer was received on this subflow only */
+  PendingSend   /**!< Ready to send a new probe */
+  };
+
+  /**
+   We don't care if it's hackish anymore, this is our own o/
+   we rule the world !
+  **/
+//  uint8_t m_targetedSubflow;  /**< subflow id from which to compare arrival times */
+
+  enum Type {
+    Answer,
+    Request
+  };
+
+  void Setup (Type type, uint8_t cookie, int64_t nanoseconds);
+  
+//  bool m_type;     /* to identify option */
+  Type m_type;     /* answer/request */
+  int m_cookie;     /* to identify option */
+  int64_t m_nanoseconds;      /**< assume this resolution Could be passed via the option */
+
+  
+  
+  Type GetType () const;
 
   //! Inherited
   virtual void Print (std::ostream &os) const;
@@ -1140,13 +1244,12 @@ public:
 
 private:
   //! Defined and unimplemented to avoid misuse
-  TcpOptionMpTcpDeltaOWD (const TcpOptionMpTcpDeltaOWD&);
-  TcpOptionMpTcpDeltaOWD& operator= (const TcpOptionMpTcpDeltaOWD&);
+  TcpOptionMpTcpOwdTimeStamp (const TcpOptionMpTcpOwdTimeStamp&);
+  TcpOptionMpTcpOwdTimeStamp& operator= (const TcpOptionMpTcpOwdTimeStamp&);
 
 
 //  uint64_t m_dsn; /**< Last acked dsn */
 };
-
 
 /**
  * \brief Helper function to find an MPTCP option

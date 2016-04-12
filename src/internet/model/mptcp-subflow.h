@@ -42,6 +42,7 @@
 #include "ns3/tcp-socket-base.h"
 #include "ns3/tcp-header.h"
 #include "ns3/mptcp-mapping.h"
+#include "ns3/tcp-option-mptcp.h"
 //#include "ns3/tcp-option-mptcp.h"
 
 using namespace std;
@@ -53,6 +54,14 @@ class MpTcpSocketBase;
 class MpTcpPathIdManager;
 class TcpOptionMpTcpDSS;
 class TcpOptionMpTcp;
+class TcpOptionMpTcpDeltaOWD;
+class TcpOptionMpTcpOwdTimeStamp;
+class SubflowPair;
+
+enum OwdEstimator {
+LocalOwdEstimator = 0,
+RemoteOwdEstimator = 1,
+};
 
 /**
  * \class MpTcpSubflow
@@ -332,7 +341,13 @@ TODO move this up to TcpSocketBase
   virtual int ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option);
 //  virtual int ProcessTcpOptionMpTcpDSS(Ptr<const TcpOptionMpTcpDSS> dss);
 
-  Ptr<MpTcpPathIdManager> GetIdManager();
+  /** WIP TODO move this one to MptcpSubflowOwd */
+  int ProcessOptionMpTcpDeltaOWD (const Ptr<const TcpOptionMpTcpDeltaOWD> option);
+  int ProcessOptionMpTcpOwdTimeStamp (const Ptr<const TcpOptionMpTcpOwdTimeStamp> option);
+
+
+    // TODO rename to get remote or local
+  Ptr<MpTcpPathIdManager> GetIdManager ();
 
   /**
   Temporary, for debug
@@ -419,6 +434,13 @@ protected:
   virtual void
   ProcessClosing(Ptr<Packet> packet, const TcpHeader& tcpHeader);
 
+
+  /**
+   * \brief Should be able to process any kind of MPTCP options.
+   *
+   * \warn When overriding this member function, call it last as
+   *       it throws a fatal exception upon unknown options
+   */
   virtual int ProcessOptionMpTcp (const Ptr<const TcpOption> option);
 
   /**
@@ -426,7 +448,7 @@ protected:
    */
 //  virtual int ProcessOptionMpTcpSynSent(const Ptr<const TcpOption> optionMapTo);
 
-
+    void StartOwdProbe ();
 public:
   /**
    *
@@ -438,9 +460,19 @@ public:
    * \return false
    */
   bool IsInfiniteMappingEnabled() const;
-
+    
+  Ptr<RttEstimator> GetOwd (OwdEstimator);
 protected:
 
+  /** probe mechanism , check before sending a packet if we should */
+  TcpOptionMpTcpOwdTimeStamp::State m_probeState;
+
+  /**!< True if should add an MP_OWDTS option*/
+  std::pair<bool, Ptr<TcpOptionMpTcpOwdTimeStamp> > m_owdProbeAnswer;
+
+//  Time m_probeStartTime;    /**!< Record */
+//  Ptr<SubflowPair> m_probingStats;
+  Ptr<RttEstimator> m_owd[2];   /** 0 => local, 1 = remote */
 
 //  void DumpInfo () const;
   /////////////////////////////////////////////
@@ -455,7 +487,7 @@ protected:
    *
    * \param dsnHead
    */
-  bool AddLooseMapping(SequenceNumber64 dsnHead, uint16_t length);
+  bool AddLooseMapping (SequenceNumber64 dsnHead, uint16_t length);
 
   /**
    * If no mappings set yet, then it returns the tail ssn of the Tx buffer.

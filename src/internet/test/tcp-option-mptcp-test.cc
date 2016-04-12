@@ -303,13 +303,26 @@ public:
       new TcpOptionMpTcpTestCase<TcpOptionMpTcpFastClose> ( close, TcpOptionMpTcp::MP_FASTCLOSE, "MP_Fastclose"),
       QUICK
       );
+      
+    /** non standard options tests */
+    #if 0
 
     ////////////////////////////////////////////////
     //// MP_DELTAOWD
     ////
     Ptr<TcpOptionMpTcpDeltaOWD> deltaOwd = CreateObject<TcpOptionMpTcpDeltaOWD> ();
     AddTestCase (
-      new TcpOptionMpTcpTestCase<TcpOptionMpTcpDeltaOWD> ( deltaOwd, TcpOptionMpTcp::MP_FASTCLOSE, "MP_Fastclose"),
+      new TcpOptionMpTcpTestCase<TcpOptionMpTcpDeltaOWD> ( deltaOwd, TcpOptionMpTcp::MP_DELTAOWD, "MP_DeltaOWD"),
+      QUICK
+      );
+    #endif 
+
+    ////////////////////////////////////////////////
+    //// MP_DELTAOWD
+    ////
+    Ptr<TcpOptionMpTcpOwdTimeStamp> owd_ts = CreateObject<TcpOptionMpTcpOwdTimeStamp> ();
+    AddTestCase (
+      new TcpOptionMpTcpTestCase<TcpOptionMpTcpOwdTimeStamp> ( owd_ts, TcpOptionMpTcp::MP_OWDTS, "One way Delay timestamps"),
       QUICK
       );
   }
