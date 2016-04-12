@@ -16,6 +16,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  * Author: Matthieu Coudron <matthieu.coudron@lip6.fr>
+ *
+ * TODO :
+ * -  possibility to create subflows from the server
  */
 
 #include "ns3/test.h"
@@ -288,14 +291,59 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
   /*
   first address on 2nd interface
   */
-  Ipv4Address serverAddr = m_serverNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
-  Ipv4Address sourceAddr = m_sourceNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
+  
+//    static const int MaxNbOfDevices = 3;
+//    static const int SubflowPerDevice = 1;
+//  TODO loop over devices
+    // GetNDevice
+//     GetDevice
+  Ptr<Ipv4> ipv4Local = m_sourceNode->GetObject<Ipv4> ();
+  NS_ABORT_MSG_UNLESS (ipv4Local, "GetObject for <Ipv4> interface failed");
 
-  //! TODO, we should be able to not specify a port but it seems buggy so for now, let's set a port
-  InetSocketAddress local(sourceAddr, 4420);
-  InetSocketAddress remote(serverAddr, serverPort);
+//      bool isForwarding = false;
+      for (uint32_t j = 0; j < ipv4Local->GetNInterfaces (); ++j )
+        {
+          if (
+//          ipv4Local->GetNetDevice (j) == ndLocal && 
+          ipv4Local->IsUp (j) &&
+              ipv4Local->IsForwarding (j)   // to remove localhost
+              ) 
+            {
+              isForwarding = true;
+              // TODO call to CreateNewSubflow
+              nb_of_subflows_to_create = m_number_of_subflow_per_device;
+              // If it's the same interface as master subflow, then remove one
+              if()
+              {
+                nb_of_subflows_to_create--;
+              }
+              for (int subflow_per_device = 1; subflow_per_device < SubflowPerDevice; ++subflow_per_device) {
+                // Create new subflow
+              }              
+            }
+        }
+        
+    #if 0
+    uint32_t numDevices = node->GetNDevices ();
+    ->
+    for (int nb_of_devices = 1; nb_of_devices < MaxNbOfDevices; ++nb_of_devices) {
 
-  meta->ConnectNewSubflow (local, remote);
+        // TODO account for master subflow
+        for (int subflow_per_device = 1; subflow_per_device < SubflowPerDevice; ++subflow_per_device) {
+
+        }
+    }
+    // GetAddress (interface, index ) index = 0 as each device has only one IP.
+    Ipv4Address serverAddr = m_serverNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
+    Ipv4Address sourceAddr = m_sourceNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
+
+    //! TODO, we should be able to not specify a port but it seems buggy so for now, let's set a port
+    InetSocketAddress local(sourceAddr, 4420);
+    InetSocketAddress remote(serverAddr, serverPort);
+
+    meta->ConnectNewSubflow (local, remote);
+    #endif
+  }
 //#endif
 
 }
@@ -581,7 +629,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
   for(int i = 0; i < nbOfDevices; ++i)
   {
     // Use 10.0. instead !
-    // TODO use SimpleNetDevice instead !
+    // TODO use SimpleNetDevice instead if you want to upstream !
     std::stringstream netAddr;
     netAddr << "192.168." << i << ".0";
 
