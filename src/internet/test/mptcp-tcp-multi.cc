@@ -61,6 +61,7 @@
 #include "ns3/sequence-number.h"
 #include "ns3/trace-helper.h"
 #include "ns3/global-route-manager.h"
+#include "ns3/abort.h"
 
 #include <string>
 #include <fstream>
@@ -85,7 +86,7 @@ void setPos (Ptr<Node> n, int x, int y, int z)
   loc->SetPosition (locVec2);
 }
 
-
+static const Ipv4Mask g_netmask = Ipv4Mask(0xffffff00);
 /**
  *
  */
@@ -158,12 +159,18 @@ static std::string Name (std::string str, uint32_t totalStreamSize,
                          uint32_t serverReadSize,
                          uint32_t serverWriteSize,
                          uint32_t sourceReadSize,
+                         uint8_t nb_of_devices,
+                         uint8_t nb_of_subflows_per_device,
                          bool useIpv6)
 {
   std::ostringstream oss;
   oss << str << " total=" << totalStreamSize << " sourceWrite=" << sourceWriteSize
       << " sourceRead=" << sourceReadSize << " serverRead=" << serverReadSize
-      << " serverWrite=" << serverWriteSize << " useIpv6=" << useIpv6;
+      << " serverWrite=" << serverWriteSize << " useIpv6=" << useIpv6
+      << "nbOfDevices=" << static_cast<long int>(nb_of_devices) 
+      << " nb_of_subflows_per_device=" << static_cast<long int>(nb_of_subflows_per_device)
+      << " => expects " << nb_of_subflows_per_device * nb_of_devices << " subflows "
+      ;
   return oss.str ();
 }
 
@@ -181,8 +188,8 @@ MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
                           uint32_t sourceReadSize,
                           uint32_t serverWriteSize,
                           uint32_t serverReadSize,
-                           uint8_t nb_of_devices,
-                           uint8_t nb_of_subflows_per_device,
+                          uint8_t nb_of_devices,
+                          uint8_t nb_of_subflows_per_device,
                           bool useIpv6)
   : TestCase (Name ("Send string data from client to server and back",
                     totalStreamSize,
@@ -190,14 +197,18 @@ MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
                     serverReadSize,
                     serverWriteSize,
                     sourceReadSize,
+                    nb_of_devices,
+                    nb_of_subflows_per_device,
                     useIpv6)),
     m_totalBytes (totalStreamSize),
     m_sourceWriteSize (sourceWriteSize),
     m_sourceReadSize (sourceReadSize),
     m_serverWriteSize (serverWriteSize),
     m_serverReadSize (serverReadSize),
-    m_number_of_devices(nb_of_devices),
-    m_number_of_subflow_per_device(nb_of_subflows_per_device),
+    m_number_of_devices (nb_of_devices),
+    m_number_of_subflow_per_device (nb_of_subflows_per_device),
+    m_nb_of_successful_connections (0),
+    m_nb_of_successful_creations (0),
     m_connect_cb_called(false),
     m_useIpv6 (useIpv6)
 {
@@ -260,7 +271,8 @@ MpTcpMultihomedTestCase::DoTeardown (void)
 
 
 /**
-Normally this should be called twice ...
+Normally this should be called twice, first when server replied with MPTCP option,
+2nd when DataAck was received, i.e., FullyEstablished
 **/
 void
 MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
@@ -273,13 +285,15 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
 //              << " received a DSS: " << meta->m_receivedDSS
               );
 
-  if(! meta->FullyEstablished())
+
+  if (!meta->FullyEstablished ())
   {
     //!
-    NS_LOG_INFO("No DSS received yet => Not fully established. Can't create any subflow");
+    NS_LOG_INFO ("No DSS received yet => Not fully established. Can't create any subflow");
     return;
   }
 
+  m_nb_of_successful_connections++;
   NS_LOG_INFO("At least one DSS received => fully established. Asking for a new subflow");
 
 //  NS_LOG_WARN("TODO check this is called after the receival of 1st DSS !!!");
@@ -310,17 +324,28 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
               ipv4Local->IsForwarding (j)   // to remove localhost
               ) 
             {
-              isForwarding = true;
+//              isForwarding = true;
               // TODO call to CreateNewSubflow
-              nb_of_subflows_to_create = m_number_of_subflow_per_device;
+              int nb_of_subflows_to_create = m_number_of_subflow_per_device;
               // If it's the same interface as master subflow, then remove one
-              if()
+              if (ipv4Local->GetInterfaceForPrefix( "192.168.0.0", g_netmask))
               {
                 nb_of_subflows_to_create--;
               }
-              for (int subflow_per_device = 1; subflow_per_device < SubflowPerDevice; ++subflow_per_device) {
+              
+              // create subflows for this device
+              for (int i = 0; i < nb_of_subflows_to_create; ++i)
+              {
                 // Create new subflow
-              }              
+                Ipv4Address serverAddr = m_serverNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
+                Ipv4Address sourceAddr = m_sourceNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
+
+                //! TODO, we should be able to not specify a port but it seems buggy so for now, let's set a port
+                InetSocketAddress local(sourceAddr, 4420);
+                InetSocketAddress remote(serverAddr, serverPort);
+
+                meta->ConnectNewSubflow (local, remote);
+              }
             }
         }
         
@@ -344,7 +369,7 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
 
     meta->ConnectNewSubflow (local, remote);
     #endif
-  }
+
 //#endif
 
 }
@@ -368,7 +393,8 @@ MpTcpMultihomedTestCase::ServerHandleConnectionCreated (Ptr<Socket> s, const Add
   // TODO setup tracing there !
 
   Ptr<MpTcpSocketBase> server_meta = DynamicCast<MpTcpSocketBase>(s);
-  NS_ASSERT_MSG(server_meta, "Was expecting a meta socket !");
+  NS_ASSERT_MSG (server_meta, "Was expecting a meta socket !");
+  m_nb_of_successful_creations++;
 //  server_meta->SetupMetaTracing("server");
 }
 
@@ -611,8 +637,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
   // TODO this number should be made configurable
 
   NS_LOG_UNCOND ("SetupDefaultSim Start ");
-
-  const char* netmask = "255.255.255.0";
+//const char* netmask = "255.255.255.0";
 
 //  const char* ipaddr1 = "192.168.1.2";
 //  Ptr<Node> m_serverNode = CreateInternetNode ();
@@ -643,7 +668,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
 
     Ipv4AddressHelper ipv4;
     NS_LOG_DEBUG ("setting ipv4 base " << netAddr.str());
-    ipv4.SetBase( netAddr.str().c_str(), netmask);
+    ipv4.SetBase ( netAddr.str().c_str(), g_netmask);
     ipv4.Assign(cont);
     /// Added by matt for debugging purposes
 
@@ -821,11 +846,11 @@ public:
 
 
     // with units of bytes
-    static const int MaxNbOfDevices = 1;
-    static const int SubflowPerDevice = 1;
-    for (int nb_of_devices = 1; nb_of_devices <= MaxNbOfDevices; nb_of_devices++) {
+    static const uint8_t MaxNbOfDevices = 1;
+    static const uint8_t SubflowPerDevice = 1;
+    for (uint8_t nb_of_devices = 1; nb_of_devices <= MaxNbOfDevices; nb_of_devices++) {
 
-        for (int subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
+        for (uint8_t subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
 
             AddTestCase (
                 new MpTcpMultihomedTestCase (
