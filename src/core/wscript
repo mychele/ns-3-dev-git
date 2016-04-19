@@ -134,6 +134,8 @@ def build(bld):
 
     core = bld.create_ns3_module('core')
     core.source = [
+        'model/clock.cc',
+        'model/clock-perfect.cc',
         'model/time.cc',
         'model/event-id.cc',
         'model/scheduler.cc',
@@ -194,6 +196,7 @@ def build(bld):
         'test/attribute-test-suite.cc',
         'test/build-profile-test-suite.cc',
         'test/callback-test-suite.cc',
+        'test/clock-test.cc',
         'test/command-line-test-suite.cc',
         'test/config-test-suite.cc',
         'test/global-value-test-suite.cc',
@@ -218,6 +221,8 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'core'
     headers.source = [
+        'model/clock.h',
+        'model/clock-perfect.h',
         'model/nstime.h',
         'model/event-id.h',
         'model/event-impl.h',

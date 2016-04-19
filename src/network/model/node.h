@@ -27,14 +27,19 @@
 #include "ns3/callback.h"
 #include "ns3/ptr.h"
 #include "ns3/net-device.h"
+#include "ns3/simulator.h"
+#include "ns3/make-event.h"
+#include "ns3/simulator-impl.h"
 
 namespace ns3 {
 
 class Application;
 class Packet;
 class Address;
+class Clock;
 class Time;
-
+class Scheduler;
+class ObjectFactory;
 
 /**
  * \ingroup network
@@ -50,10 +55,11 @@ class Time;
  *     through the Socket API.
  *   - a node Id: a unique per-node identifier.
  *   - a system Id: a unique Id used for parallel simulations.
+ *   - a clock converting local <-> Simulator reference time
  *
  * Every Node created is added to the NodeList automatically.
  */
-class Node : public Object
+class Node : public SimulatorImpl
 {
 public:
   /**
@@ -71,12 +77,15 @@ public:
   virtual ~Node();
 
   /**
-   * \returns the unique id of this node.
-   * 
-   * This unique id happens to be also the index of the Node into
-   * the NodeList. 
+   * TODO deprecate in favorof now
+   * \returns TODO
    */
-  uint32_t GetId (void) const;
+  Time GetLocalTime (void) const;
+
+  /** 
+   *
+   */
+//  Ptr<Clock> GetClock () const;
 
   /**
    * In the future, ns3 nodes may have clock that returned a local time
@@ -84,9 +93,10 @@ public:
    * This function is currently a placeholder to ease the development of this feature.
    * For now, it is only an alias to Simulator::Now()
    *
-   * \return The time as seen by this node
+   * This unique id happens to be also the index of the Node into
+   * the NodeList.
    */
-  Time GetLocalTime (void) const;
+  uint32_t GetId (void) const;
 
   /**
    * \returns the system id for parallel simulations associated
@@ -197,20 +207,110 @@ public:
   /**
    * \param listener the listener to remove
    *
-   * Remove an existing listener from the list of listeners for the 
+   * Remove an existing listener from the list of listeners for the
    * device-added event.
    */
   void UnregisterDeviceAdditionListener (DeviceAdditionListener listener);
-
-
 
   /**
    * \returns true if checksums are enabled, false otherwise.
    */
   static bool ChecksumEnabled (void);
 
+  /**
+   * Replaces the current clock with a new one.
+   *
+   * \param clock New clock of the node, 
+   *
+   * The time of the new clock will be inherited from the previous clock, thus if
+   * you want to set yourself the time of the clock, do it after a call to this function
+   */
+  virtual void SetClock (Ptr<Clock> clock);
+  
+  /**
+   * @return Currently set clock
+   */
+  virtual Ptr<Clock> GetClock () const; 
+
+  EventId Schedule (Time const &time, EventImpl *event);
+
+  template<typename ... Types>
+  EventId Schedule (Time const &timeOffset, Types... rest)
+  {
+      // That's basically what does Simulator::DoSchedule
+      return DoSchedule( timeOffset, MakeEvent( (rest)...));
+  }
+
+  /** 
+   * Required for dce as dce pass node id via the context.
+   */
+  virtual EventId ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event);
+
+  EventId ScheduleNow (EventImpl *event);
+
+  template<typename ... Types>
+  EventId ScheduleNow (Types... rest)
+  {
+      EventId event = DoSchedule(Time(0), rest...);
+      return event;
+  }
+
+  /**
+   * Once event finishes, the next event in line must be scheduled,
+   * hence we need some kind of wrapper to schedule the next local event
+   */
+  EventId DoSchedule (Time const &time, EventImpl *event);
+
+  /**
+   * This is a wrapper function that executes the next local event, and allows 
+   * afterwards to prepare for the next event and schedule it
+   */
+  void ExecOnNode ();
+
+  /** 
+   * @return local next event
+   */
+  EventId GetNextEvent () const;
+
+  /**
+   * @return EventId under which is registered the local next event in the Simulator.
+   */
+  EventId GetNextEventSim () const;
+
+
+  //! Inherited from SimulatorImpl
+  virtual Time GetDelayLeft (const EventId &id) const;
+  virtual Time GetMaximumSimulationTime (void) const;
+  virtual void SetScheduler (ObjectFactory schedulerFactory);
+  virtual void SetScheduler (TypeId schedulerType);
+  virtual void Destroy ();
+  virtual bool IsFinished (void) const;
+  virtual void Stop (void);
+  virtual void Stop (Time const &time);
+  virtual void Remove (const EventId &id);
+  virtual void Cancel (const EventId &id);
+  virtual bool IsExpired (const EventId &id) const;
+  virtual EventId ScheduleDestroy (EventImpl *event);
+  virtual uint32_t GetContext (void) const;
+  virtual void Run (void);
+  virtual Time Now (void) const;
+
 
 protected:
+  /**
+   * Callback called whenever a clock is updated and predicted past event time
+   * need to be updated
+   */
+//  virtual void RefreshEvents ();
+
+  /**
+   * Forcefully register an event into the main Simulator and maps the returned
+   * event to 
+   * @param [in] nodeEventId eventId whose doppelganger should be scheduled in Simulator
+   * @see m_nextEvent
+   */
+  void ForceLocalEventIntoSimulator (EventId nodeEventId);
+
   /**
    * The dispose method. Subclasses must override this method
    * and must chain up to it by calling Node::DoDispose at the
@@ -218,6 +318,18 @@ protected:
    */
   virtual void DoDispose (void);
   virtual void DoInitialize (void);
+
+  /**
+   * Synchronize this node with the simulator, i.e., make sure that events scheduled 
+   * on this node properly scheduled in the main Simulator as well, otherwise they 
+   * would never trigger.
+   * 1/ it takes the closest/next event (if any) `e`.
+   * 2/ if `e` is already registered in Simulator as the next local event, return
+   * 3/ if `e` is different from the registered next event in Simulator, cancel the registered event.
+   * 4/ Push `e` to Simulator to the predicted simulator time according to current clock
+   */
+  virtual void SyncNodeWithMainSimulator ();
+
 private:
 
   /**
@@ -288,6 +400,17 @@ private:
   std::vector<Ptr<Application> > m_applications; //!< Applications associated to this node
   ProtocolHandlerList m_handlers; //!< Protocol handlers in the node
   DeviceAdditionListenerList m_deviceAdditionListeners; //!< Device addition listeners in the node
+
+  Ptr<Clock> m_clock; //!< Local variable pointing at the aggregated clock if any
+  
+  Ptr<Scheduler> m_events; //!< List of events
+
+  /**
+   * Maps the local EventId to simulator EventId to allow for cancelling the event.
+   */
+  std::pair<EventId,EventId> m_nextEvent;
+
+  uint32_t    m_localUid;         //!< Next free event uid
 };
 
 } // namespace ns3
