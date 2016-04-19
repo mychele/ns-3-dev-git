@@ -31,6 +31,15 @@
 #include "ns3/global-value.h"
 #include "ns3/boolean.h"
 #include "ns3/simulator.h"
+#include "ns3/clock.h"
+#include "ns3/clock-perfect.h" // Could be removed
+#include "ns3/nstime.h"
+#include "ns3/callback.h"
+#include "ns3/scheduler.h"
+#include "ns3/object-factory.h"
+#include "ns3/map-scheduler.h"
+#include "ns3/simulator-impl.h"
+#include "ns3/scheduler.h"
 
 namespace ns3 {
 
@@ -46,11 +55,12 @@ static GlobalValue g_checksumEnabled  = GlobalValue ("ChecksumEnabled",
                                                      BooleanValue (false),
                                                      MakeBooleanChecker ());
 
-TypeId 
+
+TypeId
 Node::GetTypeId (void)
 {
   static TypeId tid = TypeId ("ns3::Node")
-    .SetParent<Object> ()
+    .SetParent<SimulatorImpl> ()
     .SetGroupName("Network")
     .AddConstructor<Node> ()
     .AddAttribute ("DeviceList", "The list of devices associated to this Node.",
@@ -71,13 +81,26 @@ Node::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&Node::m_sid),
                    MakeUintegerChecker<uint32_t> ())
-  ;
+    // TODO Might remove the global one and make it instance dependant ?
+    // SetScheduler
+    .AddAttribute("SchedulerType",
+                  "The object class to use as the scheduler implementation",
+                  TypeIdValue (MapScheduler::GetTypeId ()),
+                  MakeTypeIdAccessor ( (void (Node::*)(TypeId ))&Node::SetScheduler),
+                  MakeTypeIdChecker ())    
+//    .AddAttribute("ClockType",
+//                  "The type of clock",
+//                  TypeIdValue (ClockPerfect::GetTypeId ()),
+//                  MakeTypeIdAccessor(&Node::m_clockTypeId),
+//                  MakeTypeIdChecker ())
+;
   return tid;
 }
 
 Node::Node()
   : m_id (0),
-    m_sid (0)
+    m_sid (0),
+    m_localUid(0)
 {
   NS_LOG_FUNCTION (this);
   Construct ();
@@ -96,7 +119,74 @@ Node::Construct (void)
 {
   NS_LOG_FUNCTION (this);
   m_id = NodeList::Add (this);
+
+  ObjectFactory factory;
+  factory.SetTypeId (ClockPerfect::GetTypeId());
+  SetClock (factory.Create<Clock> ());
 }
+
+// Look at simulator.cc GetImpl
+Ptr<Clock>
+Node::GetClock () const 
+{
+  return m_clock;
+}
+
+void
+Node::SetClock (Ptr<Clock> clock)
+{
+  NS_LOG_FUNCTION (this);
+  NS_ASSERT (clock);
+
+  //! if there is an existing clock, set offset & Reschedule currently scheduled event
+  if (m_clock)
+  {
+    clock->SetTime (m_clock->GetTime());
+    // Cancel currently scheduled event if any
+    if (GetNextEventSim ().IsRunning ())
+    {
+      GetNextEventSim ().Cancel ();
+    }
+
+    SyncNodeWithMainSimulator ();
+  }
+  else 
+  {
+    clock->SetTime (Simulator::Now());
+  }
+
+  m_clock = clock;
+  m_clock->SetSimulatorSyncCallback (MakeCallback(&Node::SyncNodeWithMainSimulator, Ptr<Node> (this)));
+}
+
+
+void
+Node::SetScheduler (TypeId schedulerType)
+{
+  NS_LOG_FUNCTION (this << schedulerType);
+  ObjectFactory schedulerFactory;
+  schedulerFactory.SetTypeId(schedulerType);
+  SetScheduler (schedulerFactory);
+}
+
+void
+Node::SetScheduler (ObjectFactory schedulerFactory)
+{
+  NS_LOG_FUNCTION (this << schedulerFactory);
+
+  Ptr<Scheduler> scheduler = schedulerFactory.Create<Scheduler> ();
+
+  if (m_events != 0)
+    {
+      while (!m_events->IsEmpty ())
+        {
+          Scheduler::Event next = m_events->RemoveNext ();
+          scheduler->Insert (next);
+        }
+    }
+  m_events = scheduler;
+}
+
 
 Node::~Node ()
 {
@@ -114,9 +204,272 @@ Time
 Node::GetLocalTime (void) const
 {
   NS_LOG_FUNCTION (this);
-  return Simulator::Now ();
+  if (m_clock)
+  {
+    return m_clock->GetTime();
+  }
+  return Simulator::Now();
 }
 
+EventId
+Node::GetNextEvent () const
+{
+    return m_nextEvent.first;
+}
+
+EventId
+Node::GetNextEventSim () const
+{
+    return m_nextEvent.second;
+}
+
+/**
+it must check if there is an event already scheduled in main:
+- if there isn't, it calls Simulator::Schedule
+- If there is:
+   > if the new event happens before then:
+   cancel the matching EventId in Simulator
+   > Simulator::Schedule
+- otherwise
+
+Also the simulator should
+ */
+void
+Node::SyncNodeWithMainSimulator ()
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  if (m_events->IsEmpty ()) 
+  {
+    NS_LOG_LOGIC ( "No event in queue. Stop here." );
+    return;
+  }
+
+  // caller takes ownership of the returned pointer ?
+  Scheduler::Event nextEvent = m_events->PeekNext ();
+  
+  EventId nodeEventId (nextEvent.impl, nextEvent.key.m_ts, nextEvent.key.m_context, nextEvent.key.m_uid);
+  bool enqueueNextEvent = false;
+
+  if (GetNextEventSim ().IsRunning ())
+  {
+    NS_LOG_DEBUG ( "An event is already scheduled. at local Ts=" << GetNextEvent ().GetTs () );
+    
+    // if the newly scheduled event should be scheduled before
+     if (nodeEventId.GetTs () < GetNextEvent ().GetTs ())
+     {
+        NS_LOG_LOGIC ( "Replace current first event with a new one." );
+        // we should cancel the running one
+        GetNextEventSim ().Cancel ();
+        enqueueNextEvent = true;
+     }
+     else
+     {
+        NS_LOG_DEBUG ( "Currently scheduled happens first. Do nothing." );
+     }
+  }
+  else 
+  {
+    NS_LOG_DEBUG ( "No node event running in Simulator yet" );
+    enqueueNextEvent = true;
+  }
+
+  // if we are not the next event=, abort here,
+  if (!enqueueNextEvent) 
+  {
+    NS_LOG_DEBUG ( "Don't queue first" );
+    return;
+  }
+
+  ForceLocalEventIntoSimulator (nodeEventId);
+}
+
+
+void 
+Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  Time eventSimTime;
+
+  bool res = m_clock->LocalTimeToSimulatorTime ( Time (nodeEventId.GetTs ()), &eventSimTime);
+  NS_ASSERT_MSG ( res, "Could not compute timelapse" );
+
+  NS_LOG_DEBUG ( "Enqueuing event to Simulator in " << eventSimTime - Simulator::Now() );
+  EventId simEventId = Simulator::ScheduleWithContext ( nodeEventId.GetContext(),
+                          eventSimTime - Simulator::Now(), 
+                          &Node::ExecOnNode, this
+                    );
+
+  m_nextEvent = std::make_pair (nodeEventId, simEventId);
+}
+
+void 
+Node::ExecOnNode ()
+{
+  NS_LOG_FUNCTION ( Simulator::Now() );
+
+  Scheduler::Event next = m_events->RemoveNext();
+  NS_ASSERT (next.key.m_ts >= Simulator::Now());
+  NS_LOG_DEBUG (next.key.m_uid);
+
+  next.impl->Invoke ();
+  next.impl->Unref ();
+  // TODO mark event as finisehd ?
+  // Now that it's finished, check if we need to add another one
+  SyncNodeWithMainSimulator ();
+}
+
+EventId 
+Node::Schedule (Time const &timeOffset, EventImpl *event) 
+{
+    return DoSchedule( timeOffset, event);
+}
+
+EventId
+Node::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
+{
+    NS_FATAL_ERROR ("not implemented");
+}
+
+EventId
+Node::DoSchedule (Time const &timeOffset, EventImpl *event)
+{
+  NS_LOG_FUNCTION (this << timeOffset.GetTimeStep () << event);
+
+  Time localTime = GetLocalTime ();
+  Time eventLocalTime = localTime + timeOffset;
+
+  NS_ASSERT (eventLocalTime.IsPositive ());
+
+  // In all cases I insert the event
+  Scheduler::Event newEvent; // rename into newEvent
+  newEvent.impl = event;
+  NS_LOG_DEBUG ( "DoSchedule at localtime=" << eventLocalTime);
+  newEvent.key.m_ts = (uint64_t) eventLocalTime.GetTimeStep ();
+  newEvent.key.m_context = this->GetId ();
+  newEvent.key.m_uid = m_localUid;
+  m_localUid++;
+
+  m_events->Insert (newEvent);
+
+  EventId nodeEventId (event, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
+  nodeEventId.m_node = this;
+
+   SyncNodeWithMainSimulator ();
+
+  return nodeEventId;
+}
+
+
+EventId
+Node::ScheduleNow (EventImpl *event)
+{
+    return DoSchedule (Time (0), event);
+}
+
+
+void
+Node::Remove (const EventId &id)
+{
+    //!
+    NS_LOG_WARN ("implemented as a cancel");
+    Cancel (id);
+}
+
+bool
+Node::IsExpired (const EventId &id) const
+{
+  NS_LOG_FUNCTION_NOARGS ();
+
+  Time localTs = GetLocalTime();
+  if (id.PeekEventImpl () == 0 ||
+      id.GetTs () < localTs ||
+      (id.GetTs () == localTs && id.GetUid () <= m_localUid) ||
+      id.PeekEventImpl ()->IsCancelled ()
+      )
+    {
+      return true;
+    }
+  else
+  {
+    return false;
+  }
+}
+
+void
+Node::Cancel (const EventId &localId)
+{
+  NS_LOG_FUNCTION (localId.GetUid());
+
+  if (!IsExpired (localId))
+    {
+      NS_LOG_LOGIC ("Cancelling the implementation");
+      localId.PeekEventImpl ()->Cancel ();
+    }
+
+  SyncNodeWithMainSimulator ();
+}
+
+uint32_t 
+Node::GetContext (void) const
+{
+  NS_LOG_WARN ("stub");
+  return 0;
+}
+
+void 
+Node::Run (void)
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+
+Time 
+Node::Now (void) const
+{
+  return GetLocalTime();
+}
+
+bool 
+Node::IsFinished (void) const
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+void 
+Node::Stop (void)
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+void 
+Node::Stop (Time const &time)
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+
+Time 
+Node::GetMaximumSimulationTime (void) const
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+  
+Time 
+Node::GetDelayLeft (const EventId &id) const
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+
+EventId 
+Node::ScheduleDestroy (EventImpl *event)
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+
+void 
+Node::Destroy ()
+{
+  NS_FATAL_ERROR("Not implemented");
+}
+  
 uint32_t
 Node::GetSystemId (void) const
 {
