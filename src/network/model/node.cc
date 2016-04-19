@@ -32,7 +32,6 @@
 #include "ns3/boolean.h"
 #include "ns3/simulator.h"
 #include "ns3/clock.h"
-#include "ns3/clock-perfect.h" // Could be removed
 #include "ns3/nstime.h"
 #include "ns3/callback.h"
 #include "ns3/scheduler.h"
@@ -82,18 +81,12 @@ Node::GetTypeId (void)
                    MakeUintegerAccessor (&Node::m_sid),
                    MakeUintegerChecker<uint32_t> ())
     // TODO Might remove the global one and make it instance dependant ?
-    // SetScheduler
     .AddAttribute("SchedulerType",
                   "The object class to use as the scheduler implementation",
                   TypeIdValue (MapScheduler::GetTypeId ()),
                   MakeTypeIdAccessor ( (void (Node::*)(TypeId ))&Node::SetScheduler),
-                  MakeTypeIdChecker ())    
-//    .AddAttribute("ClockType",
-//                  "The type of clock",
-//                  TypeIdValue (ClockPerfect::GetTypeId ()),
-//                  MakeTypeIdAccessor(&Node::m_clockTypeId),
-//                  MakeTypeIdChecker ())
-;
+                  MakeTypeIdChecker ())
+  ;
   return tid;
 }
 
@@ -121,7 +114,7 @@ Node::Construct (void)
   m_id = NodeList::Add (this);
 
   ObjectFactory factory;
-  factory.SetTypeId (ClockPerfect::GetTypeId());
+  factory.SetTypeId ("ns3::ClockPerfect");
   SetClock (factory.Create<Clock> ());
 }
 
@@ -296,10 +289,11 @@ Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
   NS_ASSERT_MSG ( res, "Could not compute timelapse" );
 
   NS_LOG_DEBUG ( "Enqueuing event to Simulator in " << eventSimTime - Simulator::Now() );
-  EventId simEventId = Simulator::ScheduleWithContext ( nodeEventId.GetContext(),
-                          eventSimTime - Simulator::Now(), 
-                          &Node::ExecOnNode, this
-                    );
+  EventId simEventId;
+//  EventId simEventId = Simulator::ScheduleWithContext (nodeEventId.GetContext(),
+//                          eventSimTime - Simulator::Now(), 
+//                          &Node::ExecOnNode, this
+//                      );
 
   m_nextEvent = std::make_pair (nodeEventId, simEventId);
 }
@@ -326,7 +320,7 @@ Node::Schedule (Time const &timeOffset, EventImpl *event)
     return DoSchedule( timeOffset, event);
 }
 
-EventId
+void
 Node::ScheduleWithContext (uint32_t context, Time const &time, EventImpl *event)
 {
     NS_FATAL_ERROR ("not implemented");
@@ -354,9 +348,8 @@ Node::DoSchedule (Time const &timeOffset, EventImpl *event)
   m_events->Insert (newEvent);
 
   EventId nodeEventId (event, newEvent.key.m_ts, newEvent.key.m_context, newEvent.key.m_uid);
-  nodeEventId.m_node = this;
 
-   SyncNodeWithMainSimulator ();
+  SyncNodeWithMainSimulator ();
 
   return nodeEventId;
 }
