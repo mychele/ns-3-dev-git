@@ -106,13 +106,15 @@ ClockPerfect::GetLastTimeUpdateSim () const
 }
 
 Time
-ClockPerfect::GetTime()
+ClockPerfect::GetTime ()
 {
     NS_LOG_FUNCTION (this);
 
     Time result;
     result = GetLastTimeUpdateLocal ();
     result += AbsToLocalDuration (Simulator::Now() - GetLastTimeUpdateSim());
+
+    NS_LOG_DEBUG ("local time= " << result);
     return result;
 }
 

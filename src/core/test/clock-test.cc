@@ -87,7 +87,6 @@ ClockRawFrequencyTestCase::ClockRawFrequencyTestCase (
 void 
 ClockRawFrequencyTestCase::OnNewFrequency (double oldFreq, double newFreq)
 {
-//    std::cout << "New frequency=" << newFreq << " (replacing " << oldFreq << ")" << std::endl;
     std::cout << "  Clock time=" << m_clock->GetLastTimeUpdateLocal() << std::endl;
     std::cout << "  Recorded Simu time=" << m_clock->GetLastTimeUpdateSim()
         << "(compare with " << Simulator::Now() << ")" <<std::endl;
@@ -161,11 +160,9 @@ ClockRawFrequencyTestCase::SetupClock (void)
     std::cout << "Setup clock " << std::endl;
     m_clock = CreateObject<ClockPerfect> ();
     bool res = m_clock->SetRawFrequency (m_frequency);
-//    m_clock->SetSimulatorSyncCallback( MakeCallback(&ClockRawFrequencyTestCase::OnNewFrequency, this));
 
     NS_ASSERT (res);
 
-    //
     res = m_clock->TraceConnectWithoutContext ("RawFrequency", 
         MakeCallback ( &ClockRawFrequencyTestCase::OnNewFrequency, this) 
         );

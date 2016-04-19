@@ -278,7 +278,7 @@ Node::SyncNodeWithMainSimulator ()
 }
 
 
-void 
+void
 Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
 {
   NS_LOG_FUNCTION_NOARGS ();
@@ -289,11 +289,12 @@ Node::ForceLocalEventIntoSimulator (EventId nodeEventId)
   NS_ASSERT_MSG ( res, "Could not compute timelapse" );
 
   NS_LOG_DEBUG ( "Enqueuing event to Simulator in " << eventSimTime - Simulator::Now() );
-  EventId simEventId;
-//  EventId simEventId = Simulator::ScheduleWithContext (nodeEventId.GetContext(),
-//                          eventSimTime - Simulator::Now(), 
-//                          &Node::ExecOnNode, this
-//                      );
+
+  // TODO should use Simulator::ScheduleWithContext (nodeEventId.GetContext(),
+  EventId simEventId = Simulator::Schedule (
+                          eventSimTime - Simulator::Now(), 
+                          &Node::ExecOnNode, this
+                      );
 
   m_nextEvent = std::make_pair (nodeEventId, simEventId);
 }

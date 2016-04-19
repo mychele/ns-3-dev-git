@@ -25,6 +25,7 @@
 #include "attribute-helper.h"
 #include "int64x64.h"
 #include "unused.h"
+#include "ns3/log.h"
 #include <stdint.h>
 #include <limits>
 #include <cmath>
@@ -761,15 +762,17 @@ inline Time operator - (const Time & lhs, const Time & rhs)
 {
   return Time (lhs.m_data - rhs.m_data);
 }
+template <typename T>
 inline Time
-operator * (const Time & lhs, const int64_t & rhs)
+operator * (const Time & lhs, const T & rhs)
 {
   Time res = lhs;
   res.m_data *= rhs;
   return res;
 }
+template<typename T>
 inline Time
-operator * (const int64_t & lhs, const Time & rhs)
+operator * (const T & lhs, const Time & rhs)
 {
   Time res = rhs;
   res.m_data *= lhs;
@@ -781,13 +784,15 @@ operator / (const Time & lhs, const Time & rhs)
   int64_t res = lhs.m_data / rhs.m_data;
   return res;
 }
+template <typename T>
 inline Time
-operator / (const Time & lhs, const int64_t & rhs)
-{
-  Time res = lhs;
-  res.m_data /= rhs;
-  return res;
-}
+operator / (const Time & lhs, const T & rhs)
+ {
+   Time res = lhs;
+   NS_ASSERT_MSG ( ((res.m_data / rhs) != 0) || (res.m_data == 0), "Resolution too low for this computation");
+   res.m_data /= rhs;
+   return res;
+ }
 inline Time & operator += (Time & lhs, const Time & rhs)
 {
   lhs.m_data += rhs.m_data;
