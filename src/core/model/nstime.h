@@ -676,10 +676,16 @@ private:
   friend bool operator > (const Time & lhs, const Time & rhs);
   friend Time operator + (const Time & lhs, const Time & rhs);
   friend Time operator - (const Time & lhs, const Time & rhs);
-  friend Time operator * (const Time & lhs, const int64_t & rhs);
-  friend Time operator * (const int64_t & lhs, const Time & rhs);
+  template <typename T>
+  friend Time operator * (const Time & lhs, const T & rhs);
+  template <typename T> 
+  friend Time operator * (const T & lhs, const Time & rhs);
+
+
   friend int64_t operator / (const Time & lhs, const Time & rhs);
-  friend Time operator / (const Time & lhs, const int64_t & rhs);
+  template<typename T>
+  friend Time operator / (const Time & lhs, const T & rhs);
+
   friend Time & operator += (Time & lhs, const Time & rhs);
   friend Time & operator -= (Time & lhs, const Time & rhs);
   /** @} */

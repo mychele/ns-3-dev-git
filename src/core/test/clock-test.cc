@@ -29,13 +29,11 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("ClockTest");
 
-void FakeEvent()
-{
-    std::cout << "Simulator time advanced to " << Simulator::Now() << std::endl;
-}
-
-/** 
- *
+/**
+ * Specific clock-perfect test
+ * 
+ * Use CheckTime/ChangeFrequency/InjectOffset members to change clock parameters
+ * and check that the 
  */
 class ClockRawFrequencyTestCase : public TestCase
 {
@@ -55,6 +53,10 @@ public:
 protected:
   virtual void CheckTime (Time absTime, Time localTime);
   virtual void ChangeFrequency (Time absTime, double newFrequency);
+
+  /** 
+   * Unused yet
+   */
   virtual void InjectOffset (Time absTime, Time offset);
 
   void SetupClock (void);
@@ -64,8 +66,8 @@ private:
   void ScheduledFrequencyChange ( double newFrequency);
   void ScheduledOffset ( Time offset);
 
-  double m_frequency;           /**!<  */
-  Ptr<ClockPerfect> m_clock;    /**!<  */
+  double m_frequency;
+  Ptr<ClockPerfect> m_clock;
 
   int m_notifiedFrequencyChanges;    /**!< Check frequency was changed often enough */
   int m_expectedFrequencyChange;    /**!< Check frequency was changed often enough */
@@ -178,7 +180,6 @@ ClockRawFrequencyTestCase::DoSetup (void)
 
     // Check that at simulator time AbsoluteTime, local time is RelativeTime
     // hence when the simulator time is 2 
-    // TODO make it more generic with error limits; in case we have a clock with some jitter
     CheckTime (Time (2), Time (1));
     CheckTime (Time (4), Time (2));
     // at simulator time 6, node time should be 3

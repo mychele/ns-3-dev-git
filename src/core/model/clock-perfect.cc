@@ -20,25 +20,11 @@
 #include "ns3/clock-perfect.h"
 #include "ns3/simulator.h"
 #include "ns3/log.h"
-//#include "ns3/integer.h"
-//#include "ns3/uinteger.h"
-//#include "ns3/double.h"
 
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("ClockPerfect");
 
-inline Time
-LocalToAbs (Time duration, double frequency)
-{
-    return duration*frequency;
-}
-
-inline Time
-AbsToLocal (Time duration, double frequency)
-{
-    return duration/frequency;
-}
 
 TypeId
 ClockPerfect::GetTypeId (void)
@@ -79,13 +65,11 @@ ClockPerfect::~ClockPerfect ()
 bool
 ClockPerfect::SetRawFrequency (double freq)
 {
-
-    NS_LOG_INFO ("New frequency=" << freq << " oldFreq=" << m_rawFrequency);
+    NS_LOG_FUNCTION (freq << m_rawFrequency);
     NS_ASSERT_MSG (freq > 0, "Can't set a negative frequency");
     double oldFreq = m_rawFrequency;
 
     Time currentTime = GetLastTimeUpdateSim () + AbsToLocalDuration(Simulator::Now () - GetLastTimeUpdateSim ());
-//    Time currentTime = GetLastTimeUpdateSim() + AbsToLocalDuration( Simulator::Now() - GetLastTimeUpdateSim() );
     m_timeOfLastUpdate = std::make_pair (currentTime, Simulator::Now() );
     m_rawFrequency = freq;
 
