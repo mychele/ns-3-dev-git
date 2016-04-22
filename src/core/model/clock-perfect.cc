@@ -102,12 +102,6 @@ ClockPerfect::GetTime ()
     return result;
 }
 
-double
-ClockPerfect::GetRawFrequency () const
-{
-    return m_rawFrequency;
-}
-
 bool
 ClockPerfect::SimulatorTimeToLocalTime (Time absTime, Time *localTime)
 {

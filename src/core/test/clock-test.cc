@@ -103,11 +103,6 @@ ClockRawFrequencyTestCase::ScheduledTimeCheck (Time localTime)
 {
     std::cout << "Checking Local -> Absolute" << std::endl;
     NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime (), localTime, "Clock returns wrong result");
-
-//    NS_LOG_INFO ("Checking Absolute -> Local");
-//    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime ( Simulator::Now(), &result), true, "Could not compute" );
-//    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
-
 }
 
 
@@ -118,23 +113,12 @@ ClockRawFrequencyTestCase::ScheduledFrequencyChange (double newFreq)
 //    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime (), localTime, "Clock returns wrong result");
     std::cout << "Setting frequency to " << newFreq << std::endl;
     NS_TEST_EXPECT_MSG_EQ (m_clock->SetRawFrequency (newFreq), true, "Could not set frequency");
-//    NS_LOG_INFO ("Checking Absolute -> Local");
-//    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime ( Simulator::Now(), &result), true, "Could not compute" );
-//    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
-
 }
 
 void 
 ClockRawFrequencyTestCase::ScheduledOffset (Time offset)
 {
     m_clock->SetTime (m_clock->GetTime() + offset);
-//    NS_LOG_INFO ("Checking Local -> Absolute");
-//    NS_TEST_EXPECT_MSG_EQ (m_clock->GetTime (), localTime, "Clock returns wrong result");
-//    NS_TEST_ASSERT (m_clock->SetRawFrequency (newFreq));
-//    NS_LOG_INFO ("Checking Absolute -> Local");
-//    NS_TEST_EXPECT_MSG_EQ (m_clock->SimulatorTimeToLocalTime ( Simulator::Now(), &result), true, "Could not compute" );
-//    NS_TEST_EXPECT_MSG_EQ (result, nodeTime, "test");
-
 }
 
 void 
@@ -196,17 +180,13 @@ void
 ClockRawFrequencyTestCase::DoRun (void)
 {
 
-
     NS_TEST_ASSERT_MSG_EQ (m_clock->GetRawFrequency (), m_frequency, "Wrong raw frequency. Did you call SetupClock ?");
-
-//    m_clock->SetSimulatorSyncCallback( MakeCallback(&ClockRawFrequencyTestCase::OnNewFrequency, this));
 
     Simulator::Run ();
 
     NS_TEST_EXPECT_MSG_EQ (m_notifiedFrequencyChanges, m_expectedFrequencyChange, "The frequency change callback has not always been called");
 
     Simulator::Destroy ();
-
 };
 
 class ClockTestSuite : public TestSuite
@@ -214,26 +194,8 @@ class ClockTestSuite : public TestSuite
 public:
   ClockTestSuite () : TestSuite ("clock")
   {
-    {
-
-        // Node clock is twice as slow as simulator's,
-//        test0->ChangeFrequency (Time (6), 1.0);
-    //    test0->CheckTime (Time (7), Time (4));
-
-        // Node's time goes twice faster than simulation time
-        AddTestCase ( new ClockRawFrequencyTestCase (0.5), TestCase::QUICK);
-        // TODO le test est concu pour une frequence précise, one peut pas le changer pr l'instant
-//        AddTestCase ( new ClockRawFrequencyTestCase (1), TestCase::QUICK);
-    }
-    {
-//        ClockRawFrequencyTestCase *test1 = new ClockRawFrequencyTestCase (1.0);
-//        test1->CheckTime (Time (1), Time (1));
-//        test1->CheckTime (Time (2), Time (2));
-//        test1->ChangeFrequency (Time (3), 2.0);
-    }
-    // First clear the map, then add new tests
-//    test.clear();
-//    AddTestCase (new ClockRawFrequencyTestCase (0.5, tests), TestCase::QUICK);
+      // Node's time goes twice faster than simulation time
+      AddTestCase ( new ClockRawFrequencyTestCase (0.5), TestCase::QUICK);
 
   }
 } g_clockTestSuite;

@@ -32,10 +32,8 @@ class Time;
 
 
 /**
-* \see ClockMonoticIncreasing
-* No drift
- TODO maybe rename into ClockImpl
- * TODO keep clock perfect simple and move threshold completion into ClockAdjtimex ?
+ * This simple clock is said to be perfect because its frequency doesn't change
+ * on its own.
  */
 class ClockPerfect : public Clock
 {
@@ -55,32 +53,23 @@ public:
     bool LocalTimeToSimulatorTime (Time localTime, Time *absTime);
     bool SimulatorTimeToLocalTime (Time absTime, Time *localTime);
 
-    
-    // Maybe the simulator should define a rawFrequency too
-    virtual double GetRawFrequency () const;
-
     /**
-    Adds ss_slew
-    if frequency can change, make it mutable
-    \warn
+     * \return Total frequency, i.e., the raw frequency
      */
     virtual double GetTotalFrequency () const;
 
     /**
-     * Ideally we would pass a frequency generator that adds some noise
-     * but for now we stick to simple
-     */
-    bool SetRawFrequency (double freq);
-
-
-    /**
      * Conversion is composed of 2 phases; one with SS frequency,
      * one whithout
+     * \param [in] localDuration duration relative to this node
+     * \pram [out] absDuration equivalent duration according to reference clock.
      */
-    // Rename into SimulatorToLocalDuration ?
     bool LocalToAbsDuration (Time localDuration, Time* absDuration);
+
+    /**
+     * \param absDuration Convert simulator duration into this node duration
+     */
     Time AbsToLocalDuration (Time absDuration);
-//    bool LocalToAbsDuration(Time localDuration, Time& absDuration);
 
     /**
      * @return Last local recorded time

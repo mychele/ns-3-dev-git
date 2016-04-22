@@ -51,7 +51,6 @@ CancelEvent
 /** 
  * TODO: we should check that it's possible to change clock during simulation
  * without invalidating results
- * 
  */
 
 
