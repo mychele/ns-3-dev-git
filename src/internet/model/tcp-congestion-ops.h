@@ -98,10 +98,10 @@ public:
 
   ~TcpNewReno ();
 
-  std::string GetName () const;
+  virtual std::string GetName () const;
 
-  void IncreaseWindow (Ptr<TcpSocketState> tcb);
-  uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
+  virtual void IncreaseWindow (Ptr<TcpSocketState> tcb);
+  virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
 
   virtual Ptr<TcpCongestionOps> Fork ();
 };

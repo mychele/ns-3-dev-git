@@ -19,13 +19,13 @@
  * Author:  Matthieu Coudron <matthieu.coudron@lip6.fr>
  *          Morteza Kheirkhah <m.kheirkhah@sussex.ac.uk>
  */
-#ifndef MPTCP_CC_FULLY_COUPLED_H
-#define MPTCP_CC_FULLY_COUPLED_H
+#ifndef MPTCP_CC_LIA_H
+#define MPTCP_CC_LIA_H
 
 
 #include <stdint.h>
 #include "ns3/object.h"
-#include "ns3/tcp-congestion-ops.h"
+#include "tcp-congestion-ops.h"
 //#include "ns3/mptcp-mapping.h"
 
 
@@ -34,9 +34,11 @@ namespace ns3
 
 /**
 \brief Defined in RFC 6356 (http://tools.ietf.org/html/rfc6356)
-
+ TODO inherit from reno rather ?
+ 
+ TODO rename to LIA (Linked Increase Algorithm)
 */
-class MpTcpCongestionCoupled : public TcpCongestionOps
+class MpTcpCongestionLia : public TcpCongestionOps
 {
 public:
   /**
@@ -44,16 +46,17 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void);
 
-  MpTcpCongestionCoupled ();
-  MpTcpCongestionCoupled (const MpTcpCongestionCoupled& sock);
+  MpTcpCongestionLia ();
+  MpTcpCongestionLia (const MpTcpCongestionLia& sock);
 
-  ~MpTcpCongestionCoupled ();
+  ~MpTcpCongestionLia ();
 
-  std::string GetName () const;
+  virtual std::string GetName () const;
 
-  void IncreaseWindow (Ptr<TcpSocketState> tcb);
-  uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
+  virtual void IncreaseWindow (Ptr<TcpSocketState> tcb);
+  virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
 
   virtual Ptr<TcpCongestionOps> Fork ();
 

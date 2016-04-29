@@ -24,18 +24,65 @@
 namespace ns3
 {
 
-#if 0
+NS_OBJECT_ENSURE_REGISTERED (MpTcpCongestionLia);
+
+TypeId
+MpTcpCongestionLia::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::MpTcpCongestionLia")
+    .SetParent<TcpCongestionOps> ()
+    .SetGroupName ("Internet")
+    .AddConstructor<MpTcpCongestionLia> ()
+    .AddTraceSource ("Alpha",
+                     "Value of the alp",
+                     MakeTraceSourceAccessor (&MpTcpLia::m_alpha),
+                     "ns3::WTH_IS_ZIS_TracedValueCallback"
+                     )
+      ;
+  ;
+  return tid;
+}
+
+TypeId 
+MpTcpCongestionLia::GetInstanceTypeId (void)
+{
+  return GetTypeId ();
+}
+
+
+// TODO we should aggregate CC for the mptcp case ?
+MpTcpCongestionLia::MpTcpCongestionLia() : 
+  TcpCongestionOps (),
+  m_alpha (0),
+  m_totalCwnd (0)
+{
+  NS_LOG_FUNCTION_NOARGS();
+}
+
+MpTcpCongestionLia::~MpTcpCongestionLia ()
+{
+  NS_LOG_FUNCTION_NOARGS();
+}
+
+
+std::string
+MpTcpCongestionLia::GetName () const
+{
+  return "MpTcpLia";
+}
+
 void
-MpTcpCongestionCoupled::CalculateAlpha()
+MpTcpCongestionLia::CalculateAlpha ()
 {
   // this method is called whenever a congestion happen in order to regulate the agressivety of m_subflows
   // m_alpha = cwnd_total * MAX(cwnd_i / rtt_i^2) / {SUM(cwnd_i / rtt_i))^2}   //RFC 6356 formula (2)
 
   NS_LOG_FUNCTION(this);
   m_alpha = 0;
-  double maxi = 0;
-  double sumi = 0;
+  double maxi = 0; // Matches the MAX(cwnd_i / rtt_i^2) part
+  double sumi = 0; // SUM(cwnd_i / rtt_i)
 
+  // TODO here
   for (uint32_t i = 0; i < m_metaSock->GetNActiveSubflows(); i++)
     {
       Ptr<MpTcpSubflow> sFlow = m_metaSock->GetSubflow(i);
@@ -43,6 +90,7 @@ MpTcpCongestionCoupled::CalculateAlpha()
       Time time = sFlow->rtt->GetCurrentEstimate();
       double rtt = time.GetSeconds();
       double tmpi = sFlow->cwnd.Get() / (rtt * rtt);
+      
       if (maxi < tmpi)
         maxi = tmpi;
 
@@ -54,7 +102,7 @@ MpTcpCongestionCoupled::CalculateAlpha()
 
 //
 uint32_t
-MpTcpCongestionCoupled::OpenCWNDInCA(Ptr<MpTcpSubflow> subflow, uint32_t ackedBytes)
+MpTcpCongestionLia::CongestionAvoidance (Ptr<MpTcpSubflow> subflow, uint32_t ackedBytes)
 {
   NS_ASSERT( subflow );
 
@@ -68,7 +116,6 @@ MpTcpCongestionCoupled::OpenCWNDInCA(Ptr<MpTcpSubflow> subflow, uint32_t ackedBy
 //      << adder <<" GetSSThresh() "<< GetSSThresh() << " cwnd "<<cwnd);
   return 0;
 }
-#endif
 
 
 }

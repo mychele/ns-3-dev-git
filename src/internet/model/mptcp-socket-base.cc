@@ -2212,7 +2212,7 @@ MpTcpSocketBase::DoRetransmit()
         }
       else
         {
-          NotifyConnectionFailed();
+          NotifyConnectionFailed ();
         }
       return;
     }
@@ -2226,7 +2226,6 @@ MpTcpSocketBase::DoRetransmit()
 //          SendEmptyPacket(TcpHeader::FIN);
           TcpHeader header;
           SendFin();
-
         }
       return;
     }
