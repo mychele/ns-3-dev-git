@@ -38,7 +38,9 @@ namespace ns3
  
  TODO rename to LIA (Linked Increase Algorithm)
 */
-class MpTcpCongestionLia : public TcpCongestionOps
+class MpTcpCongestionLia : 
+//  public TcpCongestionOps
+  public TcpNewReno
 {
 public:
   /**
@@ -55,13 +57,23 @@ public:
 
   virtual std::string GetName () const;
 
+  /**
+   *
+   Note that the calculation of alpha does not take into account path
+   MSS and is the same for stacks that keep cwnd in bytes or packets.
+   */
   virtual void IncreaseWindow (Ptr<TcpSocketState> tcb);
-  virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
+//  virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
 
   virtual Ptr<TcpCongestionOps> Fork ();
 
 protected:
-  void CalculateAlpha();
+
+  /**
+   * TODO should update m_totalCwnd as well ?
+   */
+  void ComputeAlpha (Ptr<TcpSocketState> tcb);
+
   double m_alpha;
   uint32_t m_totalCwnd;
 

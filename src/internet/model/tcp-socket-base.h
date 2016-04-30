@@ -56,6 +56,8 @@ class TcpHeader;
 class MpTcpSubflow;
 class TcpTraceHelper;
 
+class TcpSocketBase;
+
 /**
  * \ingroup tcp
  *
@@ -131,6 +133,12 @@ public:
 
   // Ack state
   TracedValue<TcpAckState_t> m_ackState; //!< State in the ACK state machine
+
+
+  // MATT HACK to get around TcpSocketState limitations and let TcpCongestionOps 
+  // get access to MPTCP subflows
+  Ptr<TcpSocketBase> m_socket;
+  
 };
 
 /**

@@ -309,7 +309,9 @@ TcpSocketBase::TcpSocketBase (void)
   m_rxBuffer = CreateObject<TcpRxBuffer> ();
   m_txBuffer = CreateObject<TcpTxBuffer> ();
   m_tcb      = CreateObject<TcpSocketState> ();
-
+  // HACK MATT
+  m_tcb->m_socket = this;
+  
   bool ok;
 
   ok = m_tcb->TraceConnectWithoutContext ("CongestionWindow",
@@ -380,6 +382,9 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     {
       m_rtt = sock.m_rtt->Copy ();
     }
+    
+  // TODO  there should be a way to prevent this from happening when looking to upgrade
+  // TCP socket into an MPTCP one ?
   // Reset all callbacks to null
   Callback<void, Ptr< Socket > > vPS = MakeNullCallback<void, Ptr<Socket> > ();
   Callback<void, Ptr<Socket>, const Address &> vPSA = MakeNullCallback<void, Ptr<Socket>, const Address &> ();
@@ -390,7 +395,13 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
   SetRecvCallback (vPS);
   m_txBuffer = CopyObject (sock.m_txBuffer);
   m_rxBuffer = CopyObject (sock.m_rxBuffer);
+  
+  // MATT HACK to get around TcpSocketState limitations and let TcpCongestionOps 
+  // get access to MPTCP subflows
+  // 
   m_tcb = CopyObject (sock.m_tcb);
+  m_tcb->m_socket = this;
+  
   if (sock.m_congestionControl)
     {
       m_congestionControl = sock.m_congestionControl->Fork ();
