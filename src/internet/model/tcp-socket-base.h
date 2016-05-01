@@ -842,6 +842,8 @@ protected:
    * The function does not register the new subflow in m_tcp->AddSocket, this should be taken care
    * of afterwards.
    *
+   * TODO might be best in TcpL4Protocol ?
+   *
    * @param connecting Set to true for the client
    * \param master
    * \return master subflow. It is not associated to the meta at this point

@@ -258,13 +258,8 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
   NS_LOG_DEBUG ("Default CC =" << m_congestionTypeId.GetName());
   socket->SetCongestionControlAlgorithm (algo);
 
-  m_sockets.push_back (socket);
-  
-  if(!m_onNewSocket.IsNull())
-  {
-    NS_LOG_DEBUG ("Calling m_onNewSocket");
-    m_onNewSocket (socket);
-  }
+//  m_sockets.push_back (socket);
+  AddSocket (socket);
   return socket;
 }
 
@@ -934,10 +929,18 @@ TcpL4Protocol::AddSocket (Ptr<TcpSocket> socket)
   // TODO remove afterwards
   DumpSockets();
 
+
+  if(!m_onNewSocket.IsNull())
+  {
+    NS_LOG_DEBUG ("Calling m_onNewSocket");
+    m_onNewSocket (socket);
+  }
+
   std::vector<Ptr<TcpSocket> >::iterator it = std::find(m_sockets.begin(), m_sockets.end(), socket);
   if (it == m_sockets.end())
   {
     m_sockets.push_back (socket);
+
     return true;
   }
   return false;

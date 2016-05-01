@@ -86,11 +86,17 @@ void setPos (Ptr<Node> n, int x, int y, int z)
 }
 
 
+/**
+TODO name generation could be moved to tcp-trace-helper ?!
+
+TODO prefixer avec nom de la meta etc...
+
+**/
 void
-OnNewSocket (Ptr<TcpSocketBase> sock)
+OnNewSocket (Ptr<TcpSocket> socket)
 {
   NS_LOG_DEBUG ("New socket incoming");
-
+  
   TcpTraceHelper tcpHelper;
   std::stringstream os;
   //! we start at 1 because it's nicer
@@ -98,21 +104,39 @@ OnNewSocket (Ptr<TcpSocketBase> sock)
   static int subflowCounter = 0;
   static int metaCounter = 0;
 
+//      std::string filename;
+//      if (explicitFilename)
+//        {
+//          filename = prefix;
+//        }
+//      else
+//        {
+//          filename = asciiTraceHelper.GetFilenameFromInterfacePair (prefix, ipv4, interface);
+//        }
+
+  // No reason to fail
+  Ptr<TcpSocketBase> sock = DynamicCast<TcpSocketBase>(socket);
+
   //! choose a prefix depending on if it's subflow or meta
-  if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()))
+  // TODO improve the doc to mark that isChildOf is strict
+  if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()) 
+    || sock->GetInstanceTypeId() == MpTcpSubflow::GetTypeId())
   {
-    //!
-    os << "subflow" <<  subflowCounter++;
+    //! TODO prefixer avec le nom de la meta 
+    os << Simulator::GetContext() << "-subflow" <<  subflowCounter++;
     tcpHelper.SetupSocketTracing (sock, os.str());
   }
-  else if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()))
+  else if(sock->GetInstanceTypeId().IsChildOf( MpTcpSocketBase::GetTypeId())
+      || sock->GetInstanceTypeId() == MpTcpSocketBase::GetTypeId()
+      )
   {
-    os << "meta" <<  metaCounter++;
+    os << Simulator::GetContext() << "-meta" <<  metaCounter++;
     tcpHelper.SetupSocketTracing (sock, os.str());
   }
   else 
   {
-    NS_LOG_INFO ("Not mptcp, do nothing");
+    
+    NS_LOG_INFO ("Not mptcp, do nothing: typeid=" << sock->GetInstanceTypeId().GetName ());
   }
 }
 
@@ -897,22 +921,23 @@ public:
 
         for (uint8_t subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
 
-            AddTestCase (
-                new MpTcpMultihomedTestCase (
-                    13,     // 1) totalStreamSize (everything in bytes)
-                    200,    // 2) source write size,
-                    200,    // 3) source read size
-                    200,    // 4) server write size
-                    200,    // 5) server read size
-                    nb_of_devices,
-                    subflow_per_device,
-                    false       // 6/ use ipv6
-                    ),
-                TestCase::QUICK
-            );
+//            AddTestCase (
+//                new MpTcpMultihomedTestCase (
+//                    13,     // 1) totalStreamSize (everything in bytes)
+//                    200,    // 2) source write size,
+//                    200,    // 3) source read size
+//                    200,    // 4) server write size
+//                    200,    // 5) server read size
+//                    nb_of_devices,
+//                    subflow_per_device,
+//                    false       // 6/ use ipv6
+//                    ),
+//                TestCase::QUICK
+//            );
+//            
 
             AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
-            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
+//            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
         }
     }
 

@@ -258,7 +258,7 @@ public:
   HACK matt while waiting for https://www.nsnam.org/bugzilla/show_bug.cgi?id=2336
   TODO put it as an attribute of TcpL4Protocol
   */
-  Callback<void, Ptr<TcpSocketBase> > m_onNewSocket;
+  Callback<void, Ptr<TcpSocket> > m_onNewSocket;
   
 protected:
   virtual void DoDispose (void);

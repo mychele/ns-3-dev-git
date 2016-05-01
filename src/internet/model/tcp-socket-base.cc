@@ -1612,9 +1612,9 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 
         Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
 
-      bool result = m_tcp->AddSocket(newSock);
+      bool result = m_tcp->AddSocket (newSock);
       NS_ASSERT_MSG (result, "could not register meta");
-      uint64_t localKey = meta->GenerateUniqueMpTcpKey();
+      uint64_t localKey = meta->GenerateUniqueMpTcpKey ();
         uint32_t localToken;
         uint64_t idsn;
 
@@ -1623,8 +1623,8 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 
       NS_LOG_DEBUG ("Server meta ISN = " << idsn << " from key " << localKey);
 
-        // Setting isn of meta
-        meta->InitLocalISN (sidsn);
+      // Setting isn of meta
+      meta->InitLocalISN (sidsn);
 
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
@@ -2021,8 +2021,11 @@ uint32_t localToken;
         Ptr<NetDevice> boundDev = m_boundnetdevice;
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
         // master = first subflow
-        Ptr<MpTcpSubflow> master = UpgradeToMeta(true);
+        Ptr<MpTcpSubflow> master = UpgradeToMeta (true);
 
+        // Hack to retrigger the tcpL4protocol::OnNewSocket callback
+        m_tcp->AddSocket( this);
+        
         // Need to register an id
         InetSocketAddress addr (endPoint->GetLocalAddress(), endPoint->GetLocalPort());
         MpTcpSocketBase* meta = (MpTcpSocketBase*)this;

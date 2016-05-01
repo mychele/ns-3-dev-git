@@ -305,7 +305,7 @@ MpTcpSocketBase::CreateScheduler(TypeId schedulerTypeId)
 }
 
 int
-MpTcpSocketBase::ConnectNewSubflow(const Address &local, const Address &remote)
+MpTcpSocketBase::ConnectNewSubflow (const Address &local, const Address &remote)
 {
   NS_ASSERT_MSG(InetSocketAddress::IsMatchingType(local) && InetSocketAddress::IsMatchingType(remote), "only support ipv4");
 
