@@ -93,6 +93,10 @@ TcpL4Protocol::GetTypeId (void)
                    ObjectVectorValue (),
                    MakeObjectVectorAccessor (&TcpL4Protocol::m_sockets),
                    MakeObjectVectorChecker<TcpSocket> ())
+    .AddAttribute ("OnNewSocket", "Callback invoked whenever a socket is created.",
+                   CallbackValue (),
+                   MakeCallbackAccessor (&TcpL4Protocol::m_onNewSocket),
+                   MakeCallbackChecker ())
   ;
   return tid;
 }
@@ -255,6 +259,12 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
   socket->SetCongestionControlAlgorithm (algo);
 
   m_sockets.push_back (socket);
+  
+  if(!m_onNewSocket.IsNull())
+  {
+    NS_LOG_DEBUG ("Calling m_onNewSocket");
+    m_onNewSocket (socket);
+  }
   return socket;
 }
 

@@ -1889,7 +1889,7 @@ TcpSocketBase::ProcessTcpOptionsListen (const TcpHeader& header)
 BEGIN TRACING system (to remove after tests ?)
 *****************************/
 void
-TcpSocketBase::SetupTracing(std::string prefix)
+TcpSocketBase::SetupTracing (std::string prefix)
 {
     if(IsTracingEnabled())
         return;

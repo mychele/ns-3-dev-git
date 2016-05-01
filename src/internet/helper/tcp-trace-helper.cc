@@ -79,11 +79,12 @@ TODO move that elsewhere, and plot the first line to get the initial value else 
 for bad plots.
 **/
 void
-TcpTraceHelper::SetupSocketTracing(Ptr<TcpSocketBase> sock, const std::string prefix)
+TcpTraceHelper::SetupSocketTracing (Ptr<TcpSocketBase> sock, const std::string prefix)
 {
   NS_LOG_INFO("sock " << sock << " and prefix [" << prefix << "]");
   std::ios::openmode mode = std::ofstream::out | std::ofstream::trunc;
 
+  // Or everything could be just written in the same file (uses fewer file descriptors)
   AsciiTraceHelper asciiTraceHelper;
   Ptr<OutputStreamWrapper> streamTxNext = asciiTraceHelper.CreateFileStream (prefix+"_TxNext.csv", mode);
   Ptr<OutputStreamWrapper> streamTxHighest = asciiTraceHelper.CreateFileStream (prefix+"_TxHighest.csv", mode);
@@ -126,9 +127,7 @@ TcpTraceHelper::SetupSocketTracing(Ptr<TcpSocketBase> sock, const std::string pr
 
   // TODO
   *streamCwnd->GetStream() << "Time,oldCwnd,newCwnd" << std::endl
-
-                          << now << ",0," << sock->GetInitialCwnd() << std::endl
-;
+                          << now << ",0," << sock->GetInitialCwnd() << std::endl;
 
   *streamRwnd->GetStream() << "Time,oldRwnd,newRwnd" << std::endl
                            << now << ",0," << sock->Window() << std::endl

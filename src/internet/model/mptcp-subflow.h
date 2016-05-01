@@ -73,7 +73,7 @@ public:
   static TypeId
   GetTypeId(void);
 
-  virtual TypeId GetInstanceTypeId(void) const;
+  virtual TypeId GetInstanceTypeId (void) const;
 
 
   /**
@@ -576,7 +576,6 @@ protected:
 //  MappingList
   MpTcpMappingContainer m_TxMappings;  //!< List of mappings to send
   MpTcpMappingContainer m_RxMappings;  //!< List of mappings to receive
-
 
 
 protected:

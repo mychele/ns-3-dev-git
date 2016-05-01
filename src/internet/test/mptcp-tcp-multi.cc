@@ -17,8 +17,6 @@
  *
  * Author: Matthieu Coudron <matthieu.coudron@lip6.fr>
  *
- * TODO :
- * -  possibility to create subflows from the server
  */
 
 #include "ns3/test.h"
@@ -62,6 +60,7 @@
 #include "ns3/trace-helper.h"
 #include "ns3/global-route-manager.h"
 #include "ns3/abort.h"
+#include "ns3/tcp-trace-helper.h"
 
 #include <string>
 #include <fstream>
@@ -84,6 +83,37 @@ void setPos (Ptr<Node> n, int x, int y, int z)
   n->AggregateObject (loc);
   Vector locVec2 (x, y, z);
   loc->SetPosition (locVec2);
+}
+
+
+void
+OnNewSocket (Ptr<TcpSocketBase> sock)
+{
+  NS_LOG_DEBUG ("New socket incoming");
+
+  TcpTraceHelper tcpHelper;
+  std::stringstream os;
+  //! we start at 1 because it's nicer
+  // m_tracePrefix << 
+  static int subflowCounter = 0;
+  static int metaCounter = 0;
+
+  //! choose a prefix depending on if it's subflow or meta
+  if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()))
+  {
+    //!
+    os << "subflow" <<  subflowCounter++;
+    tcpHelper.SetupSocketTracing (sock, os.str());
+  }
+  else if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()))
+  {
+    os << "meta" <<  metaCounter++;
+    tcpHelper.SetupSocketTracing (sock, os.str());
+  }
+  else 
+  {
+    NS_LOG_INFO ("Not mptcp, do nothing");
+  }
 }
 
 static const Ipv4Mask g_netmask = Ipv4Mask(0xffffff00);
@@ -229,6 +259,9 @@ MpTcpMultihomedTestCase::DoSetup (void)
 //  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
 
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
+  CallbackValue cbValue = MakeCallback (&OnNewSocket);
+  Config::SetDefault ("ns3::TcpL4Protocol::OnNewSocket", cbValue);
+  
 
   m_currentSourceTxBytes = 0;
   m_currentSourceRxBytes = 0;

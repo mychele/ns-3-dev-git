@@ -125,17 +125,17 @@ MpTcpSocketBase::GetTypeId(void)
                BooleanValue (false),
                MakeBooleanAccessor (&MpTcpSocketBase::m_generatedIdsn),
                MakeBooleanChecker ())
+  
     // TODO rehabilitate
 //      .AddAttribute("SchedulingAlgorithm", "Algorithm for data distribution between m_subflows", EnumValue(Round_Robin),
 //          MakeEnumAccessor(&MpTcpSocketBase::SetDataDistribAlgo),
 //          MakeEnumChecker(Round_Robin, "Round_Robin"))
+    // Would this be cleaner ? perfs ?
 //      .AddAttribute("Subflows", "The list of subflows associated to this protocol.",
 //          ObjectVectorValue(),
 //          MakeObjectVectorAccessor(&MpTcpSocketBase::m_subflows),
 //          MakeObjectVectorChecker<MpTcpSocketBase>())
 //        )
-
-
     ;
   return tid;
 }
