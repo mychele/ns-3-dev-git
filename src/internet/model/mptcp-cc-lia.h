@@ -32,6 +32,8 @@
 namespace ns3
 {
 
+class MpTcpSocketBase;
+
 /**
 \brief Defined in RFC 6356 (http://tools.ietf.org/html/rfc6356)
  TODO inherit from reno rather ?
@@ -62,7 +64,7 @@ public:
    Note that the calculation of alpha does not take into account path
    MSS and is the same for stacks that keep cwnd in bytes or packets.
    */
-  virtual void IncreaseWindow (Ptr<TcpSocketState> tcb);
+  virtual void IncreaseWindow (Ptr<TcpSocketBase> sf, Ptr<TcpSocketState> tcb);
 //  virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
 
   virtual Ptr<TcpCongestionOps> Fork ();
@@ -71,11 +73,13 @@ protected:
 
   /**
    * TODO should update m_totalCwnd as well ?
+   // TODO just return alpha and put const everywhere
+   * assume metaSock->totalCwnd is already computed
    */
-  void ComputeAlpha (Ptr<TcpSocketState> tcb);
+  double ComputeAlpha (Ptr<MpTcpSocketBase> metaSock, Ptr<TcpSocketState> tcb) const;
 
   double m_alpha;
-  uint32_t m_totalCwnd;
+//  uint32_t m_totalCwnd;
 
 
 };

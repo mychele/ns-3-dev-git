@@ -250,6 +250,8 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
   socket->SetRtt (rtt);
 
   // TODO solve
+  NS_LOG_DEBUG ("Setting CC with " << algo->GetName());
+  NS_LOG_DEBUG ("Default CC =" << m_congestionTypeId.GetName());
   socket->SetCongestionControlAlgorithm (algo);
 
   m_sockets.push_back (socket);

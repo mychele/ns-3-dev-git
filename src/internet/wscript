@@ -251,7 +251,7 @@ def build(bld):
         'test/mptcp-pm-test.cc',
         'test/mptcp-tcp-multi.cc',
         # TO remove once tcp-multi is confirmed
-        'test/mptcp-tcp-test.cc',
+        # 'test/mptcp-tcp-test.cc',
         'test/tcp-header-test.cc',
         'test/udp-test.cc',
         'test/ipv6-address-generator-test-suite.cc',

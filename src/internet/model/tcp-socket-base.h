@@ -1095,7 +1095,10 @@ protected:
   uint32_t               m_lostOut;      //!< number of bytes lost (estimation)
   uint32_t               m_retransOut;   //!< number of bytes retransmitted and not yet ACKed
 
+public:
   Ptr<TcpSocketState> m_tcb;                  //!< Transmission Control Block
+
+protected:
   Ptr<TcpCongestionOps>  m_congestionControl; //!< Congestion control
 };
 

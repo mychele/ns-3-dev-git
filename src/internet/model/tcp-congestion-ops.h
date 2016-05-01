@@ -25,6 +25,7 @@
 namespace ns3 {
 
 class TcpSocketState;
+class TcpSocketBase;
 
 /**
  * \brief Congestion control abstract class
@@ -64,7 +65,7 @@ public:
    *
    * \param Socket internal state
    */
-  virtual void IncreaseWindow (Ptr<TcpSocketState> tcb) = 0;
+  virtual void IncreaseWindow (Ptr<TcpSocketBase> , Ptr<TcpSocketState> tcb) = 0;
 
   virtual void PktsAcked (Ptr<TcpSocketState> tcb, uint32_t packetsAcked,
                           const Time& rtt) { }
@@ -100,7 +101,7 @@ public:
 
   virtual std::string GetName () const;
 
-  virtual void IncreaseWindow (Ptr<TcpSocketState> tcb);
+  virtual void IncreaseWindow (Ptr<TcpSocketBase> , Ptr<TcpSocketState> tcb);
   virtual uint32_t GetSsThresh (Ptr<const TcpSocketState> tcb);
 
   virtual Ptr<TcpCongestionOps> Fork ();

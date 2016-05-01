@@ -61,8 +61,8 @@ MpTcpCongestionLia::GetInstanceTypeId (void)
 MpTcpCongestionLia::MpTcpCongestionLia() : 
 //  TcpCongestionOps (),
   TcpNewReno(),
-  m_alpha (0),
-  m_totalCwnd (0)
+  m_alpha (1)
+//  , m_totalCwnd (0)
 {
   NS_LOG_FUNCTION_NOARGS();
 }
@@ -79,18 +79,21 @@ MpTcpCongestionLia::GetName () const
   return "MpTcpLia";
 }
 
-void
-MpTcpCongestionLia::ComputeAlpha (Ptr<TcpSocketState> tcb)
+
+double
+MpTcpCongestionLia::ComputeAlpha (Ptr<MpTcpSocketBase> metaSock, Ptr<TcpSocketState> tcb) const
 {
   // this method is called whenever a congestion happen in order to regulate the agressivety of m_subflows
   // m_alpha = cwnd_total * MAX(cwnd_i / rtt_i^2) / {SUM(cwnd_i / rtt_i))^2}   //RFC 6356 formula (2)
-
+  
   NS_LOG_FUNCTION(this);
-  m_alpha = 0;
+  
+  double alpha = 0;
   double maxi = 0; // Matches the MAX(cwnd_i / rtt_i^2) part
   double sumi = 0; // SUM(cwnd_i / rtt_i)
 
-  Ptr<MpTcpSocketBase> metaSock = DynamicCast<MpTcpSocketBase> (tcb->m_socket);
+  
+  NS_ASSERT (metaSock);
   // TODO here
   for (uint32_t i = 0; i < metaSock->GetNActiveSubflows(); i++)
     {
@@ -105,14 +108,15 @@ MpTcpCongestionLia::ComputeAlpha (Ptr<TcpSocketState> tcb)
 
       sumi += tcb->m_cWnd.Get() / rtt;
     }
-  m_alpha = (m_totalCwnd * maxi) / (sumi * sumi);
+  alpha = (metaSock->m_tcb->m_cWnd.Get () * maxi) / (sumi * sumi);
+  return alpha;
 }
 
 
 // TODO in this version, this function is called for each segment size
 // in future versions (>3.25), one can 
 void
-MpTcpCongestionLia::IncreaseWindow (Ptr<TcpSocketState> tcb)
+MpTcpCongestionLia::IncreaseWindow (Ptr<TcpSocketBase> sf, Ptr<TcpSocketState> tcb)
 {
   NS_LOG_FUNCTION (this);
 
@@ -124,7 +128,15 @@ MpTcpCongestionLia::IncreaseWindow (Ptr<TcpSocketState> tcb)
     }
   else
     { 
-      ComputeAlpha (tcb);
+      
+      Ptr<MpTcpSubflow> subflow = DynamicCast<MpTcpSubflow> (sf);
+      Ptr<MpTcpSocketBase> metaSock = subflow->GetMeta();
+      
+      // rename into get ?
+      uint32_t totalCwnd = metaSock->ComputeTotalCWND ();
+//      metaSock->
+  
+      m_alpha = ComputeAlpha (metaSock, tcb);
       double alpha_scale = 1;
 //         The alpha_scale parameter denotes the precision we want for computing
 //   alpha
@@ -133,7 +145,7 @@ MpTcpCongestionLia::IncreaseWindow (Ptr<TcpSocketState> tcb)
 //                 alpha_scale * cwnd_total              cwnd_i
     
     double adder = std::min ( 
-      m_alpha* tcb->m_segmentSize * tcb->m_segmentSize / (m_totalCwnd* alpha_scale),
+      m_alpha* tcb->m_segmentSize * tcb->m_segmentSize / (totalCwnd* alpha_scale),
         static_cast<double>((tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get ())
       );
     // Congestion avoidance mode, increase by (segSize*segSize)/cwnd. (RFC2581, sec.3.1)

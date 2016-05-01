@@ -176,6 +176,7 @@ MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
     m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
     m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
+    m_tcb->m_socket = this;
     CreateScheduler(m_schedulerTypeId);
 }
 
@@ -205,6 +206,7 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
   m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
+  m_tcb->m_socket = this;
 
   // TODO
   CreateScheduler(m_schedulerTypeId);
@@ -232,7 +234,7 @@ MpTcpSocketBase::MpTcpSocketBase() :
   m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
   m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
-
+  m_tcb->m_socket = this;
   CreateScheduler(m_schedulerTypeId);
 
 
@@ -795,7 +797,7 @@ MpTcpSocketBase::OnSubflowNewCwnd(std::string context, uint32_t oldCwnd, uint32_
         );
 
   // maybe ComputeTotalCWND should be left
-  m_tcb->m_cWnd = ComputeTotalCWND();
+  m_tcb->m_cWnd = ComputeTotalCWND ();
 }
 
 
@@ -2563,7 +2565,7 @@ MpTcpSocketBase::NotifySubflowCreated(Ptr<MpTcpSubflow> sf)
 }
 
 void
-MpTcpSocketBase::NotifySubflowConnected(Ptr<MpTcpSubflow> sf)
+MpTcpSocketBase::NotifySubflowConnected (Ptr<MpTcpSubflow> sf)
 {
   NS_LOG_FUNCTION(this << sf);
   if (!m_subflowConnectionSucceeded.IsNull ())
@@ -2621,7 +2623,7 @@ MpTcpSocketBase::GetInstanceTypeId(void) const
 void
 MpTcpSocketBase::OnSubflowClosing(Ptr<MpTcpSubflow> sf)
 {
-  NS_LOG_LOGIC("Subflow has gone into state ["
+  NS_LOG_LOGIC ("Subflow has gone into state ["
 //               << TcpStateName[sf->m_state]
                );
 
@@ -2661,7 +2663,7 @@ MpTcpSocketBase::OnSubflowRetransmit(Ptr<MpTcpSubflow> sf)
 // renvoie m_highTxMark.Get() - m_txBuffer->HeadSequence(); should be ok even
 // if bytes may not really be in flight but rather in subflows buffer
 uint32_t
-MpTcpSocketBase::BytesInFlight()
+MpTcpSocketBase::BytesInFlight ()
 {
   NS_LOG_FUNCTION(this);
   return TcpSocketBase::BytesInFlight();
@@ -2680,11 +2682,49 @@ MpTcpSocketBase::BytesInFlight()
 //uint32_t
 //TcpSocketBase::UnAckDataCount()
 // TODO buggy ?
+//uint16_t
+//TcpSocketBase::AdvertisedWindowSize ()
+//{
+//  uint32_t w = m_rxBuffer->MaxBufferSize () - m_rxBuffer->Size ();
+//
+//  w >>= m_sndScaleFactor;
+//
+//  if (w > m_maxWinSize)
+//    {
+//      NS_LOG_WARN ("There is a loss in the adv win size, wrt buffer size");
+//      w = m_maxWinSize;
+//    }
+//
+//  return (uint16_t) w;
+//}
 uint16_t
 MpTcpSocketBase::AdvertisedWindowSize()
 {
   NS_LOG_FUNCTION(this);
-  return TcpSocketBase::AdvertisedWindowSize();
+  
+  uint32_t usedBufferSize = m_rxBuffer->Size ();
+
+  for (uint32_t i = 0; i < Maximum; i++)
+  {
+    for( SubflowList::const_iterator it = m_subflows[i].begin(); it != m_subflows[i].end(); it++ )
+    {
+        Ptr<MpTcpSubflow> sf = *it;
+       usedBufferSize += m_rxBuffer->Size ();
+    }
+  }
+
+  uint32_t w = m_rxBuffer->MaxBufferSize () - usedBufferSize;
+  
+  w >>= m_sndScaleFactor;
+
+  if (w > m_maxWinSize)
+    {
+      NS_LOG_WARN ("There is a loss in the adv win size, wrt buffer size");
+      w = m_maxWinSize;
+    }
+
+  return (uint16_t) w;
+//  return TcpSocketBase::AdvertisedWindowSize();
 //  NS_LOG_DEBUG("Advertised Window size of " << value );
 //  return value;
 }
@@ -3213,7 +3253,7 @@ MpTcpSocketBase::GetTxAvailable(void) const
 //this would not accomodate with google option that proposes to add payload in
 // syn packets MPTCP
 /**
-This function should be overridable since it may depend on the CC, cf RFC:
+cf RFC:
 
    To compute cwnd_total, it is an easy mistake to sum up cwnd_i across
    all subflows: when a flow is in fast retransmit, its cwnd is
@@ -3227,7 +3267,7 @@ This function should be overridable since it may depend on the CC, cf RFC:
 TODO fix this to handle fast recovery
 **/
 uint32_t
-MpTcpSocketBase::ComputeTotalCWND()
+MpTcpSocketBase::ComputeTotalCWND ()
 {
   NS_LOG_DEBUG("Cwnd before update=" << Window()
 //               m_tcb->m_cWnd.Get()
@@ -3239,16 +3279,15 @@ MpTcpSocketBase::ComputeTotalCWND()
   {
     for( SubflowList::const_iterator it = m_subflows[i].begin(); it != m_subflows[i].end(); it++ )
     {
-  //      Ptr<MpTcpSubflow> sf = m_subflows[Established][i];
         Ptr<MpTcpSubflow> sf = *it;
 
-        // TODO handle fast recovery
-        // fast recovery
-  //      if ( sf->m_inFastRec) {
-  //        NS_LOG_DEBUG("Is in Fast recovery");
-  //        totalCwnd += sf->GetSSThresh();
-  //      }
-  //      else
+        // when in fast recovery, use SS threshold instead of cwnd
+        if(sf->m_tcb->m_ackState == TcpSocketState::RECOVERY)
+        {
+          NS_LOG_DEBUG("Is in Fast recovery");
+          totalCwnd += sf->m_tcb->m_ssThresh;
+        }
+        else
         {
 //          NS_LOG_WARN("Don't consider Fast recovery yet");
 //          totalCwnd += sf->m_cWnd.Get();          // Should be this all the time ?!
@@ -3258,7 +3297,7 @@ MpTcpSocketBase::ComputeTotalCWND()
     }
   }
   m_tcb->m_cWnd = totalCwnd;
-  NS_LOG_DEBUG("Cwnd after computation=" << m_tcb->m_cWnd.Get());
+  NS_LOG_DEBUG ("Cwnd after computation=" << m_tcb->m_cWnd.Get());
   return totalCwnd;
 }
 

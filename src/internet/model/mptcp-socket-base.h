@@ -226,11 +226,25 @@ public:
   /* Sum congestio nwindows across subflows to compute global cwin
   WARNING: it does not take flows that are closing yet so that may be a weakness depending on the scenario
   to update
-  TODO: should be done in the congestion controller
+   Should it be done rather in CC ?
+   according to RFC:
+   To compute cwnd_total, it is an easy mistake to sum up cwnd_i across
+   all subflows: when a flow is in fast retransmit, its cwnd is
+   typically inflated and no longer represents the real congestion
+   window.  The correct behavior is to use the ssthresh (slow start
+   threshold) value for flows in fast retransmit when computing
+   cwnd_total.  To cater to connections that are app limited, the
+   computation should consider the minimum between flight_size_i and
+   cwnd_i, and flight_size_i and ssthresh_i, where appropriate.
   */
   virtual uint32_t
-  ComputeTotalCWND();
+  ComputeTotalCWND ();
 
+  /**
+   * I suppose it would be best to have TcpRxBuffer memory shared between all subflows
+   * and retrieve occupied size from there but it's hard with the current infrastructure
+   * For now loop over subflows and retrieve their buffer usage
+   */
   virtual uint16_t
   AdvertisedWindowSize();
 

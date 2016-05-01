@@ -106,6 +106,7 @@ public:
   void HandleSubflowCreated (Ptr<MpTcpSubflow> subflow);
 
 private:
+  virtual void DoSetup (void);
   virtual void DoRun (void);
   virtual void DoTeardown (void);
   void SetupDefaultSim (void);
@@ -212,11 +213,23 @@ MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
     m_connect_cb_called(false),
     m_useIpv6 (useIpv6)
 {
+
+
 }
 
 void
-MpTcpMultihomedTestCase::DoRun (void)
+MpTcpMultihomedTestCase::DoSetup (void)
 {
+  // These
+//  Config::SetDefault ("ns3::TcpL4Protocol::SocketType",  StringValue("ns3::TcpNewReno") );
+  Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true));
+  Config::SetDefault ("ns3::TcpSocketBase::NullISN",    BooleanValue(false));
+//    Time::SetResolution (Time::MS);
+    // Arguments to these test cases are 1) totalStreamSize,
+//  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
+
+  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
+
   m_currentSourceTxBytes = 0;
   m_currentSourceRxBytes = 0;
   m_currentServerRxBytes = 0;
@@ -240,6 +253,11 @@ MpTcpMultihomedTestCase::DoRun (void)
     {
       SetupDefaultSim ();
     }
+}
+
+void
+MpTcpMultihomedTestCase::DoRun (void)
+{
 
   AnimationInterface anim ("animation.xml");
   Simulator::Run ();
@@ -836,14 +854,8 @@ public:
 
 
     // TODO addition by matt
-//    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCCOlia") );
-//    Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCCLia") );
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType",  StringValue("ns3::TcpNewReno") );
-  Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true));
-  Config::SetDefault ("ns3::TcpSocketBase::NullISN",    BooleanValue(false));
-//    Time::SetResolution (Time::MS);
-    // Arguments to these test cases are 1) totalStreamSize,
 
+//  Config::Set ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
 
     // with units of bytes
     static const uint8_t MaxNbOfDevices = 1;

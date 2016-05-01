@@ -1559,7 +1559,7 @@ TcpSocketBase::ReceivedAck (SequenceNumber32 ack)
 
       for (uint32_t i=0; i<segsAcked; ++i)
         {
-          m_congestionControl->IncreaseWindow (m_tcb);
+          m_congestionControl->IncreaseWindow (this, m_tcb);
         }
 
       NS_LOG_LOGIC ("Congestion control called: " <<
@@ -2515,8 +2515,8 @@ TcpSocketBase::SendPacket(TcpHeader header, Ptr<Packet> p)
 //                << TcpHeader::FlagsToString (flags)
                 );
 
-
-  NS_ASSERT(header.GetWindowSize() == AdvertisedWindowSize ());
+  // Matt this might be a problem later on
+  NS_ASSERT (header.GetWindowSize() == AdvertisedWindowSize ());
 
 
   /*
@@ -3028,6 +3028,7 @@ TcpSocketBase::AdvertisedWindowSize ()
   if (w > m_maxWinSize)
     {
       NS_LOG_WARN ("There is a loss in the adv win size, wrt buffer size");
+      NS_LOG_WARN ("Loss=" << w - m_maxWinSize);
       w = m_maxWinSize;
     }
 

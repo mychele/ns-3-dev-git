@@ -90,7 +90,7 @@ TcpNewReno::~TcpNewReno (void)
 }
 
 void
-TcpNewReno::IncreaseWindow (Ptr<TcpSocketState> tcb)
+TcpNewReno::IncreaseWindow (Ptr<TcpSocketBase> base, Ptr<TcpSocketState> tcb)
 {
   NS_LOG_FUNCTION (this);
 
