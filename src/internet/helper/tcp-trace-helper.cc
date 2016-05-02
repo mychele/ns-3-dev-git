@@ -49,7 +49,7 @@ dumpStr (Ptr<OutputStreamWrapper> stream, int pos, std::string item)
   << (Simulator::Now())
   );
   
-  *stream->GetStream() << Simulator::Now();
+  *stream->GetStream() << Simulator::Now() << ",";
   
   for (int i = 1;i < pos; ++i){
     *stream->GetStream() << ",";
@@ -146,6 +146,7 @@ TcpTraceHelper::SetupSocketTracing (Ptr<TcpSocketBase> sock, const std::string p
           << "," << sock->Window()
           << "," << sock->GetInitialSSThresh()
           << "," << TcpSocket::TcpStateName[sock->GetState()]
+          << std::endl
    ;
 
 //  *streamTxHighest->GetStream() << "Time,oldHighestSequence,newHighestSequence" << std::endl

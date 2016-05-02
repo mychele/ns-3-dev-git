@@ -916,18 +916,10 @@ public:
     // with units of bytes
     static const uint8_t MaxNbOfDevices = 1;
     static const uint8_t SubflowPerDevice = 2;
-    
+    for (uint8_t nb_of_devices = 1; nb_of_devices <= MaxNbOfDevices; nb_of_devices++) {
 
-    uint8_t nb_of_devices = MaxNbOfDevices;
-    uint8_t subflow_per_device = 1;
+        for (uint8_t subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
 
-//    #define LOOP
-        
-    #ifdef LOOP
-    for (nb_of_devices = 1; nb_of_devices <= MaxNbOfDevices; nb_of_devices++) {
-
-        for (subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
-    #endif
 //            AddTestCase (
 //                new MpTcpMultihomedTestCase (
 //                    13,     // 1) totalStreamSize (everything in bytes)
@@ -944,11 +936,9 @@ public:
 
 //            AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
             AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
-
-    #ifdef LOOP
         }
     }
-    #endif
+
 
 // here it's a test where I lower streamsize to see where it starts failing.
 // 2100 is ok, 2200 fails

@@ -911,6 +911,17 @@ TcpL4Protocol::DumpSockets () const
     NS_LOG_UNCOND ("== end of dump ==");
 }
 
+
+bool
+TcpL4Protocol::NotifyNewSocket (Ptr<TcpSocket> socket)
+{
+  if(!m_onNewSocket.IsNull())
+  {
+    NS_LOG_DEBUG ("Calling m_onNewSocket");
+    m_onNewSocket (socket);
+  }
+}
+
 bool
 TcpL4Protocol::AddSocket (Ptr<TcpSocket> socket)
 {
@@ -930,17 +941,13 @@ TcpL4Protocol::AddSocket (Ptr<TcpSocket> socket)
   DumpSockets();
 
 
-  if(!m_onNewSocket.IsNull())
-  {
-    NS_LOG_DEBUG ("Calling m_onNewSocket");
-    m_onNewSocket (socket);
-  }
+
 
   std::vector<Ptr<TcpSocket> >::iterator it = std::find(m_sockets.begin(), m_sockets.end(), socket);
   if (it == m_sockets.end())
   {
     m_sockets.push_back (socket);
-
+    NotifyNewSocket (socket);
     return true;
   }
   return false;

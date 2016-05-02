@@ -164,22 +164,4 @@ MpTcpCongestionLia::Fork ()
 }
 
 
-#if 0
-uint32_t
-MpTcpCongestionLia::CongestionAvoidance (Ptr<MpTcpSubflow> subflow, uint32_t ackedBytes)
-{
-  NS_ASSERT( subflow );
-
-  uint32_t MSS = subflow->GetSegSize();
-  double inc = static_cast<double>(MSS * MSS) / m_totalCwnd;
-  inc = std::max(1.0, inc);
-  subflow->cwnd += static_cast<double>(inc);
-//  NS_LOG_ERROR (
-//      "Subflow "<<(int)sFlowIdx
-//      <<" Congestion Control (Fully_Coupled) increment is "
-//      << adder <<" GetSSThresh() "<< GetSSThresh() << " cwnd "<<cwnd);
-  return 0;
-}
-#endif
-
 }

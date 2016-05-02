@@ -259,7 +259,8 @@ public:
   TODO put it as an attribute of TcpL4Protocol
   */
   Callback<void, Ptr<TcpSocket> > m_onNewSocket;
-  
+  bool NotifyNewSocket (Ptr<TcpSocket> socket);
+
 protected:
   virtual void DoDispose (void);
 

@@ -1652,7 +1652,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting)
 
 
   // the master is always a new socket, hence we should register it
-  bool result = m_tcp->AddSocket(master);
+  bool result = m_tcp->AddSocket (master);
   NS_ASSERT_MSG(result, "Could not register master");
 
 //  master->SetupCallback();
@@ -2024,7 +2024,8 @@ uint32_t localToken;
         Ptr<MpTcpSubflow> master = UpgradeToMeta (true);
 
         // Hack to retrigger the tcpL4protocol::OnNewSocket callback
-        m_tcp->AddSocket( this);
+        m_tcp->AddSocket (this);
+//        m_tcp->NotifyNewSocket (this);
         
         // Need to register an id
         InetSocketAddress addr (endPoint->GetLocalAddress(), endPoint->GetLocalPort());
