@@ -147,6 +147,7 @@ public:
   /**
   these callbacks will be passed on to
    * \see Socket::Set
+   * what about failures ?
    */
   virtual void
   SetSubflowAcceptCallback(Callback<bool, Ptr<MpTcpSocketBase>, const Address &, const Address & > connectionRequest,

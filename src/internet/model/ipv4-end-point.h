@@ -58,7 +58,7 @@ public:
    * \brief Get the local address.
    * \return the local address
    */
-  Ipv4Address GetLocalAddress (void);
+  Ipv4Address GetLocalAddress (void) const;
 
   /**
    * \brief Set the local address.
@@ -70,19 +70,19 @@ public:
    * \brief Get the local port.
    * \return the local port
    */
-  uint16_t GetLocalPort (void);
+  uint16_t GetLocalPort (void) const;
 
   /**
    * \brief Get the peer address.
    * \return the peer address
    */
-  Ipv4Address GetPeerAddress (void);
+  Ipv4Address GetPeerAddress (void) const;
 
   /**
    * \brief Get the peer port.
    * \return the peer port
    */
-  uint16_t GetPeerPort (void);
+  uint16_t GetPeerPort (void) const;
 
   /**
    * \brief Set the peer informations (address and port).
@@ -167,6 +167,8 @@ public:
   void ForwardIcmp (Ipv4Address icmpSource, uint8_t icmpTtl,
                     uint8_t icmpType, uint8_t icmpCode,
                     uint32_t icmpInfo);
+
+  void Print (std::ostream &os) const;
 
 private:
   /**

@@ -47,8 +47,15 @@ Ipv4EndPoint::~Ipv4EndPoint ()
   m_destroyCallback.Nullify ();
 }
 
+void 
+Ipv4EndPoint::Print (std::ostream &os) const
+{
+  os << "src.ip=" << GetLocalAddress () << " src.port="<< GetLocalPort()
+    << "dst.ip=" << GetPeerAddress () << " dst.port="<< GetPeerPort();
+}
+ 
 Ipv4Address
-Ipv4EndPoint::GetLocalAddress (void)
+Ipv4EndPoint::GetLocalAddress (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_localAddr;
@@ -62,19 +69,19 @@ Ipv4EndPoint::SetLocalAddress (Ipv4Address address)
 }
 
 uint16_t
-Ipv4EndPoint::GetLocalPort (void)
+Ipv4EndPoint::GetLocalPort (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_localPort;
 }
 Ipv4Address
-Ipv4EndPoint::GetPeerAddress (void)
+Ipv4EndPoint::GetPeerAddress (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_peerAddr;
 }
 uint16_t
-Ipv4EndPoint::GetPeerPort (void)
+Ipv4EndPoint::GetPeerPort (void) const
 {
   NS_LOG_FUNCTION (this);
   return m_peerPort;

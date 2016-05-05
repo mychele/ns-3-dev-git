@@ -386,13 +386,8 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
   // TODO  there should be a way to prevent this from happening when looking to upgrade
   // TCP socket into an MPTCP one ?
   // Reset all callbacks to null
-  Callback<void, Ptr< Socket > > vPS = MakeNullCallback<void, Ptr<Socket> > ();
-  Callback<void, Ptr<Socket>, const Address &> vPSA = MakeNullCallback<void, Ptr<Socket>, const Address &> ();
-  Callback<void, Ptr<Socket>, uint32_t> vPSUI = MakeNullCallback<void, Ptr<Socket>, uint32_t> ();
-  SetConnectCallback (vPS, vPS);
-  SetDataSentCallback (vPSUI);
-  SetSendCallback (vPSUI);
-  SetRecvCallback (vPS);
+  ResetUserCallbacks ();
+
   m_txBuffer = CopyObject (sock.m_txBuffer);
   m_rxBuffer = CopyObject (sock.m_rxBuffer);
   
@@ -449,6 +444,21 @@ TcpSocketBase::~TcpSocketBase (void)
     }
   m_tcp = 0;
   CancelAllTimers ();
+}
+
+
+/* Associate a node with this TCP socket */
+void
+TcpSocketBase::ResetUserCallbacks (void)
+{
+
+  Callback<void, Ptr< Socket > > vPS = MakeNullCallback<void, Ptr<Socket> > ();
+  Callback<void, Ptr<Socket>, const Address &> vPSA = MakeNullCallback<void, Ptr<Socket>, const Address &> ();
+  Callback<void, Ptr<Socket>, uint32_t> vPSUI = MakeNullCallback<void, Ptr<Socket>, uint32_t> ();
+  SetConnectCallback (vPS, vPS);
+  SetDataSentCallback (vPSUI);
+  SetSendCallback (vPSUI);
+  SetRecvCallback (vPS);
 }
 
 /* Associate a node with this TCP socket */
@@ -656,6 +666,7 @@ TcpSocketBase::Bind (const Address &address)
   m_tcp->AddSocket(this);
 
   NS_LOG_LOGIC ("TcpSocketBase " << this << " got an endpoint: " << m_endPoint);
+  m_endPoint->Print(std::cout);
 
   return SetupCallback ();
 }
@@ -3238,14 +3249,20 @@ TcpSocketBase::ReTxTimeout ()
 {
   NS_LOG_FUNCTION (this);
   NS_LOG_LOGIC (this << " ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ());
+  
+  // duplicated code here with Retransmit()
   // If erroneous timeout in closed/timed-wait state, just return
   if (m_state == CLOSED || m_state == TIME_WAIT)
     {
+      NS_LOG_WARN ("Retransmit while state=" <<  TcpSocket::TcpStateName[GetState()] );
       return;
     }
   // If all data are received (non-closing socket and nothing to send), just return
-  if (m_state <= ESTABLISHED && FirstUnackedSeq() >= m_highTxMark)
+  // used to be FirstUnackedSeq() >= m_highTxMark
+  if (m_state <= ESTABLISHED && FirstUnackedSeq() > m_highTxMark)
     {
+      NS_LOG_WARN ("Retransmit while state=" <<  TcpSocket::TcpStateName[GetState()] 
+        << "Check " << FirstUnackedSeq() << ">= " << m_highTxMark );
       return;
     }
 
@@ -3301,7 +3318,9 @@ TcpSocketBase::Retransmit ()
   // If erroneous timeout in closed/timed-wait state, just return
   if (m_state == CLOSED || m_state == TIME_WAIT) return;
   // If all data are received (non-closing socket and nothing to send), just return
-  if (m_state <= ESTABLISHED && FirstUnackedSeq() >= m_highTxMark) return;
+//  if (m_state <= ESTABLISHED && FirstUnackedSeq() >= m_highTxMark) {
+//    return;
+//  }
 
   /*
    * When a TCP sender detects segment loss using the retransmission timer

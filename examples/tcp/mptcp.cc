@@ -61,6 +61,15 @@
 #include "ns3/global-route-manager.h"
 #include "ns3/abort.h"
 #include "ns3/tcp-trace-helper.h"
+// Copy
+#include <string>
+#include <fstream>
+#include "ns3/core-module.h"
+#include "ns3/point-to-point-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/applications-module.h"
+#include "ns3/network-module.h"
+#include "ns3/packet-sink.h"
 
 #include <string>
 #include <fstream>
@@ -138,9 +147,11 @@ OnNewSocket (Ptr<TcpSocket> socket)
 }
 
 static const Ipv4Mask g_netmask = Ipv4Mask(0xffffff00);
+
 /**
  *
  */
+ #if 0
 class MpTcpMultihomedTestCase : public TestCase
 {
 public:
@@ -205,140 +216,8 @@ private:
   Ptr<Node> m_serverNode;
   Ptr<Node> m_sourceNode;
 };
+#endif
 
-static std::string Name (std::string str, uint32_t totalStreamSize,
-                         uint32_t sourceWriteSize,
-                         uint32_t serverReadSize,
-                         uint32_t serverWriteSize,
-                         uint32_t sourceReadSize,
-                         uint8_t nb_of_devices,
-                         uint8_t nb_of_subflows_per_device,
-                         bool useIpv6)
-{
-  std::ostringstream oss;
-  oss << str << " total=" << totalStreamSize << " sourceWrite=" << sourceWriteSize
-      << " sourceRead=" << sourceReadSize << " serverRead=" << serverReadSize
-      << " serverWrite=" << serverWriteSize << " useIpv6=" << useIpv6
-      << "nbOfDevices=" << static_cast<long int>(nb_of_devices) 
-      << " nb_of_subflows_per_device=" << static_cast<long int>(nb_of_subflows_per_device)
-      << " => expects " << nb_of_subflows_per_device * nb_of_devices << " subflows "
-      ;
-  return oss.str ();
-}
-
-#ifdef NS3_LOG_ENABLE
-static std::string GetString (Ptr<Packet> p)
-{
-  std::ostringstream oss;
-  p->CopyData (&oss, p->GetSize ());
-  return oss.str ();
-}
-#endif /* NS3_LOG_ENABLE */
-
-MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
-                          uint32_t sourceWriteSize,
-                          uint32_t sourceReadSize,
-                          uint32_t serverWriteSize,
-                          uint32_t serverReadSize,
-                          uint8_t nb_of_devices,
-                          uint8_t nb_of_subflows_per_device,
-                          bool useIpv6)
-  : TestCase (Name ("Send string data from client to server and back",
-                    totalStreamSize,
-                    sourceWriteSize,
-                    serverReadSize,
-                    serverWriteSize,
-                    sourceReadSize,
-                    nb_of_devices,
-                    nb_of_subflows_per_device,
-                    useIpv6)),
-    m_totalBytes (totalStreamSize),
-    m_sourceWriteSize (sourceWriteSize),
-    m_sourceReadSize (sourceReadSize),
-    m_serverWriteSize (serverWriteSize),
-    m_serverReadSize (serverReadSize),
-    m_number_of_devices (nb_of_devices),
-    m_number_of_subflow_per_device (nb_of_subflows_per_device),
-    m_nb_of_successful_connections (0),
-    m_nb_of_successful_creations (0),
-    m_connect_cb_called(false),
-    m_useIpv6 (useIpv6)
-{
-
-}
-
-void
-MpTcpMultihomedTestCase::DoSetup (void)
-{
-  // These
-//  Config::SetDefault ("ns3::TcpL4Protocol::SocketType",  StringValue("ns3::TcpNewReno") );
-  Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true));
-  Config::SetDefault ("ns3::TcpSocketBase::NullISN",    BooleanValue(false));
-//    Time::SetResolution (Time::MS);
-    // Arguments to these test cases are 1) totalStreamSize,
-//  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
-
-  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
-  CallbackValue cbValue = MakeCallback (&OnNewSocket);
-  Config::SetDefault ("ns3::TcpL4Protocol::OnNewSocket", cbValue);
-  
-
-  m_currentSourceTxBytes = 0;
-  m_currentSourceRxBytes = 0;
-  m_currentServerRxBytes = 0;
-  m_currentServerTxBytes = 0;
-  m_sourceTxPayload = new uint8_t [m_totalBytes];
-  m_sourceRxPayload = new uint8_t [m_totalBytes];
-  m_serverRxPayload = new uint8_t [m_totalBytes];
-  for(uint32_t i = 0; i < m_totalBytes; ++i)
-    {
-      uint8_t m = (uint8_t)(97 + (i % 26));
-      m_sourceTxPayload[i] = m;
-    }
-  memset (m_sourceRxPayload, 0, m_totalBytes);
-  memset (m_serverRxPayload, 0, m_totalBytes);
-
-  if (m_useIpv6 == true)
-    {
-      SetupDefaultSim6 ();
-    }
-  else
-    {
-      SetupDefaultSim ();
-    }
-}
-
-void
-MpTcpMultihomedTestCase::DoRun (void)
-{
-
-  AnimationInterface anim ("animation.xml");
-  Simulator::Run ();
-
-  NS_TEST_EXPECT_MSG_EQ (m_connect_cb_called, true, "Callback was called on successful connection");
-  NS_TEST_EXPECT_MSG_EQ (m_currentSourceTxBytes, m_totalBytes, "Source sent all bytes");
-  NS_TEST_EXPECT_MSG_EQ (m_currentServerRxBytes, m_totalBytes, "Server received all bytes");
-  NS_TEST_EXPECT_MSG_EQ (m_currentSourceRxBytes, m_totalBytes, "Source received all bytes");
-  NS_TEST_EXPECT_MSG_EQ (memcmp (m_sourceTxPayload, m_serverRxPayload, m_totalBytes), 0,
-                         "Server received expected data buffers");
-  NS_TEST_EXPECT_MSG_EQ (memcmp (m_sourceTxPayload, m_sourceRxPayload, m_totalBytes), 0,
-                         "Source received back expected data buffers");
-
-
-  NS_TEST_EXPECT_MSG_EQ ( m_nb_of_successful_connections, m_number_of_devices * m_number_of_subflow_per_device,
-                         "As many successful connections as subflows");
-
-  NS_TEST_EXPECT_MSG_EQ ( m_nb_of_successful_connections, m_nb_of_successful_creations,
-                         "As many successful connections callback calls as creation callback calls.");
-}
-void
-MpTcpMultihomedTestCase::DoTeardown (void)
-{
-  delete [] m_sourceTxPayload;
-  delete [] m_sourceRxPayload;
-  delete [] m_serverRxPayload;
-  Simulator::Destroy ();
-}
 
 
 /**
@@ -469,6 +348,7 @@ MpTcpMultihomedTestCase::ServerHandleConnectionCreated (Ptr<Socket> s, const Add
 //  server_meta->SetupMetaTracing("server");
 }
 
+#if 0
 void
 MpTcpMultihomedTestCase::ServerHandleRecv (Ptr<Socket> sock)
 {
@@ -568,81 +448,8 @@ MpTcpMultihomedTestCase::SourceHandleRecv (Ptr<Socket> sock)
       sock->Close ();
     }
 }
-
-Ptr<Node>
-MpTcpMultihomedTestCase::CreateInternetNode ()
-{
-  Ptr<Node> node = CreateObject<Node> ();
-  NS_LOG_INFO("New node with id=" << node->GetId());
-  //ARP
-  Ptr<ArpL3Protocol> arp = CreateObject<ArpL3Protocol> ();
-  node->AggregateObject (arp);
-  //IPV4
-  Ptr<Ipv4L3Protocol> ipv4 = CreateObject<Ipv4L3Protocol> ();
-  //Routing for Ipv4
-  Ptr<Ipv4ListRouting> ipv4Routing = CreateObject<Ipv4ListRouting> ();
-  ipv4->SetRoutingProtocol (ipv4Routing);
-  Ptr<Ipv4StaticRouting> ipv4staticRouting = CreateObject<Ipv4StaticRouting> ();
-  ipv4Routing->AddRoutingProtocol (ipv4staticRouting, 0);
-  node->AggregateObject (ipv4);
-  //ICMP
-  Ptr<Icmpv4L4Protocol> icmp = CreateObject<Icmpv4L4Protocol> ();
-  node->AggregateObject (icmp);
-  //UDP
-  Ptr<UdpL4Protocol> udp = CreateObject<UdpL4Protocol> ();
-  node->AggregateObject (udp);
-
-
-
-  Ptr<TcpL4Protocol> tcp = CreateObject<TcpL4Protocol> ();
-  node->AggregateObject (tcp);
-  return node;
-}
-
-Ptr<SimpleNetDevice>
-MpTcpMultihomedTestCase::AddSimpleNetDevice (Ptr<Node> node, const char* ipaddr, const char* netmask)
-{
-  Ptr<SimpleNetDevice> dev = CreateObject<SimpleNetDevice> ();
-  dev->SetAddress (Mac48Address::ConvertFrom (Mac48Address::Allocate ()));
-  node->AddDevice (dev);
-  Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
-  uint32_t ndid = ipv4->AddInterface (dev);
-  Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (Ipv4Address (ipaddr), Ipv4Mask (netmask));
-  ipv4->AddAddress (ndid, ipv4Addr);
-  ipv4->SetUp (ndid);
-  return dev;
-}
-
-#if 0
-Assign (const Ptr<NetDevice> &device)
-{
-  Ipv4InterfaceContainer retval;
-
-  Ptr<Node> node = device->GetNode ();
-  NS_ASSERT_MSG (node, "Ipv4AddressHelper::Assign(): NetDevice is not not associated "
-                   "with any node -> fail");
-
-  Ptr<Ipv4> ipv4 = node->GetObject<Ipv4> ();
-  NS_ASSERT_MSG (ipv4, "Ipv4AddressHelper::Assign(): NetDevice is associated"
-                 " with a node without IPv4 stack installed -> fail "
-                 "(maybe need to use InternetStackHelper?)");
-
-  int32_t interface = ipv4->GetInterfaceForDevice (device);
-  if (interface == -1)
-    {
-      interface = ipv4->AddInterface (device);
-    }
-  NS_ASSERT_MSG (interface >= 0, "Ipv4AddressHelper::Assign(): "
-                 "Interface index not found");
-
-  Ipv4InterfaceAddress ipv4Addr = Ipv4InterfaceAddress (, m_mask);
-  ipv4->AddAddress (interface, ipv4Addr);
-  ipv4->SetMetric (interface, 1);
-  ipv4->SetUp (interface);
-  retval.Add (ipv4, interface);
-  return retval;
-}
 #endif
+
 
 //Callback<bool, const Address &> m_joinRequest
 //Callback<void, Ptr<MpTcpSubflow> > m_joinConnectionSucceeded;
@@ -654,6 +461,7 @@ MpTcpMultihomedTestCase::HandleSubflowCreated (Ptr<MpTcpSubflow> subflow)
 {
   NS_LOG_LOGIC("Created new subflow [" << subflow << "]. Is master: " << subflow->IsMaster());
 
+  static int nb_of_successful_creations = 0;
   if(subflow->IsMaster())
   {
     NS_LOG_LOGIC("successful establishement of first subflow " << subflow);
@@ -668,8 +476,7 @@ MpTcpMultihomedTestCase::HandleSubflowCreated (Ptr<MpTcpSubflow> subflow)
   NS_LOG_LOGIC ( "Subflow =" << subflow );
 
   // TODO check it's not called several times for the same sf ?
-  m_nb_of_successful_creations++;
-//  subflow->GetMeta()->SetupSubflowTracing(subflow);
+  nb_of_successful_creations++;
 }
 
 
@@ -679,6 +486,7 @@ MpTcpMultihomedTestCase::HandleSubflowConnected (Ptr<MpTcpSubflow> subflow)
 {
   NS_LOG_LOGIC ("successful connection of a subflow");
 
+  static nb_of_successful_connections = 0;
   if (subflow->IsMaster ())
   {
     NS_LOG_LOGIC ("successful establishement of first subflow " << subflow);
@@ -689,30 +497,77 @@ MpTcpMultihomedTestCase::HandleSubflowConnected (Ptr<MpTcpSubflow> subflow)
     NS_LOG_LOGIC ("successful JOIN of subflow " << subflow );
   }
 
-
-//  subflow->GetMeta()->SetupSubflowTracing(subflow);
+  nb_of_successful_connections++;
   // TODO check it's not called several times for the same sf ?
-  m_nb_of_successful_connections++;
+  
 }
 
 
-/**
-relier chaque interface
-nbIf
-fullMesh /
-In the future we should be able to havemore complex topologies
-**/
-void
-MpTcpMultihomedTestCase::SetupDefaultSim (void)
+
+
+
+using namespace ns3;
+
+NS_LOG_COMPONENT_DEFINE ("TcpBulkSendExample");
+
+int
+main (int argc, char *argv[])
 {
-  // TODO this number should be made configurable
 
-  NS_LOG_UNCOND ("SetupDefaultSim Start ");
-//const char* netmask = "255.255.255.0";
+  bool tracing = false;
+  uint32_t maxBytes = 0;
+  int nbOfDevices = 1;
 
-//  const char* ipaddr1 = "192.168.1.2";
-//  Ptr<Node> m_serverNode = CreateInternetNode ();
-//  Ptr<Node> m_sourceNode = CreateInternetNode ();
+//
+// Allow the user to override any of the defaults at
+// run-time, via command-line arguments
+//
+  CommandLine cmd;
+  cmd.AddValue ("tracing", "Flag to enable/disable tracing", tracing);
+  cmd.AddValue ("sfPerDevices",
+                "Total number of devices", nbOfDevices);
+
+  cmd.AddValue ("nbOfDevices",
+                "Total number of devices", nbOfDevices);
+  cmd.AddValue ("maxBytes",
+                "Total number of bytes for application to send", maxBytes);
+  cmd.Parse (argc, argv);
+
+//
+// Explicitly create the nodes required by the topology (shown above).
+//
+  NS_LOG_INFO ("Create nodes.");
+  NodeContainer nodes;
+  nodes.Create (2);
+
+  NS_LOG_INFO ("Create channels.");
+
+//
+// Explicitly create the point-to-point link required by the topology (shown above).
+//
+  PointToPointHelper pointToPoint;
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("500Kbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("5ms"));
+
+  NetDeviceContainer devices;
+  devices = pointToPoint.Install (nodes);
+
+//
+// Install the internet stack on the nodes
+//
+  InternetStackHelper internet;
+  internet.Install (nodes);
+
+//
+// We've got the "hardware" in place.  Now we need to add IP addresses.
+//
+  NS_LOG_INFO ("Assign IP Addresses.");
+  Ipv4AddressHelper ipv4;
+  ipv4.SetBase ("10.1.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer i = ipv4.Assign (devices);
+
+  
+  
   m_serverNode = CreateInternetNode ();
   m_sourceNode = CreateInternetNode ();
 
@@ -794,236 +649,8 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
     MakeCallback (&MpTcpMultihomedTestCase::SourceConnectionFailed, this)
 
     );
-
-  /*
-  Callback when a subflow successfully connected
-  TODO move to Connect
-  */
-  #if 0
-  source_meta->SetJoinConnectCallback(
-    MakeCallback (&HandleSubflowConnected)
-  );
-
-  //! cb when server creates
-  server_meta->SetJoinCreatedCallback(
-    MakeCallback (&HandleSubflowCreated)
-    );
-    #endif
-
-//  server_meta->SetupMetaTracing("server");
-//  source_meta->SetupMetaTracing("source");
-//  server_meta->SetupMetaTracing("server");
-
   source->Connect (serverremoteaddr);
 
-
-
-
-}
-
-void
-MpTcpMultihomedTestCase::SetupDefaultSim6 (void)
-{
-  Ipv6Prefix prefix = Ipv6Prefix(64);
-  Ipv6Address ipaddr0 = Ipv6Address("2001:0100:f00d:cafe::1");
-  Ipv6Address ipaddr1 = Ipv6Address("2001:0100:f00d:cafe::2");
-  Ptr<Node> m_serverNode = CreateInternetNode6 ();
-  Ptr<Node> m_sourceNode = CreateInternetNode6 ();
-  Ptr<SimpleNetDevice> dev0 = AddSimpleNetDevice6 (m_serverNode, ipaddr0, prefix);
-  Ptr<SimpleNetDevice> dev1 = AddSimpleNetDevice6 (m_sourceNode, ipaddr1, prefix);
-
-  Ptr<SimpleChannel> channel = CreateObject<SimpleChannel> ();
-  dev0->SetChannel (channel);
-  dev1->SetChannel (channel);
-
-  Ptr<SocketFactory> sockFactory0 = m_serverNode->GetObject<TcpSocketFactory> ();
-  Ptr<SocketFactory> sockFactory1 = m_sourceNode->GetObject<TcpSocketFactory> ();
-
-  Ptr<Socket> server = sockFactory0->CreateSocket ();
-  Ptr<Socket> source = sockFactory1->CreateSocket ();
-
-  uint16_t serverPort = 50000;
-  Inet6SocketAddress serverlocaladdr (Ipv6Address::GetAny (), serverPort);
-  Inet6SocketAddress serverremoteaddr (ipaddr0, serverPort);
-
-  server->Bind (serverlocaladdr);
-  server->Listen ();
-  server->SetAcceptCallback (MakeNullCallback<bool, Ptr< Socket >, const Address &> (),
-                             MakeCallback (&MpTcpMultihomedTestCase::ServerHandleConnectionCreated,this));
-
-  source->SetRecvCallback (MakeCallback (&MpTcpMultihomedTestCase::SourceHandleRecv, this));
-  source->SetSendCallback (MakeCallback (&MpTcpMultihomedTestCase::SourceHandleSend, this));
-
-  source->Connect (serverremoteaddr);
-}
-
-Ptr<Node>
-MpTcpMultihomedTestCase::CreateInternetNode6 ()
-{
-  Ptr<Node> node = CreateObject<Node> ();
-  //IPV6
-  Ptr<Ipv6L3Protocol> ipv6 = CreateObject<Ipv6L3Protocol> ();
-  //Routing for Ipv6
-  Ptr<Ipv6ListRouting> ipv6Routing = CreateObject<Ipv6ListRouting> ();
-  ipv6->SetRoutingProtocol (ipv6Routing);
-  Ptr<Ipv6StaticRouting> ipv6staticRouting = CreateObject<Ipv6StaticRouting> ();
-  ipv6Routing->AddRoutingProtocol (ipv6staticRouting, 0);
-  node->AggregateObject (ipv6);
-  //ICMP
-  Ptr<Icmpv6L4Protocol> icmp = CreateObject<Icmpv6L4Protocol> ();
-  node->AggregateObject (icmp);
-  //Ipv6 Extensions
-  ipv6->RegisterExtensions ();
-  ipv6->RegisterOptions ();
-  //UDP
-  Ptr<UdpL4Protocol> udp = CreateObject<UdpL4Protocol> ();
-  node->AggregateObject (udp);
-  //TCP
-  Ptr<TcpL4Protocol> tcp = CreateObject<TcpL4Protocol> ();
-  node->AggregateObject (tcp);
-  return node;
-}
-
-Ptr<SimpleNetDevice>
-MpTcpMultihomedTestCase::AddSimpleNetDevice6 (Ptr<Node> node, Ipv6Address ipaddr, Ipv6Prefix prefix)
-{
-  Ptr<SimpleNetDevice> dev = CreateObject<SimpleNetDevice> ();
-  dev->SetAddress (Mac48Address::ConvertFrom (Mac48Address::Allocate ()));
-  node->AddDevice (dev);
-  Ptr<Ipv6> ipv6 = node->GetObject<Ipv6> ();
-  uint32_t ndid = ipv6->AddInterface (dev);
-  Ipv6InterfaceAddress ipv6Addr = Ipv6InterfaceAddress (ipaddr, prefix);
-  ipv6->AddAddress (ndid, ipv6Addr);
-  ipv6->SetUp (ndid);
-  return dev;
-}
-
-static class MpTcpMultihomedTestSuite : public TestSuite
-{
-public:
-  MpTcpMultihomedTestSuite ()
-    : TestSuite ("mptcp-multi", UNIT)
-  {
-
-
-    // TODO addition by matt
-
-//  Config::Set ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
-
-    // with units of bytes
-    static const uint8_t MaxNbOfDevices = 1;
-    static const uint8_t SubflowPerDevice = 2;
-    for (uint8_t nb_of_devices = 1; nb_of_devices <= MaxNbOfDevices; nb_of_devices++) {
-
-        for (uint8_t subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
-
-//            AddTestCase (
-//                new MpTcpMultihomedTestCase (
-//                    13,     // 1) totalStreamSize (everything in bytes)
-//                    200,    // 2) source write size,
-//                    200,    // 3) source read size
-//                    200,    // 4) server write size
-//                    200,    // 5) server read size
-//                    nb_of_devices,
-//                    subflow_per_device,
-//                    false       // 6/ use ipv6
-//                    ),
-//                TestCase::QUICK
-//            );
-
-//            AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
-            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
-        }
-    }
-
-
-// here it's a test where I lower streamsize to see where it starts failing.
-// 2100 is ok, 2200 fails
-//    AddTestCase (new MpTcpMultihomedTestCase (5000, 100, 50, 100, 20, false), TestCase::EXTENSIVE);
-//    AddTestCase (new MpTcpMultihomedTestCase (10000, 100, 50, 100, 50, false), TestCase::QUICK);
-//    AddTestCase (new MpTcpMultihomedTestCase (10000, 100, 50, 100, 20, false), TestCase::QUICK);
-
-
-
-    // Disable IPv6 tests; not supported yet
-//    AddTestCase (new MpTcpMultihomedTestCase (13, 200, 200, 200, 200, true), TestCase::QUICK);
-//    AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, true), TestCase::QUICK);
-//    AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, true), TestCase::QUICK);
-  }
-
-} g_tcpTestSuite;
-
-
-
-// Copy
-#include <string>
-#include <fstream>
-#include "ns3/core-module.h"
-#include "ns3/point-to-point-module.h"
-#include "ns3/internet-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/network-module.h"
-#include "ns3/packet-sink.h"
-
-using namespace ns3;
-
-NS_LOG_COMPONENT_DEFINE ("TcpBulkSendExample");
-
-int
-main (int argc, char *argv[])
-{
-
-  bool tracing = false;
-  uint32_t maxBytes = 0;
-  int nbOfDevices = 1;
-
-//
-// Allow the user to override any of the defaults at
-// run-time, via command-line arguments
-//
-  CommandLine cmd;
-  cmd.AddValue ("tracing", "Flag to enable/disable tracing", tracing);
-  cmd.AddValue ("sfPerDevices",
-                "Total number of devices", nbOfDevices);
-
-  cmd.AddValue ("nbOfDevices",
-                "Total number of devices", nbOfDevices);
-  cmd.AddValue ("maxBytes",
-                "Total number of bytes for application to send", maxBytes);
-  cmd.Parse (argc, argv);
-
-//
-// Explicitly create the nodes required by the topology (shown above).
-//
-  NS_LOG_INFO ("Create nodes.");
-  NodeContainer nodes;
-  nodes.Create (2);
-
-  NS_LOG_INFO ("Create channels.");
-
-//
-// Explicitly create the point-to-point link required by the topology (shown above).
-//
-  PointToPointHelper pointToPoint;
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("500Kbps"));
-  pointToPoint.SetChannelAttribute ("Delay", StringValue ("5ms"));
-
-  NetDeviceContainer devices;
-  devices = pointToPoint.Install (nodes);
-
-//
-// Install the internet stack on the nodes
-//
-  InternetStackHelper internet;
-  internet.Install (nodes);
-
-//
-// We've got the "hardware" in place.  Now we need to add IP addresses.
-//
-  NS_LOG_INFO ("Assign IP Addresses.");
-  Ipv4AddressHelper ipv4;
-  ipv4.SetBase ("10.1.1.0", "255.255.255.0");
-  Ipv4InterfaceContainer i = ipv4.Assign (devices);
 
   NS_LOG_INFO ("Create Applications.");
 
@@ -1064,6 +691,8 @@ main (int argc, char *argv[])
 // Now, do the actual simulation.
 //
   NS_LOG_INFO ("Run Simulation.");
+
+  AnimationInterface anim ("animation.xml");
   Simulator::Stop (Seconds (10.0));
   Simulator::Run ();
   Simulator::Destroy ();

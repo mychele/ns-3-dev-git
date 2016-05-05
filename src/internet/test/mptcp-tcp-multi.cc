@@ -65,6 +65,32 @@
 #include <string>
 #include <fstream>
 
+
+
+/**
+
+
+
+
+
+Connects directly one client to its server with as many links as devices 
+(different configuration for each test)
+
+ __________                          __________
+| Client   |________________________| Server   |
+| (node 1) |                        | (node 0) |
+|          |________________________|          |
+|__________|                        |__________|
+
+192.168.<Device>.1 <------------> 192.168.<Device>.2
+
+
+
+
+
+
+
+**/
 NS_LOG_COMPONENT_DEFINE ("MpTcpMultiSuite");
 
 using namespace ns3;
@@ -182,13 +208,13 @@ private:
 
 
 
-  uint32_t m_totalBytes;
-  uint32_t m_sourceWriteSize;
-  uint32_t m_sourceReadSize;
-  uint32_t m_serverWriteSize;
-  uint32_t m_serverReadSize;
-  uint32_t m_currentSourceTxBytes;
-  uint32_t m_currentSourceRxBytes;
+  const uint32_t m_totalBytes;          /* size of payload to send */
+  const uint32_t m_sourceWriteSize;
+  const uint32_t m_sourceReadSize;
+  const uint32_t m_serverWriteSize;
+  const uint32_t m_serverReadSize;
+  uint32_t m_currentSourceTxBytes;  /**!< Amount of data already sent */
+  uint32_t m_currentSourceRxBytes;  /**!< Amount of data already received */
   uint32_t m_currentServerRxBytes;
   uint32_t m_currentServerTxBytes;
   uint8_t *m_sourceTxPayload;
@@ -196,14 +222,14 @@ private:
   uint8_t* m_serverRxPayload;
 
   int m_nb_of_successful_connections;
-  int m_nb_of_successful_creations;
+  int m_nb_of_successful_subflow_creations;
 //  int m_nb_of_subflow_connections;
 
   bool m_connect_cb_called;
-  bool m_useIpv6;
+  const bool m_useIpv6;
 
-  uint8_t m_number_of_devices;
-  uint8_t m_number_of_subflow_per_device;
+  const uint8_t m_number_of_devices;
+  const uint8_t m_number_of_subflow_per_device;
 
   Ptr<Node> m_serverNode;
   Ptr<Node> m_sourceNode;
@@ -263,7 +289,7 @@ MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
     m_number_of_devices (nb_of_devices),
     m_number_of_subflow_per_device (nb_of_subflows_per_device),
     m_nb_of_successful_connections (0),
-    m_nb_of_successful_creations (0),
+    m_nb_of_successful_subflow_creations (0),
     m_connect_cb_called(false),
     m_useIpv6 (useIpv6)
 {
@@ -321,6 +347,7 @@ MpTcpMultihomedTestCase::DoRun (void)
   NS_TEST_EXPECT_MSG_EQ (m_connect_cb_called, true, "Callback was called on successful connection");
   NS_TEST_EXPECT_MSG_EQ (m_currentSourceTxBytes, m_totalBytes, "Source sent all bytes");
   NS_TEST_EXPECT_MSG_EQ (m_currentServerRxBytes, m_totalBytes, "Server received all bytes");
+  NS_TEST_EXPECT_MSG_EQ (m_currentServerTxBytes, m_totalBytes, "Server sent all bytes");
   NS_TEST_EXPECT_MSG_EQ (m_currentSourceRxBytes, m_totalBytes, "Source received all bytes");
   NS_TEST_EXPECT_MSG_EQ (memcmp (m_sourceTxPayload, m_serverRxPayload, m_totalBytes), 0,
                          "Server received expected data buffers");
@@ -331,7 +358,7 @@ MpTcpMultihomedTestCase::DoRun (void)
   NS_TEST_EXPECT_MSG_EQ ( m_nb_of_successful_connections, m_number_of_devices * m_number_of_subflow_per_device,
                          "As many successful connections as subflows");
 
-  NS_TEST_EXPECT_MSG_EQ ( m_nb_of_successful_connections, m_nb_of_successful_creations,
+  NS_TEST_EXPECT_MSG_EQ ( m_nb_of_successful_connections, m_nb_of_successful_subflow_creations,
                          "As many successful connections callback calls as creation callback calls.");
 }
 void
@@ -373,76 +400,88 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
 //  NS_LOG_WARN("TODO check this is called after the receival of 1st DSS !!!");
   m_connect_cb_called = true;
 
-//   NS_LOG_DEBUG("meta in state " << meta->m_state);
+  /*
+  Callback when a subflow successfully connected
+  TODO move to Connect
+  */
+//  #if 0
+  meta->SetSubflowConnectCallback(
+    MakeCallback (&MpTcpMultihomedTestCase::HandleSubflowConnected, this),
+    MakeNullCallback<void, Ptr<MpTcpSubflow> > ()
+  );
 
-//#if 0
+//    #endif
+    
   /*
   first address on 2nd interface
   TODO this should depend on the number of interfaces
   */
-  
-//    static const int MaxNbOfDevices = 3;
-//    static const int SubflowPerDevice = 1;
-//  TODO loop over devices
-    // GetNDevice
-//     GetDevice
+
   Ptr<Ipv4> ipv4Local = m_sourceNode->GetObject<Ipv4> ();
   NS_ABORT_MSG_UNLESS (ipv4Local, "GetObject for <Ipv4> interface failed");
 
+  NS_LOG_DEBUG ( "NbIpInterfaces" << ipv4Local->GetNInterfaces ());
+  
+//  #if 0 
 //      bool isForwarding = false;
-      for (uint32_t j = 0; j < ipv4Local->GetNInterfaces (); ++j )
-        {
-          if (
+
+  // Starts at one to skip loopback. Better solution ?
+  for (uint32_t interface = 1; interface < ipv4Local->GetNInterfaces (); ++interface )
+    {
+      //!
+      if (
 //          ipv4Local->GetNetDevice (j) == ndLocal && 
-          ipv4Local->IsUp (j) &&
-              ipv4Local->IsForwarding (j)   // to remove localhost
-              ) 
-            {
+      ipv4Local->IsUp (interface) &&
+          ipv4Local->IsForwarding (interface)   // to remove localhost
+          ) 
+        {
 //              isForwarding = true;
-              // TODO call to CreateNewSubflow
-              int nb_of_subflows_to_create = m_number_of_subflow_per_device;
-              // If it's the same interface as master subflow, then remove one
-              if (ipv4Local->GetInterfaceForPrefix( "192.168.0.0", g_netmask))
-              {
-                nb_of_subflows_to_create--;
-              }
-              
-              // create subflows for this device
-              for (int i = 0; i < nb_of_subflows_to_create; ++i)
-              {
-                // Create new subflow
-                Ipv4Address serverAddr = m_serverNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
-                Ipv4Address sourceAddr = m_sourceNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
+          // TODO call to CreateNewSubflow
+          int nb_of_subflows_to_create = m_number_of_subflow_per_device;
 
-                //! TODO, we should be able to not specify a port but it seems buggy so for now, let's set a port
-                InetSocketAddress local(sourceAddr, 4420);
-                InetSocketAddress remote(serverAddr, serverPort);
+          // If it's the same interface as master subflow, then remove one
+          if (ipv4Local->GetInterfaceForPrefix ( "192.168.0.0", g_netmask) == interface)
+          {
+            NS_LOG_DEBUG ("same interface as master's");
+            nb_of_subflows_to_create--;
+          }
+          
+          // create subflows for this device
+          for (int i = 0; i < nb_of_subflows_to_create; ++i)
+          {
+            // Create new subflow
+            Ipv4Address serverAddr = m_serverNode->GetObject<Ipv4>()->GetAddress(interface, 0).GetLocal();
+            Ipv4Address sourceAddr = m_sourceNode->GetObject<Ipv4>()->GetAddress(interface, 0).GetLocal();
 
-                meta->ConnectNewSubflow (local, remote);
-              }
-            }
+            NS_LOG_UNCOND ("serverAddr=" << serverAddr <<  "sourceAddr=" << sourceAddr);
+
+            //! TODO, we should be able to not specify a port but it seems buggy so for now, let's set a port
+            InetSocketAddress local(sourceAddr, 4420);
+            InetSocketAddress remote(serverAddr, serverPort);
+//            InetSocketAddress remote(serverAddr, serverPort);
+
+            meta->ConnectNewSubflow (local, remote);
+          }
         }
-        
-    #if 0
-    uint32_t numDevices = node->GetNDevices ();
-    ->
-    for (int nb_of_devices = 1; nb_of_devices < MaxNbOfDevices; ++nb_of_devices) {
-
-        // TODO account for master subflow
-        for (int subflow_per_device = 1; subflow_per_device < SubflowPerDevice; ++subflow_per_device) {
-
+        else 
+        {
+          NS_LOG_WARN ("Interface not up or not forwarding");
         }
     }
-    // GetAddress (interface, index ) index = 0 as each device has only one IP.
-    Ipv4Address serverAddr = m_serverNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
-    Ipv4Address sourceAddr = m_sourceNode->GetObject<Ipv4>()->GetAddress(2,0).GetLocal();
+//    #endif
 
-    //! TODO, we should be able to not specify a port but it seems buggy so for now, let's set a port
-    InetSocketAddress local(sourceAddr, 4420);
-    InetSocketAddress remote(serverAddr, serverPort);
-
-    meta->ConnectNewSubflow (local, remote);
-    #endif
+//    #if 0
+//    uint32_t numDevices = m_sourceNode->GetNDevices ();
+//    for (int dev_id = 1; nb_of_devices < numDevices; ++nb_of_devices) {
+//
+//        // TODO account for master subflow
+//        for (int subflow_per_device = 0; subflow_per_device < m_number_of_subflow_per_device; ++subflow_per_device)
+//        {
+//        
+//        }
+//    }
+    
+//    #endif
 
 //#endif
 
@@ -460,16 +499,22 @@ MpTcpMultihomedTestCase::SourceConnectionFailed(Ptr<Socket> sock)
 void
 MpTcpMultihomedTestCase::ServerHandleConnectionCreated (Ptr<Socket> s, const Address & addr)
 {
-  NS_LOG_DEBUG("ServerHandleConnectionCreated");
+  NS_LOG_DEBUG ("ServerHandleConnectionCreated");
   s->SetRecvCallback (MakeCallback (&MpTcpMultihomedTestCase::ServerHandleRecv, this));
   s->SetSendCallback (MakeCallback (&MpTcpMultihomedTestCase::ServerHandleSend, this));
 
-  // TODO setup tracing there !
-
   Ptr<MpTcpSocketBase> server_meta = DynamicCast<MpTcpSocketBase>(s);
-  NS_ASSERT_MSG (server_meta, "Was expecting a meta socket !");
-  m_nb_of_successful_creations++;
-//  server_meta->SetupMetaTracing("server");
+  NS_ASSERT_MSG (server_meta, "Was expecting a meta socket !" << s->GetInstanceTypeId ());
+
+
+  //! cb when server creates
+  server_meta->SetSubflowAcceptCallback(
+    MakeNullCallback<bool, Ptr<MpTcpSocketBase>, const Address &, const Address &  > (),
+    MakeCallback (&MpTcpMultihomedTestCase::HandleSubflowCreated, this)
+    
+    );
+    
+//  m_nb_of_successful_subflow_creations++;
 }
 
 void
@@ -667,11 +712,11 @@ MpTcpMultihomedTestCase::HandleSubflowCreated (Ptr<MpTcpSubflow> subflow)
     NS_LOG_LOGIC ("successful JOIN of subflow " << subflow );
   }
 
-  NS_LOG_LOGIC ( "Subflow id=" << (int)subflow->GetLocalId() );
+//  NS_LOG_LOGIC ( "Subflow id=" << (int)subflow->GetLocalId() );
   NS_LOG_LOGIC ( "Subflow =" << subflow );
 
   // TODO check it's not called several times for the same sf ?
-  m_nb_of_successful_creations++;
+  m_nb_of_successful_subflow_creations++;
 //  subflow->GetMeta()->SetupSubflowTracing(subflow);
 }
 
@@ -692,8 +737,6 @@ MpTcpMultihomedTestCase::HandleSubflowConnected (Ptr<MpTcpSubflow> subflow)
     NS_LOG_LOGIC ("successful JOIN of subflow " << subflow );
   }
 
-
-//  subflow->GetMeta()->SetupSubflowTracing(subflow);
   // TODO check it's not called several times for the same sf ?
   m_nb_of_successful_connections++;
 }
@@ -737,7 +780,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
     p2p.SetDeviceAttribute ("DataRate", StringValue ("100Mbps"));
     p2p.SetChannelAttribute ("Delay", StringValue ("10ms"));
     p2p.SetChannelAttribute ("AlternateDelay", StringValue ("10ms"));
-    NetDeviceContainer cont = p2p.Install(m_serverNode,m_sourceNode);
+    NetDeviceContainer cont = p2p.Install(m_serverNode, m_sourceNode);
     p2p.EnablePcapAll("mptcp-multi", true);
 
     Ipv4AddressHelper ipv4;
@@ -763,12 +806,6 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
   // a wrapper that calls m_tcp->CreateSocket ();
   Ptr<Socket> server = sockFactory0->CreateSocket ();
   Ptr<Socket> source = sockFactory1->CreateSocket ();
-
-  // TODO this should fail :/
-//  Ptr<MpTcpSocketBase> server_meta = DynamicCast<MpTcpSocketBase>(server);
-//  Ptr<MpTcpSocketBase> source_meta = DynamicCast<MpTcpSocketBase>(source);
-
-
 
 
   /* We want to control over which socket the meta binds first
@@ -798,20 +835,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
 
     );
 
-  /*
-  Callback when a subflow successfully connected
-  TODO move to Connect
-  */
-  #if 0
-  source_meta->SetJoinConnectCallback(
-    MakeCallback (&HandleSubflowConnected)
-  );
 
-  //! cb when server creates
-  server_meta->SetJoinCreatedCallback(
-    MakeCallback (&HandleSubflowCreated)
-    );
-    #endif
 
 //  server_meta->SetupMetaTracing("server");
 //  source_meta->SetupMetaTracing("source");
@@ -914,12 +938,12 @@ public:
 //  Config::Set ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
 
     // with units of bytes
-    static const uint8_t MaxNbOfDevices = 1;
-    static const uint8_t SubflowPerDevice = 2;
+    static const uint8_t MaxNbOfDevices = 2;
+    static const uint8_t SubflowPerDevice = 1;
     
 
     uint8_t nb_of_devices = MaxNbOfDevices;
-    uint8_t subflow_per_device = 1;
+    uint8_t subflow_per_device = SubflowPerDevice;
 
 //    #define LOOP
         

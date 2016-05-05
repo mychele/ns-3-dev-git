@@ -183,7 +183,7 @@ public:
    * is acceptable), or if address corresponds to a broadcast address.
    *
    * If the Ipv4 attribute WeakEsModel is true, the unicast address may
-   * match any of the Ipv4 addresses on any interface.  If the attribute is
+   * match any of the Ipv4 addresses on any interfpace.  If the attribute is
    * false, the address must match one assigned to the incoming device.
    */
   virtual bool IsDestinationAddress (Ipv4Address address, uint32_t iif) const = 0;

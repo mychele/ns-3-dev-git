@@ -463,7 +463,7 @@ MpTcpSocketBase::SetPeerKey (uint64_t remoteKey)
 
 
 void
-MpTcpSocketBase::InitLocalISN(const SequenceNumber32& seq)
+MpTcpSocketBase::InitLocalISN (const SequenceNumber32& seq)
 {
     //!
     TcpSocketBase::InitLocalISN(seq);
@@ -2072,43 +2072,6 @@ MpTcpSocketBase::Listen (void)
 
 }
 
-/**
- TCP: Upon RTO:
- 1) GetSSThresh() is set to half of flight size
- 2) cwnd is set to 1*MSS
- 3) retransmit the lost packet
- 4) Tcp back to slow start
- */
-//
-//void
-//MpTcpSocketBase::ReTxTimeout(uint8_t sFlowIdx)
-//{ // Retransmit timeout
-//  NS_LOG_FUNCTION (this);
-////  NS_ASSERT_MSG(client, "ReTxTimeout is not implemented for server side yet");
-//  Ptr<MpTcpSubflow> sFlow = m_subflows[sFlowIdx];
-//
-//  NS_LOG_INFO ("Subflow ("<<(int)sFlowIdx<<") ReTxTimeout Expired at time "
-//        << Simulator::Now ().GetSeconds()<< " unacked packets count is "<<sFlow->m_mapDSN.size()
-//        << " sFlow->state: " << TcpStateName[sFlow->m_state]
-//        ); //
-//  //NS_LOG_INFO("TxSeqNb: " << sFlow->TxSeqNumber << " HighestAck: " << sFlow->highestAck);
-//  // If erroneous timeout in closed/timed-wait state, just return
-//  if (sFlow->m_state == CLOSED || sFlow->m_state  == TIME_WAIT)
-//    {
-//      NS_LOG_INFO("RETURN");
-//      NS_ASSERT(3!=3);
-//      return;
-//    }
-//  // If all data are received (non-closing socket and nothing to send), just return
-//  // if (m_state <= ESTABLISHED && m_txBuffer->HeadSequence() >= m_highTxMark)
-//  if (sFlow->m_state  <= ESTABLISHED && sFlow->m_mapDSN.size() == 0)
-//    {
-//      NS_LOG_INFO("RETURN");
-//      NS_ASSERT(3!=3);
-//      return;
-//    }
-//  Retransmit(sFlowIdx); // Retransmit the packet
-//}
 
 void
 MpTcpSocketBase::OnSubflowDupAck(Ptr<MpTcpSubflow> sf)
@@ -2126,15 +2089,6 @@ void
 MpTcpSocketBase::ReduceCWND(uint8_t sFlowIdx)
 {
 
-  NS_ASSERT(m_algoCC);
-
-//  Ptr<MpTcpSubflow> sFlow = m_subflows[sFlowIdx];
-//  uint32_t m_segmentSize = sFlow->GetSegSize();
-//  int cwnd_tmp = 0;
-
-  // TODO
-
-//  m_algoCC->OnRetransmit( );
 
   switch (m_algoCC)
     {
@@ -2162,16 +2116,6 @@ MpTcpSocketBase::ReduceCWND(uint8_t sFlowIdx)
     break;
     }
 
-  // update
-//  sFlow->m_recover = SequenceNumber32(sFlow->maxSeqNb + 1);
-//  sFlow->m_inFastRec = true;
-//
-//  // Retrasnmit a specific packet (lost segment)
-//  DoRetransmit(sFlowIdx, ptrDSN);
-//
-//  // plotting
-//  reTxTrack.push_back(make_pair(Simulator::Now().GetSeconds(), sFlow->cwnd));
-//  sFlow->ssthreshtrack.push_back(make_pair(Simulator::Now().GetSeconds(), sFlow->GetSSThresh()));
 }
     #endif
 
@@ -2239,7 +2183,9 @@ MpTcpSocketBase::DoRetransmit()
   DumpRxBuffers(0);
 
 //  SendDataPacket();
-  NS_FATAL_ERROR("TODO later, but for the tests only, it should not be necesssary ?! Check for anything suspicious");
+//  NS_FATAL_ERROR("TODO later, but for the tests only, it should not be necesssary ?! Check for anything suspicious");
+  NS_LOG_ERROR ("TODO later, but for the tests only, it should not be necesssary ?! Check for anything suspicious");
+
 //
 //  m_nextTxSequence = FirstUnackedSeq();
 //  SendPendingData(true);
@@ -2271,56 +2217,6 @@ MpTcpSocketBase::ReTxTimeout()
 }
 
 
-// I moved it to mptcp-crypto.h
-// TODO remove
-#if 0
-uint64_t
-MpTcpSocketBase::GenerateKey()
-{
-  // TODO rather use NS3 random generator
-  NS_ASSERT_MSG( m_localKey == 0, "Key already generated");
-
-  //! arbitrary function, TODO replace with ns3 random gneerator
-  m_localKey = (rand() % 1000 + 1);
-
-  uint64_t idsn = 0;
-  GenerateTokenForKey( HMAC_SHA1, m_localKey, m_localToken, idsn );
-
-  /**
-
-  /!\ seq nb must be 64 bits for mptcp but that would mean rewriting lots of code so
-
-  TODO add a SetInitialSeqNb member into TcpSocketBase
-  **/
-  if(m_nullIsn)
-  {
-    m_nextTxSequence = (uint32_t)0;
-  }
-  else
-  {
-    m_nextTxSequence = (uint32_t)idsn;
-  }
-
-//  SetTxHead(m_nextTxSequence);
-  m_firstTxUnack = m_nextTxSequence;
-  m_highTxMark = m_nextTxSequence;
-
-
-  // TODO update m_endPoint
-//  m_endPoint->m_mptcpLocalKey = m_localKey;
-//  m_endPoint->m_mptcpToken = m_localToken;
-
-  return m_localKey;
-}
-#endif
-
-
-//void
-//MpTcpSocketBase::GetIdManager()
-//{
-//  NS_ASSERT(m_remoteIdManager);
-//  return m_remoteIdManager;
-//}
 
 void
 MpTcpSocketBase::GetAllAdvertisedDestinations (std::vector<InetSocketAddress>& cont)

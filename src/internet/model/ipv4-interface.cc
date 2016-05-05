@@ -315,7 +315,8 @@ Ipv4Interface::GetAddress (uint32_t index) const
           ++tmp;
         }
     }
-  NS_ASSERT (false);  // Assert if not found
+//  NS_ASSERT (false);  // Assert if not found
+  NS_FATAL_ERROR ("address " << index << " not found");
   Ipv4InterfaceAddress addr;
   return (addr);  // quiet compiler
 }
@@ -341,7 +342,7 @@ Ipv4Interface::RemoveAddress (uint32_t index)
       ++tmp;
       ++i;
     }
-  NS_ASSERT_MSG (false, "Address " << index << " not found");
+  NS_FATAL_ERROR ("Address " << index << " not found");
   Ipv4InterfaceAddress addr;
   return (addr);  // quiet compiler
 }

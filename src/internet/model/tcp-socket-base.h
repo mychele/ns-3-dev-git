@@ -850,6 +850,7 @@ protected:
    */
   virtual Ptr<MpTcpSubflow> UpgradeToMeta(bool connecting);
 
+  void ResetUserCallbacks (void);
   /**
    * TODO replace all of them by ProcessTcpOptions ?
    * than just override processMpTcp depending on the state ?
