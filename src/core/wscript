@@ -222,6 +222,7 @@ def build(bld):
         'model/event-impl.h',
         'model/simulator.h',
         'model/simulator-impl.h',
+        'model/build-profile.h',
         'model/default-simulator-impl.h',
         'model/scheduler.h',
         'model/list-scheduler.h',
