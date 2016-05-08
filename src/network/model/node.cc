@@ -182,7 +182,7 @@ Node::DoDispose ()
        i != m_devices.end (); i++)
     {
       Ptr<NetDevice> device = *i;
-      device->Dispose ();
+//      device->Dispose ();
       *i = 0;
     }
   m_devices.clear ();

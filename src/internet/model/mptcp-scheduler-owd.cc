@@ -44,6 +44,7 @@ SubflowPair::RecordStart (Ptr<MpTcpSubflow> sf, Time start, int *cookie)
     NS_ASSERT_MSG (m_index < 1, "too many RecordStart calls");
 
     m_subflows[m_index++] = std::make_pair (sf, start);
+    return true;
 }
 
 

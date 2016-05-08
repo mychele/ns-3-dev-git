@@ -920,6 +920,7 @@ TcpL4Protocol::NotifyNewSocket (Ptr<TcpSocket> socket)
     NS_LOG_DEBUG ("Calling m_onNewSocket");
     m_onNewSocket (socket);
   }
+  return true;
 }
 
 bool

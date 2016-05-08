@@ -106,6 +106,55 @@ dumpTcpState(Ptr<OutputStreamWrapper> stream, int pos, std::string context, TcpS
   dumpStr ( stream, pos, TcpSocket::TcpStateName[newVal]);
 }
 
+
+void
+TcpTraceHelper::OnNewSocket (Ptr<TcpSocket> socket)
+{
+  NS_LOG_DEBUG ("New socket incoming");
+  
+  TcpTraceHelper tcpHelper;
+  std::stringstream os;
+  //! we start at 1 because it's nicer
+  // m_tracePrefix << 
+  static int subflowCounter = 0;
+  static int metaCounter = 0;
+
+//      std::string filename;
+//      if (explicitFilename)
+//        {
+//          filename = prefix;
+//        }
+//      else
+//        {
+//          filename = asciiTraceHelper.GetFilenameFromInterfacePair (prefix, ipv4, interface);
+//        }
+
+  // No reason to fail
+  Ptr<TcpSocketBase> sock = DynamicCast<TcpSocketBase>(socket);
+
+  //! choose a prefix depending on if it's subflow or meta
+  // TODO improve the doc to mark that isChildOf is strict
+  if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()) 
+    || sock->GetInstanceTypeId() == MpTcpSubflow::GetTypeId())
+  {
+    //! TODO prefixer avec le nom de la meta 
+    os << Simulator::GetContext() << "-subflow" <<  subflowCounter++;
+    tcpHelper.SetupSocketTracing (sock, os.str());
+  }
+  else if(sock->GetInstanceTypeId().IsChildOf( MpTcpSocketBase::GetTypeId())
+      || sock->GetInstanceTypeId() == MpTcpSocketBase::GetTypeId()
+      )
+  {
+    os << Simulator::GetContext() << "-meta" <<  metaCounter++;
+    tcpHelper.SetupSocketTracing (sock, os.str());
+  }
+  else 
+  {
+    
+    NS_LOG_INFO ("Not mptcp, do nothing: typeid=" << sock->GetInstanceTypeId().GetName ());
+  }
+}
+
 /**
 TODO move that elsewhere, and plot the first line to get the initial value else it makes
 for bad plots.

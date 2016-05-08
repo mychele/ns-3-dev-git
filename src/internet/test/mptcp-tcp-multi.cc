@@ -112,60 +112,6 @@ void setPos (Ptr<Node> n, int x, int y, int z)
 }
 
 
-/**
-TODO name generation could be moved to tcp-trace-helper ?!
-
-TODO prefixer avec nom de la meta etc...
-
-**/
-void
-OnNewSocket (Ptr<TcpSocket> socket)
-{
-  NS_LOG_DEBUG ("New socket incoming");
-  
-  TcpTraceHelper tcpHelper;
-  std::stringstream os;
-  //! we start at 1 because it's nicer
-  // m_tracePrefix << 
-  static int subflowCounter = 0;
-  static int metaCounter = 0;
-
-//      std::string filename;
-//      if (explicitFilename)
-//        {
-//          filename = prefix;
-//        }
-//      else
-//        {
-//          filename = asciiTraceHelper.GetFilenameFromInterfacePair (prefix, ipv4, interface);
-//        }
-
-  // No reason to fail
-  Ptr<TcpSocketBase> sock = DynamicCast<TcpSocketBase>(socket);
-
-  //! choose a prefix depending on if it's subflow or meta
-  // TODO improve the doc to mark that isChildOf is strict
-  if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()) 
-    || sock->GetInstanceTypeId() == MpTcpSubflow::GetTypeId())
-  {
-    //! TODO prefixer avec le nom de la meta 
-    os << Simulator::GetContext() << "-subflow" <<  subflowCounter++;
-    tcpHelper.SetupSocketTracing (sock, os.str());
-  }
-  else if(sock->GetInstanceTypeId().IsChildOf( MpTcpSocketBase::GetTypeId())
-      || sock->GetInstanceTypeId() == MpTcpSocketBase::GetTypeId()
-      )
-  {
-    os << Simulator::GetContext() << "-meta" <<  metaCounter++;
-    tcpHelper.SetupSocketTracing (sock, os.str());
-  }
-  else 
-  {
-    
-    NS_LOG_INFO ("Not mptcp, do nothing: typeid=" << sock->GetInstanceTypeId().GetName ());
-  }
-}
-
 static const Ipv4Mask g_netmask = Ipv4Mask(0xffffff00);
 /**
  *
@@ -308,7 +254,8 @@ MpTcpMultihomedTestCase::DoSetup (void)
 //  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
 
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
-  CallbackValue cbValue = MakeCallback (&OnNewSocket);
+//  CallbackValue cbValue = MakeCallback (&OnNewSocket);
+  CallbackValue cbValue = MakeCallback (&TcpTraceHelper::OnNewSocket);
   Config::SetDefault ("ns3::TcpL4Protocol::OnNewSocket", cbValue);
   
 
