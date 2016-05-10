@@ -209,7 +209,7 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_tcb->m_socket = this;
 
   // TODO
-  CreateScheduler(m_schedulerTypeId);
+  CreateScheduler (m_schedulerTypeId);
 
   //! TODO here I should generate a new Key
 }
@@ -2625,6 +2625,7 @@ MpTcpSocketBase::AdvertisedWindowSize()
 //  return value;
 }
 
+/* of if cwnd updated properly */
 uint32_t
 MpTcpSocketBase::Window()
 {

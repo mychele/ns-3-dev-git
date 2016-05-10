@@ -2097,9 +2097,8 @@ MpTcpSubflow::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
   // TODO if that acknowledges a full mapping then transfer it to  the metasock
 }
 
-/* TODO unsure ?
 
-*/
+
 uint32_t
 MpTcpSubflow::UnAckDataCount()
 {
@@ -2108,7 +2107,7 @@ MpTcpSubflow::UnAckDataCount()
   return TcpSocketBase::UnAckDataCount();
 }
 
-// TODO unsure ?
+
 uint32_t
 MpTcpSubflow::BytesInFlight()
 {

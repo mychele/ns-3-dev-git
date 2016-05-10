@@ -1621,7 +1621,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // HACK matt otherwise the new subflow sends the packet on the wroing interface
       master->m_boundnetdevice = this->m_boundnetdevice;
 
-        Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
+      Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
 
       bool result = m_tcp->AddSocket (newSock);
       NS_ASSERT_MSG (result, "could not register meta");
@@ -1688,7 +1688,8 @@ TcpSocketBase::UpgradeToMeta (bool connecting)
 //  SetRecvCallback (vPS);
 //
 //  m_tcp->CreateSocket();
-  // Otherwise timers
+  
+  // TODO cancel only for forks, not when client gets upgraded Otherwise timers
   this->CancelAllTimers();
 
 //  this->~TcpSocketBase();
