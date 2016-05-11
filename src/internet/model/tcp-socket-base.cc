@@ -397,7 +397,7 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
   // TODO  there should be a way to prevent this from happening when looking to upgrade
   // TCP socket into an MPTCP one ?
   // Reset all callbacks to null
-  ResetUserCallbacks ();
+//  ResetUserCallbacks ();
 
   m_txBuffer = CopyObject (sock.m_txBuffer);
   m_rxBuffer = CopyObject (sock.m_rxBuffer);
@@ -1620,11 +1620,12 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
    /**
     we first forked here, socket is not registered into TCPL4Protocol yet
    **/
-   Ptr<TcpSocketBase> newSock = Fork();
+   Ptr<TcpSocketBase> newSock = Fork ();
+   newSock->ResetUserCallbacks ();
 
    Ptr<const TcpOptionMpTcpCapable> mpc;
 
-   if(GetTcpOption (tcpHeader, mpc))
+   if (GetTcpOption (tcpHeader, mpc))
     {
       NS_ASSERT_MSG (!mpc->HasReceiverKey(), "Should not be the case");
       NS_LOG_LOGIC ("Fork & Upgrade to meta " << this);
@@ -1691,6 +1692,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
   // TODO set SetSendCallback but for meta
   // TODO should inherit callbacks from constructor but ns3 should not reset them
 //  Callback<void, Ptr<Socket>, uint32_t >
+#if 0
   Callback<void, Ptr<Socket>, uint32_t > cbSend = this->m_sendCb;
   Callback<void, Ptr<Socket> >  cbRcv = this->m_receivedData;
   Callback<void, Ptr<Socket>, uint32_t>  cbDataSent = this->m_dataSent;
@@ -1698,6 +1700,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
   Callback<void, Ptr<Socket> >  cbConnectSuccess = this->m_connectionSucceeded;
   Callback<bool, Ptr<Socket>, const Address &> connectionRequest = this->m_connectionRequest;
   Callback<void, Ptr<Socket>, const Address&> newConnectionCreated = this->m_newConnectionCreated;
+  #endif
   Ipv4EndPoint *endPoint = m_endPoint;
   ////////////////////////
   //// !! CAREFUL !!
@@ -1767,11 +1770,13 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 
   // TODO convert this into a Socket member function so that
   // members can become private again
+  #if 0
   meta->SetSendCallback(cbSend);
   meta->SetConnectCallback (cbConnectSuccess, cbConnectFail);   // Ok
   meta->SetDataSentCallback (cbDataSent);
   meta->SetRecvCallback (cbRcv);
   meta->SetAcceptCallback(connectionRequest, newConnectionCreated);
+  #endif
   return master;
 //    return 0;
 }
@@ -1939,7 +1944,7 @@ uint32_t localToken;
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
         // master = first subflow
         Ptr<MpTcpSubflow> master = UpgradeToMeta (true, m_mptcpLocalKey, mpc->GetSenderKey() );
-
+        master->ResetUserCallbacks ();
         // Hack to retrigger the tcpL4protocol::OnNewSocket callback
 //        m_tcp->AddSocket (this);
         m_tcp->NotifyNewSocket (this);
