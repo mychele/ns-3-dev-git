@@ -586,7 +586,7 @@ MpTcpSubflow::SendPacket(TcpHeader header, Ptr<Packet> p)
 
 
   //! if we send data...
-  if(p->GetSize() && !IsInfiniteMappingEnabled())
+  if(p->GetSize () && !IsInfiniteMappingEnabled())
   {
     //... we must decide to send a mapping or not
     // For now we always append the mapping but we could have mappings spanning over several packets.
@@ -663,7 +663,9 @@ void
 MpTcpSubflow::Retransmit(void)
 {
   NS_LOG_FUNCTION (this);
-
+  std::ostringstream oss;
+  Dump (oss);
+  NS_LOG_DEBUG ( oss.str() );
   TcpSocketBase::Retransmit();
 #if 0
   NS_LOG_LOGIC (this << " ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ()
@@ -2567,8 +2569,8 @@ MpTcpSubflow::Dump (std::ostream &os) const
 {
   TcpSocketBase::Dump (os);
   // TODO check if we are connected
-  os << "Local id=" << GetLocalId ()
-     << "Remote id = " << GetRemoteId();
+//  os << "Local id=" << GetLocalId ()
+//     << "Remote id = " << GetRemoteId();
 }
 
 /*
@@ -2579,7 +2581,7 @@ Upon ack receival we need to act depending on if it's new or not
 this is called
 */
 void
-MpTcpSubflow::ReceivedAck(Ptr<Packet> p, const TcpHeader& header)
+MpTcpSubflow::ReceivedAck (Ptr<Packet> p, const TcpHeader& header)
 {
   NS_LOG_FUNCTION (this << header);
 
@@ -2588,7 +2590,7 @@ MpTcpSubflow::ReceivedAck(Ptr<Packet> p, const TcpHeader& header)
 
   // By default we always append a DACK
   // We should consider more advanced schemes
-  AppendDSSAck();
+  AppendDSSAck ();
 }
 
 // TODO remove

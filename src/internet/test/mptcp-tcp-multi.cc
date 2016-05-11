@@ -520,7 +520,7 @@ void
 MpTcpMultihomedTestCase::SourceHandleSend (Ptr<Socket> sock, uint32_t available)
 {
   NS_LOG_DEBUG("SourceHandleSend with available = " << available
-                  << " m_currentSourceTxBytes=" << m_currentSourceTxBytes
+                  << " m_currentSourceTxBytes=" << m_currentSourceTxBytes << " (already sent) "
                   << " m_totalBytes=" << m_totalBytes
                   );
   while (sock->GetTxAvailable () > 0 && m_currentSourceTxBytes < m_totalBytes)

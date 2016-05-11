@@ -141,6 +141,9 @@ public:
   
 };
 
+
+void DumpSocketState (std::ostream& os, Ptr<TcpSocketState> tcb );
+
 /**
  * \ingroup socket
  * \ingroup tcp
@@ -998,8 +1001,10 @@ protected:
 public:
   virtual void
   SetupTracing(std::string prefix);
-protected:
+  
   virtual void Dump (std::ostream &os) const;
+protected:
+  
   //SetupTracingIfEnabled
   bool
   IsTracingEnabled() const;

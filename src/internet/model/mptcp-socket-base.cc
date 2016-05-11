@@ -104,7 +104,7 @@ GetMapping(Ptr<TcpOptionMpTcpDSS> dss)
 
 
 TypeId
-MpTcpSocketBase::GetTypeId(void)
+MpTcpSocketBase::GetTypeId (void)
 {
   static TypeId tid = TypeId("ns3::MpTcpSocketBase")
       // To some extent, would ideally derive directly from TcpSocket ?
@@ -117,7 +117,7 @@ MpTcpSocketBase::GetTypeId(void)
                MakeTypeIdChecker ())
       .AddAttribute ("Scheduler",
                "How to generate the mappings",
-               TypeIdValue (MpTcpScheduler::GetTypeId ()),
+               TypeIdValue (MpTcpSchedulerRoundRobin::GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_schedulerTypeId),
                MakeTypeIdChecker ())
       //TODO remove ?
@@ -152,19 +152,19 @@ static const std::string containerNames[MpTcpSocketBase::Maximum] = {
 
 
 /*
-
+When doing this 
+CompleteConstruct
 */
-
-// TODO unused for now
 MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
   TcpSocketBase(sock),
-//  m_tracePrefix("default"),
-//  m_prefixCounter(1),
-  m_server(true), // TODO remove or use it
-  m_peerKey(0),
-  m_peerToken(0),
+  m_server (true), // TODO remove or use it
+  m_peerKey (0),
+  m_peerToken (0),
   m_doChecksum(false),
-  m_receivedDSS(false)
+  m_receivedDSS(false),
+  // TODO here would be best to retrieve default from static GetTypeId 
+  m_subflowTypeId (MpTcpSubflow::GetTypeId ()),
+  m_schedulerTypeId (MpTcpSchedulerRoundRobin::GetTypeId () )
 //  , m_localSubflowUid (0)
 //    MpTcpSocketBase()   //! delegatin constructors only available in C++11
 {
@@ -177,15 +177,13 @@ MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
     m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
     m_tcb->m_socket = this;
-    CreateScheduler(m_schedulerTypeId);
+    CreateScheduler (m_schedulerTypeId);
 }
 
 
 /* Never occurs right ? should prevent it ? */
 MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   TcpSocketBase(sock),
-//  m_tracePrefix(sock.m_tracePrefix),
-//  m_prefixCounter(1), //!< Start at one
   m_server(sock.m_server), //! true, if I am forked
   m_peerKey(sock.m_peerKey),
   m_peerToken(sock.m_peerToken),
@@ -225,8 +223,8 @@ MpTcpSocketBase::MpTcpSocketBase() :
   m_peerToken(0),
   m_doChecksum(false),
   m_receivedDSS(false),
-  m_subflowTypeId(MpTcpSubflow::GetTypeId ()),
-  m_schedulerTypeId(MpTcpSchedulerRoundRobin::GetTypeId())
+  m_subflowTypeId(MpTcpSubflow::GetTypeId ())
+//  m_schedulerTypeId(MpTcpSchedulerRoundRobin::GetTypeId())
 {
   NS_LOG_FUNCTION(this);
 
@@ -235,7 +233,7 @@ MpTcpSocketBase::MpTcpSocketBase() :
   m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
   m_tcb->m_socket = this;
-  CreateScheduler(m_schedulerTypeId);
+  CreateScheduler (m_schedulerTypeId);
 
 
 
@@ -292,16 +290,17 @@ MpTcpSocketBase::AddRemoteId (uint8_t addrId, const Address& address)
 
 
 void
-MpTcpSocketBase::CreateScheduler(TypeId schedulerTypeId)
+MpTcpSocketBase::CreateScheduler (TypeId schedulerTypeId)
 {
-  NS_LOG_FUNCTION(this);
+  NS_LOG_FUNCTION(this << schedulerTypeId);
   NS_LOG_WARN("Overriding scheduler choice to RoundRobin");
   ObjectFactory schedulerFactory;
 //  schedulerTypeId = MpTcpSchedulerFastestRTT;
-  schedulerTypeId = MpTcpSchedulerRoundRobin::GetTypeId();
+
+//  schedulerTypeId = MpTcpSchedulerRoundRobin::GetTypeId();
   schedulerFactory.SetTypeId(schedulerTypeId);
   m_scheduler = schedulerFactory.Create<MpTcpScheduler>();
-  m_scheduler->SetMeta(this);
+  m_scheduler->SetMeta (this);
 }
 
 int
@@ -416,15 +415,6 @@ MpTcpSocketBase::GetSubflowFromAddressId (uint8_t addrId) const
   return 0;
 }
 
-// There could be some kind of artifical EstimateRtt based
-// on dataack returns
-//void
-//MpTcpSocketBase::EstimateRtt(const TcpHeader& TcpHeader)
-//{
-//  NS_LOG_FUNCTION(this);
-//}
-
-
 void
 MpTcpSocketBase::SetPeerKey (uint64_t remoteKey)
 {
@@ -466,7 +456,7 @@ void
 MpTcpSocketBase::InitLocalISN (const SequenceNumber32& seq)
 {
     //!
-    TcpSocketBase::InitLocalISN(seq);
+    TcpSocketBase::InitLocalISN (seq);
 
     /*
     The SYN with MP_CAPABLE occupies the first octet of data sequence
@@ -1454,7 +1444,7 @@ MpTcpSocketBase::SyncTxBuffers()
 //      SubflowList::iterator it = std::find(m_subflows[i].begin(), m_subflows[i].end(), subflow);
 //      NS_ASSERT(it != m_subflows[from].end() ); //! the subflow must exist
 //      if(it != m_subflows[i].end()) {
-      SyncTxBuffers(*it);
+      SyncTxBuffers (*it);
     }
   }
 
@@ -2117,7 +2107,7 @@ MpTcpSocketBase::ReduceCWND(uint8_t sFlowIdx)
     }
 
 }
-    #endif
+  #endif
 
 /**
 Retransmit timeout
@@ -2131,7 +2121,11 @@ MpTcpSocketBase::Retransmit()
 {
   NS_LOG_LOGIC(this);
 //  NS_FATAL_ERROR("TODO reestablish retransmit ?");
-//  NS_LOG_ERROR("TODO");
+//  NS_LOG_ERROR("TODO")
+  std::ostringstream oss;
+  Dump (oss);
+  NS_LOG_ERROR (oss.str());
+
   m_nextTxSequence = FirstUnackedSeq(); // Start from highest Ack
 //  m_rtt->IncreaseMultiplier(); // Double the timeout value for next retx timer
   m_dupAckCount = 0;
@@ -2180,11 +2174,12 @@ MpTcpSocketBase::DoRetransmit()
 
 //  m_rxBuffer->Dump();
 
-  DumpRxBuffers(0);
+  DumpRxBuffers (0);
 
 //  SendDataPacket();
-//  NS_FATAL_ERROR("TODO later, but for the tests only, it should not be necesssary ?! Check for anything suspicious");
-  NS_LOG_ERROR ("TODO later, but for the tests only, it should not be necesssary ?! Check for anything suspicious");
+
+//  NS_FATAL_ERROR ("TODO later, but for the tests only, it should not be necesssary ?! Check for anything suspicious");
+//  NS_LOG_ERROR ("TODO later, but for the tests only, it should not be necesssary ?! Check for anything suspicious");
 
 //
 //  m_nextTxSequence = FirstUnackedSeq();
@@ -2199,7 +2194,7 @@ MpTcpSocketBase::DoRetransmit()
 }
 
 void
-MpTcpSocketBase::SendFin()
+MpTcpSocketBase::SendFin ()
 {
     Ptr<MpTcpSubflow> subflow = GetSubflow(0);
 //          m_state = FIN_WAIT_1;
@@ -3187,9 +3182,10 @@ MpTcpSocketBase::ComputeTotalCWND ()
         else
         {
 //          NS_LOG_WARN("Don't consider Fast recovery yet");
-//          totalCwnd += sf->m_cWnd.Get();          // Should be this all the time ?!
-            NS_LOG_DEBUG("Adding " << sf->Window() << " to total window");
-          totalCwnd += sf->Window();          // Should be this all the time ?!
+
+          uint32_t inc = sf->m_tcb->m_cWnd.Get();
+            NS_LOG_DEBUG("Adding " << inc << " to total window");
+          totalCwnd += inc;
         }
     }
   }

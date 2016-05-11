@@ -65,6 +65,16 @@ NS_LOG_COMPONENT_DEFINE ("TcpSocketBase");
 
 NS_OBJECT_ENSURE_REGISTERED (TcpSocketBase);
 
+
+
+void 
+DumpSocketState (std::ostream& os, Ptr<TcpSocketState> tcb )
+{
+  os << "CWND=" << tcb->m_cWnd << " SSTHRESH=" << tcb->m_ssThresh << std::endl
+    << "ack fsm in state [" << tcb->m_ackState << "]"
+    ;
+}
+
 TypeId
 TcpSocketBase::GetTypeId (void)
 {
@@ -1623,8 +1633,6 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 
       Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
 
-      bool result = m_tcp->AddSocket (newSock);
-      NS_ASSERT_MSG (result, "could not register meta");
       uint64_t localKey = meta->GenerateUniqueMpTcpKey ();
         uint32_t localToken;
         uint64_t idsn;
@@ -1637,6 +1645,10 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // Setting isn of meta
       meta->InitLocalISN (sidsn);
 
+      // We add the socket after initial parameters are correctly set so that
+      // tracing doesn't contain strange values that mess up plotting
+      bool result = m_tcp->AddSocket (newSock);
+      NS_ASSERT_MSG (result, "could not register meta");
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
 
@@ -1964,11 +1976,8 @@ TcpSocketBase::InitPeerISN (const SequenceNumber32& peerIsn)
     m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
     m_peerISN = peerIsn;
 }
-//int
-//TcpSocketBase::ProcessTcpOptionsSynRcvd(const TcpHeader& header)
-//{
-//    return 1;
-//}
+
+
 SequenceNumber32
 TcpSocketBase::GetPeerIsn (void) const
 {
@@ -2017,7 +2026,7 @@ uint32_t localToken;
       m_state = SYN_RCVD;
       m_cnCount = m_cnRetries;
 //      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
-      InitPeerISN(tcpHeader.GetSequenceNumber ());
+      InitPeerISN (tcpHeader.GetSequenceNumber ());
       SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
     }
   else if (tcpflags == (TcpHeader::SYN | TcpHeader::ACK)
@@ -2182,7 +2191,7 @@ TcpSocketBase::ProcessSynRcvd (Ptr<Packet> packet, const TcpHeader& tcpHeader,
     }
   else if (tcpflags == TcpHeader::SYN)
     { // Probably the peer lost my SYN+ACK
-      InitPeerISN(tcpHeader.GetSequenceNumber ());
+      InitPeerISN (tcpHeader.GetSequenceNumber ());
 //      m_rxBuffer->SetNextRxSequence (tcpHeader.GetSequenceNumber () + SequenceNumber32 (1));
       SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
     }
@@ -3319,10 +3328,14 @@ TcpSocketBase::PersistTimeout ()
 void
 TcpSocketBase::Retransmit ()
 {
+  // BOTH CHECKS already done in ReTxTimeout
   // If erroneous timeout in closed/timed-wait state, just return
   if (m_state == CLOSED || m_state == TIME_WAIT) return;
+  
   // If all data are received (non-closing socket and nothing to send), just return
+  // TODO uncommenting this makes test fail
 //  if (m_state <= ESTABLISHED && FirstUnackedSeq() >= m_highTxMark) {
+//    NS_LOG_WARN("WARN");
 //    return;
 //  }
 
@@ -3349,7 +3362,7 @@ TcpSocketBase::Retransmit ()
       m_tcb->m_cWnd = m_tcb->m_segmentSize;
     }
 
-  m_nextTxSequence = FirstUnackedSeq(); // Restart from highest Ack
+  m_nextTxSequence = FirstUnackedSeq (); // Restart from highest Ack
   m_dupAckCount = 0;
   m_tcb->m_ackState = TcpSocketState::LOSS;
   NS_LOG_INFO ("RTO. Reset cwnd to " << m_tcb->m_cWnd <<
@@ -3951,8 +3964,15 @@ TcpSocketBase::Dump (std::ostream &os) const
 {
 
   //! TODO assuming it's ipv4
-  os << m_endPoint->GetLocalAddress () << ":" << m_endPoint->GetLocalPort ();
-  os << m_endPoint->GetPeerAddress () << ":" << m_endPoint->GetPeerPort ();
+  os << m_endPoint->GetLocalAddress () << ":" << m_endPoint->GetLocalPort () << std::endl;
+  os << m_endPoint->GetPeerAddress () << ":" << m_endPoint->GetPeerPort () << std::endl;
+  os << " TCB:" << std::endl;
+  DumpSocketState (os, m_tcb);
+  os << std::endl;
+  os << "SND.NXT=" << m_nextTxSequence
+     << " SND.UNA=" << FirstUnackedSeq()
+     << " SND.HIGH=" << m_highTxMark
+     << std::endl;
 }
 
 void

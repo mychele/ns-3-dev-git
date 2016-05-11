@@ -47,9 +47,9 @@ MpTcpSchedulerRoundRobin::GetTypeId (void)
 
 //Ptr<MpTcpSocketBase> metaSock
 MpTcpSchedulerRoundRobin::MpTcpSchedulerRoundRobin() :
-  MpTcpScheduler(),
-  m_lastUsedFlowId(0),
-  m_metaSock(0)
+  MpTcpScheduler (),
+  m_lastUsedFlowId (0),
+  m_metaSock (0)
 {
   NS_LOG_FUNCTION(this);
 //  NS_ASSERT(m_metaSock);
