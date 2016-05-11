@@ -510,6 +510,8 @@ Ptr<T> CompleteConstruct (T *object)
   return Ptr<T> (object, false);
 }
 
+
+
 /**
  * \ingroup object
  * @{

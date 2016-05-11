@@ -1656,7 +1656,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 
       // We add the socket after initial parameters are correctly set so that
       // tracing doesn't contain strange values that mess up plotting
-      bool result = m_tcp->AddSocket (newSock);
+      bool result = m_tcp->AddSocket (meta);
       NS_ASSERT_MSG (result, "could not register meta");
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
@@ -1761,12 +1761,10 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 //  meta->m_sendCb =sf->m_sendCb;
   meta->AddSubflow (master);
 
-
-
   // the master is always a new socket, hence we should register it
   // We can only do it when meta is set
-  bool result = m_tcp->AddSocket (master);
-  NS_ASSERT_MSG (result, "Could not register master");
+//  bool result = m_tcp->AddSocket (master);
+//  NS_ASSERT_MSG (result, "Could not register master");
 
   // TODO convert this into a Socket member function so that
   // members can become private again
@@ -1945,6 +1943,10 @@ uint32_t localToken;
         // master = first subflow
         Ptr<MpTcpSubflow> master = UpgradeToMeta (true, m_mptcpLocalKey, mpc->GetSenderKey() );
         master->ResetUserCallbacks ();
+
+        bool result = m_tcp->AddSocket (master);
+        NS_ASSERT_MSG (result, "Could not register master");
+
         // Hack to retrigger the tcpL4protocol::OnNewSocket callback
 //        m_tcp->AddSocket (this);
         m_tcp->NotifyNewSocket (this);
@@ -2683,12 +2685,7 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
       m_endPoint = 0;
       NS_ASSERT(m_endPoint6);
     }
-  bool result = m_tcp->AddSocket(this);
-  if(!result)
-  {
-    NS_LOG_WARN ("Can't add socket: already registered ? Can be because of mptcp");
-  }
-
+    
   // Change the cloned socket from LISTEN state to SYN_RCVD
   NS_LOG_INFO ("LISTEN -> SYN_RCVD");
   m_state = SYN_RCVD;
@@ -2699,10 +2696,13 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   // Set the sequence number and send SYN+ACK
   InitLocalISN ();
   InitPeerISN (h.GetSequenceNumber ());
-//  if(IsTracingEnabled()) {
-//    SetupTracingIfEnabled();
-//  }
-//  m_rxBuffer->SetNextRxSequence ( + SequenceNumber32 (1));
+  
+  // Call addsocket after setting up initial parameters to get nice plots
+  bool result = m_tcp->AddSocket(this);
+  if(!result)
+  {
+    NS_LOG_WARN ("Can't add socket: already registered ? Can be because of mptcp");
+  }
 
   SendEmptyPacket (TcpHeader::SYN | TcpHeader::ACK);
 }

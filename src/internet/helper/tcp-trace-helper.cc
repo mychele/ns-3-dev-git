@@ -133,11 +133,11 @@ TcpTraceHelper::OnNewSocket (Ptr<TcpSocket> socket)
   Ptr<TcpSocketBase> sock = DynamicCast<TcpSocketBase>(socket);
 
   //! choose a prefix depending on if it's subflow or meta
-  // TODO improve the doc to mark that isChildOf is strict
+  // TODO improve the doc to mark that isChildOf ( ,false) is strict
   if(sock->GetInstanceTypeId().IsChildOf( MpTcpSubflow::GetTypeId()) 
     || sock->GetInstanceTypeId() == MpTcpSubflow::GetTypeId())
   {
-    //! TODO prefixer avec le nom de la meta 
+    //! TODO prefixer avec le nom de la meta et utiliser le subflow addrId
     os << Simulator::GetContext() << "-subflow" <<  subflowCounter++;
     tcpHelper.SetupSocketTracing (sock, os.str());
   }
@@ -170,16 +170,6 @@ TcpTraceHelper::SetupSocketTracing (Ptr<TcpSocketBase> sock, const std::string p
   // Or everything could be just written in the same file (uses fewer file descriptors)
   AsciiTraceHelper asciiTraceHelper;
   Ptr<OutputStreamWrapper> fd = asciiTraceHelper.CreateFileStream (prefix+ "_data.csv", mode);
-//  Ptr<OutputStreamWrapper> streamTxNext = asciiTraceHelper.CreateFileStream (prefix+"_TxNext.csv", mode);
-//  Ptr<OutputStreamWrapper> streamTxHighest = asciiTraceHelper.CreateFileStream (prefix+"_TxHighest.csv", mode);
-//  Ptr<OutputStreamWrapper> streamRxAvailable = asciiTraceHelper.CreateFileStream (prefix+"_RxAvailable.csv", mode);
-//  Ptr<OutputStreamWrapper> streamRxTotal = asciiTraceHelper.CreateFileStream (prefix+"_RxTotal.csv", mode);
-//  Ptr<OutputStreamWrapper> streamRxNext = asciiTraceHelper.CreateFileStream (prefix+"_RxNext.csv", mode);
-//  Ptr<OutputStreamWrapper> streamTxUnack = asciiTraceHelper.CreateFileStream (prefix+"_TxUnack.csv", mode);
-//  Ptr<OutputStreamWrapper> streamStates = asciiTraceHelper.CreateFileStream (prefix+"_states.csv", mode);
-//  Ptr<OutputStreamWrapper> streamCwnd = asciiTraceHelper.CreateFileStream (prefix+"_cwnd.csv", mode);
-//  Ptr<OutputStreamWrapper> streamRwnd = asciiTraceHelper.CreateFileStream (prefix+"_rwnd.csv", mode);
-//  Ptr<OutputStreamWrapper> streamSSThreshold = asciiTraceHelper.CreateFileStream (prefix+"_ssThresh.csv", mode);
 
   Time now = Simulator::Now();
   // TODO use GetInitialCwnd, GetValue  etc...
@@ -262,71 +252,8 @@ TcpTraceHelper::SetupSocketTracing (Ptr<TcpSocketBase> sock, const std::string p
   // HighestRxAck is not in sync with RxBuffer nextRxSequence, hence useless + it is not used in MPTCP stacks
 //  NS_ASSERT(sock->TraceConnect ("HighestRxAck", "HighestRxAck", MakeBoundCallback(&dumpSequence32, streamRxNext) ));
 //  HighestRxSequence
-  
-  
-  
-
-  
-#if 0
-  /*
-  This part is kinda specific to what we want to do
-  */
-  Ptr<MpTcpSubflow> sf = DynamicCast<MpTcpSubflow>(sock);
-//  if(sock->GetInstanceTypeId() == MpTcpSubflow::GetTypeId())
-  if(sf)
-  {
-    //!
-//    *streamSSThreshold->GetStream() << "Time,oldSSThresh,newSSThresh" << std::endl
-//                                  << now << ",," << sf->GetSSThresh() << std::endl;
-
-    // TODO Trace first Cwnd
-    *streamStates->GetStream() << now << ",," << TcpSocket::TcpStateName[sf->GetState()] << std::endl;
-
-
-//    *streamCwnd->GetStream() << now << ",," << sf->m_cWnd.Get() << std::endl;
-  }
-  else if(sock->GetInstanceTypeId() == MpTcpSocketBase::GetTypeId())
-  {
-    //! Does nothing for now
-    // could go to SetupMetaTracing
-    Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(sock);
-    *streamStates->GetStream() << now << ",," << TcpSocket::TcpStateName[meta->GetState()] << std::endl;
-
-  }
-  else
-  {
-    NS_LOG_DEBUG("The passed sock is not related to MPTCP (which is not a problem in absolute terms)");
-  }
-  #endif
 }
 
-//void
-//MpTcpSocketBase::SetupMetaTracing(std::string prefix)
-//{
-////  f.open(filename, std::ofstream::out | std::ofstream::trunc);
-//  m_tracePrefix = prefix + "/";
-//
-////  prefix = m_tracePrefix + "/meta";
-//
-//  // TODO move out to
-//  SetupSocketTracing(this, m_tracePrefix + "/meta");
-//}
-//
-//void
-//MpTcpSocketBase::SetupSubflowTracing(Ptr<MpTcpSubflow> sf)
-//{
-//  NS_ASSERT_MSG(m_tracePrefix.length() != 0, "please call SetupMetaTracing before." );
-//  NS_LOG_LOGIC("Meta=" << this << " Setup tracing for sf " << sf << " with prefix [" << m_tracePrefix << "]");
-////  f.open(filename, std::ofstream::out | std::ofstream::trunc);
-//
-//  // For now, there is no subflow deletion so this should be good enough, else it will crash
-//  std::stringstream os;
-//  //! we start at 1 because it's nicer
-//
-//  os << m_tracePrefix << "subflow" <<  m_prefixCounter++;
-//
-//  SetupSocketTracing(sf, os.str().c_str());
-//}
 
 
 

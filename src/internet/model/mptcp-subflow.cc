@@ -283,7 +283,7 @@ MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
 
 
 // Does this constructor even make sense ? no ? to remove ?
-MpTcpSubflow::MpTcpSubflow(const MpTcpSubflow& sock)
+MpTcpSubflow::MpTcpSubflow (const MpTcpSubflow& sock)
   : TcpSocketBase(sock),
   m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
   m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
@@ -1051,10 +1051,11 @@ MpTcpSubflow::CompleteFork(
   // Get port and address from peer (connecting host)
   // TODO upstream ns3 should assert that to and from Address are of the same kind
   TcpSocketBase::CompleteFork (p, h, fromAddress, toAddress);
+
 //   NS_FATAL_ERROR("TODO: endpoint never set. be careful to set it for meta too");
 //   GetMeta()->AddSubflow(this);
   NS_LOG_INFO( this << " Endpoint="  << m_endPoint);
-    if(IsMaster())
+    if (IsMaster())
     {
        NS_LOG_LOGIC("Setting meta endpoint to " << m_endPoint
                     << " (old endpoint=" << GetMeta()->m_endPoint << " )"
