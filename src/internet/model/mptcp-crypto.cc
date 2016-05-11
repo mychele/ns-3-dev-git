@@ -52,7 +52,7 @@ namespace ns3 {
 
 //https://www.gnupg.org/documentation/manuals/gcrypt/Working-with-hash-algorithms.html#Working-with-hash-algorithms
 void
-GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t& token, uint64_t& idsn)
+GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t *token, uint64_t *idsn)
 {
 
   NS_LOG_LOGIC ("Generating token/key from key=" << key);
@@ -74,7 +74,7 @@ GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t& token, u
   it.WriteHtonU64(key);
 
 
-    NS_LOG_DEBUG("Used algorithm [" << gcry_md_algo_name(gcry_algo) << "]");
+    NS_LOG_DEBUG ("Used algorithm [" << gcry_md_algo_name(gcry_algo) << "]");
     int hash_length = gcry_md_get_algo_dlen( gcry_algo );
 //    unsigned char digest[ hash_length ];
     unsigned char digest[ 20 ];
@@ -97,9 +97,9 @@ GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t& token, u
     Buffer::Iterator it_digest = digestBuf.Begin();
     it_digest.Write( digest , hash_length ); // strlen( (const char*)digest)
     it_digest = digestBuf.Begin();
-    token = it_digest.ReadNtohU32();
+    *token = it_digest.ReadNtohU32();
     it_digest.Next( 8 );
-    idsn = it_digest.ReadNtohU64();
+    *idsn = it_digest.ReadNtohU64();
   #else
     /* the cryptographic library is not available so we rely on a ns3 specific implementation
     that does not comply with the standard.
@@ -107,8 +107,8 @@ GenerateTokenForKey( mptcp_crypto_alg_t ns_alg, uint64_t key, uint32_t& token, u
 
     */
     NS_LOG_DEBUG ("Using ns3 method");
-    idsn = key;
-    token = (uint32_t)key;
+    *idsn = key;
+    *token = (uint32_t)key;
 
 //     Hasher hasher = Hasher ( Create<Hash::Function::Fnv1a> () );
 //uint32_t hash = Hasher.GetHash32 (data);

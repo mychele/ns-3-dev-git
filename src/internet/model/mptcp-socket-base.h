@@ -423,6 +423,7 @@ public:
    *
    * TODO should we use the aggregate mechanism instead ? could we even ?
    * TODO rename into SetupSubflow ?
+   * WARN does not add Subflow into TcpL4Protocol
    */
   virtual void AddSubflow (Ptr<MpTcpSubflow> sf);
 
@@ -504,7 +505,17 @@ public: // public variables
    */
   virtual bool
   AddRemoteId (uint8_t addrId, const Address& address);
+  
+  /**
+  \bug convert to uint64_t ?
+  \note Setting a remote key has the sideeffect of enabling MPTCP on the socket
+  */
+  void SetPeerKey (uint64_t );
 
+  /**
+    TODO should check the key is unique
+   */
+  void SetLocalKey (uint64_t localKey);  
 protected: // protected methods
 
   friend class Tcp;
@@ -609,11 +620,7 @@ protected: // protected methods
   void NotifyRemoteAddAddr(Address address);
   void NotifyRemoteRemAddr(uint8_t addrId);
 
-  /**
-  \bug convert to uint64_t ?
-  \note Setting a remote key has the sideeffect of enabling MPTCP on the socket
-  */
-  void SetPeerKey (uint64_t );
+
 
   virtual void
   ConnectionSucceeded (void); // Schedule-friendly wrapper for Socket::NotifyConnectionSucceeded()

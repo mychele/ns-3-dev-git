@@ -416,8 +416,25 @@ MpTcpSocketBase::GetSubflowFromAddressId (uint8_t addrId) const
 }
 
 void
+MpTcpSocketBase::SetLocalKey (uint64_t localKey)
+{
+    NS_LOG_FUNCTION (this << localKey);
+//    uint32_t localToken;
+    uint64_t idsn;
+    m_mptcpLocalKey = localKey;
+     
+    GenerateTokenForKey ( HMAC_SHA1, m_mptcpLocalKey, &m_mptcpLocalToken, &idsn );
+    SequenceNumber32 sidsn ( (uint32_t) idsn);
+    
+
+    NS_LOG_DEBUG ("Server meta ISN = " << idsn << " from key " << localKey);
+    InitLocalISN (sidsn);
+}
+
+void
 MpTcpSocketBase::SetPeerKey (uint64_t remoteKey)
 {
+  NS_LOG_FUNCTION (this << remoteKey);
 //  NS_ASSERT( m_peerKey == 0);
 //  NS_ASSERT( m_state != CLOSED);
   uint64_t idsn = 0;
@@ -427,9 +444,9 @@ MpTcpSocketBase::SetPeerKey (uint64_t remoteKey)
 //  NS_LOG_DEBUG("Peer key set to " << );
 
 // TODO use the one  from mptcp-crypo.h
-  GenerateTokenForKey (HMAC_SHA1, m_peerKey, m_peerToken, idsn);
+  GenerateTokenForKey (HMAC_SHA1, m_peerKey, &m_peerToken, &idsn);
 
-  NS_LOG_DEBUG("Peer key/token set to " << m_peerKey << "/" << m_peerToken);
+  NS_LOG_DEBUG ("Peer key/token set to " << m_peerKey << "/" << m_peerToken);
 
 //  SetTxHead(m_nextTxSequence);
 //  m_firstTxUnack = m_nextTxSequence;

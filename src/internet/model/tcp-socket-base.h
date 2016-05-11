@@ -851,7 +851,11 @@ protected:
    * \param master
    * \return master subflow. It is not associated to the meta at this point
    */
-  virtual Ptr<MpTcpSubflow> UpgradeToMeta(bool connecting);
+  virtual Ptr<MpTcpSubflow> UpgradeToMeta(
+    bool connecting,
+    uint64_t locallKey, 
+    uint64_t peerKey
+    );
 
   void ResetUserCallbacks (void);
   /**
@@ -989,28 +993,19 @@ protected:
    * or rename into something like SetupLocalKey
    * \see mptcp_set_key_sk
    */
-  virtual uint64_t GenerateUniqueMpTcpKey() ;
+  virtual uint64_t GenerateUniqueMpTcpKey() const;
 
-   /****** BEGIN TRACING *****/
-  /**
-  ONLY TEMPORARY
-  Used to export a whole range of statistics to csv files (filenames hardcoded).
-  This would likely need a rework before upstream, for instance to allow
-  enabling/disabling
-  **/
 public:
-  virtual void
-  SetupTracing(std::string prefix);
   
   virtual void Dump (std::ostream &os) const;
 protected:
-  
-  //SetupTracingIfEnabled
-  bool
-  IsTracingEnabled() const;
-//  bool EnableTracing();
-  std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
-//  int m_prefixCounter;      //!< TODO remove and put in a helper
+//  
+//  //SetupTracingIfEnabled
+//  bool
+//  IsTracingEnabled() const;
+////  bool EnableTracing();
+//  std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
+////  int m_prefixCounter;      //!< TODO remove and put in a helper
  /****** END TRACING *****/
 
 

@@ -301,7 +301,7 @@ TcpSocketBase::TcpSocketBase (void)
     m_localISN(0),
     m_peerISN(0),
     m_mptcpEnabled(false),
-    m_mptcpLocalKey(0),
+    m_mptcpLocalKey (0),
     m_mptcpLocalToken(0),
     m_winScalingEnabled(false),
     m_sndScaleFactor (0),
@@ -373,8 +373,8 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
     m_localISN(sock.m_localISN),
     m_peerISN(sock.m_peerISN),
     m_mptcpEnabled (sock.m_mptcpEnabled),
-    m_mptcpLocalKey(sock.m_mptcpLocalKey),
-    m_mptcpLocalToken(sock.m_mptcpLocalToken),
+    m_mptcpLocalKey (sock.m_mptcpLocalKey),
+    m_mptcpLocalToken (sock.m_mptcpLocalToken),
     m_winScalingEnabled (sock.m_winScalingEnabled),
     m_sndScaleFactor (sock.m_sndScaleFactor),
     m_rcvScaleFactor (sock.m_rcvScaleFactor),
@@ -1619,31 +1619,38 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
    ///! we first forked here
    //////////////////////////////////////
    Ptr<TcpSocketBase> newSock = Fork();
-    if(ProcessTcpOptions (tcpHeader) == 1)
-    {
-      NS_LOG_LOGIC("Fork & Upgrade to meta " << this);
 
+   Ptr<const TcpOptionMpTcpCapable> mpc;
+
+   if(GetTcpOption (tcpHeader, mpc))
+//    if(ProcessTcpOptions (tcpHeader) == 1)
+    {
+      NS_ASSERT_MSG (!mpc->HasReceiverKey(), "Should not be the case");
+      NS_LOG_LOGIC("Fork & Upgrade to meta " << this);
+      
       // TODO is it possible to move these to CompleteFork
       // would clutter less TcpSocketBase
+      uint64_t localKey = this->GenerateUniqueMpTcpKey () ;
+      Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta (false, localKey, mpc->GetSenderKey());
 
-      Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta (false);
-
+      // TODO Move part of it to UpgradeToMeta 
       // HACK matt otherwise the new subflow sends the packet on the wroing interface
       master->m_boundnetdevice = this->m_boundnetdevice;
 
       Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
-
-      uint64_t localKey = meta->GenerateUniqueMpTcpKey ();
-        uint32_t localToken;
-        uint64_t idsn;
-
-      GenerateTokenForKey( HMAC_SHA1, localKey, localToken, idsn );
-      SequenceNumber32 sidsn ( (uint32_t) idsn);
-
-      NS_LOG_DEBUG ("Server meta ISN = " << idsn << " from key " << localKey);
+//
+//      // generate a random key
+//      uint64_t localKey = meta->GenerateUniqueMpTcpKey ();
+//      uint32_t localToken;
+//      uint64_t idsn;
+//
+//      GenerateTokenForKey ( HMAC_SHA1, localKey, localToken, idsn );
+//      SequenceNumber32 sidsn ( (uint32_t) idsn);
+//
+//      NS_LOG_DEBUG ("Server meta ISN = " << idsn << " from key " << localKey);
 
       // Setting isn of meta
-      meta->InitLocalISN (sidsn);
+//      meta->InitLocalISN (sidsn);
 
       // We add the socket after initial parameters are correctly set so that
       // tracing doesn't contain strange values that mess up plotting
@@ -1661,7 +1668,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
 }
 
 Ptr<MpTcpSubflow>
-TcpSocketBase::UpgradeToMeta (bool connecting)
+TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerKey)
 {
   NS_LOG_FUNCTION("Upgrading to meta " << this);
 
@@ -1676,6 +1683,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting)
 
 
   // TODO set SetSendCallback but for meta
+  // TODO should inherit callbacks from constructor but ns3 should not reset them
 //  Callback<void, Ptr<Socket>, uint32_t >
   Callback<void, Ptr<Socket>, uint32_t > cbSend = this->m_sendCb;
   Callback<void, Ptr<Socket> >  cbRcv = this->m_receivedData;
@@ -1732,6 +1740,11 @@ TcpSocketBase::UpgradeToMeta (bool connecting)
 //      GetMeta ()->AddLocalId ();
   }
 
+
+  meta->SetLocalKey (localKey);
+
+    // will set peer isn
+  meta->SetPeerKey (peerKey);
 //InitLocalISN
   // we add it to tcp so that it can be freed and used for token lookup
 
@@ -1744,7 +1757,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting)
   // the master is always a new socket, hence we should register it
   // We can only do it when meta is set
   bool result = m_tcp->AddSocket (master);
-  NS_ASSERT_MSG(result, "Could not register master");
+  NS_ASSERT_MSG (result, "Could not register master");
 
   // TODO convert this into a Socket member function so that
   // members can become private again
@@ -1804,150 +1817,19 @@ TcpSocketBase::ProcessTcpOptions (const TcpHeader& header)
   }
   return 0;
 }
-#if 0
-int
-TcpSocketBase::ProcessTcpOptions(const TcpHeader& header)
-{
-  NS_LOG_FUNCTION (this << header);
-
-  TcpHeader::TcpOptionList options;
-  header.GetOptions (options);
-
-  for(TcpHeader::TcpOptionList::const_iterator it(options.begin()); it != options.end(); ++it)
-  {
-      //!
-      Ptr<const TcpOption> option = *it;
-      switch(option->GetKind())
-      {
-//        case TcpOption::WINSCALE:
-//          if ((header.GetFlags () & TcpHeader::SYN) && m_winScalingEnabled && m_state < ESTABLISHED)
-//            {
-//              ProcessOptionWScale (option);
-//              ScaleSsThresh (m_sndScaleFactor);
-//            }
-//            break;
-        case TcpOption::MPTCP:
-            //! this will interrupt option processing but this function will be scheduled again
-            //! thus some options may be processed twice, it should not trigger errors
-            ProcessOptionMpTcpEstablished(option);
-//             ) {
-//                return 1;
-//            }
-            break;
-        case TcpOption::TS:
-            if (m_timestampEnabled)
-            {
-                ProcessOptionTimestamp (option);
-            }
-            break;
-        // Ignore those
-        case TcpOption::NOP:
-        case TcpOption::END:
-            break;
-        default:
-//            NS_LOG_WARN("Unsupported option [" << (int)option->GetKind() << "]");
-            break;
-      };
-  }
-  return 0;
-}
-//#endif
-// N'est jamais appelé ?
-int
-TcpSocketBase::ProcessTcpOptionsListen (const TcpHeader& header)
-{
-  NS_LOG_FUNCTION (this << header);
-
-  TcpHeader::TcpOptionList options;
-  header.GetOptions (options);
-
-  for(TcpHeader::TcpOptionList::const_iterator it(options.begin()); it != options.end(); ++it)
-  {
-      //!
-      Ptr<const TcpOption> option = *it;
-      if (!IsTcpOptionAllowed ( option->GetKind()))
-        continue;
-
-      switch(option->GetKind())
-      {
-        case TcpOption::WINSCALE:
-//          if ((header.GetFlags () & TcpHeader::SYN) && m_winScalingEnabled && m_state < ESTABLISHED)
-//            {
-              ProcessOptionWScale (option);
-              ScaleSsThresh (m_sndScaleFactor);
-//            }
-            break;
-        case TcpOption::MPTCP:
-//            ProcessOptionMpTcp(option);
-            {
-                //!
-              Ptr<const TcpOptionMpTcpCapable> mpc;
-
-              if(GetTcpOption(header, mpc))
-              {
-                NS_LOG_UNCOND("found MP_CAPABLE");
-                return 1;
-              }
-              else
-              {
-                NS_LOG_UNCOND("MP_CAPABLE not found");
-              }
-//                NS_LOG_UNCOND("MP_CAPABLE, upgrading to meta socket");
-            }
-            break;
-        case TcpOption::TS:
-            ProcessOptionTimestamp (option);
-            break;
-        case TcpOption::NOP:
-            break;
-        default:
-            NS_LOG_INFO("option ignored [" << (int)option->GetKind() << "]");
-            break;
-      };
-  }
-
-  return 0;
-}
-#endif
-
-/*****************************
-BEGIN TRACING system (to remove after tests ?)
-*****************************/
-void
-TcpSocketBase::SetupTracing (std::string prefix)
-{
-    if(IsTracingEnabled())
-        return;
-
-    //  f.open(filename, std::ofstream::out | std::ofstream::trunc);
-    m_tracePrefix = prefix;
-
-    //  prefix = m_tracePrefix + "/meta";
-//    TcpTraceHelper traceHelper;
-    // TODO move out to
-    TcpTraceHelper::SetupSocketTracing(this, m_tracePrefix);
-
-    /** **/
-}
 
 
-bool
-TcpSocketBase::IsTracingEnabled() const
-{
-    //
-    return !m_tracePrefix.empty();
-}
 
 void
 TcpSocketBase::InitLocalISN ()
 {
-    SequenceNumber32 isn(0);
+    SequenceNumber32 isn (0);
      if(!m_nullIsn)
       {
         NS_LOG_INFO("Generating Initial Sequence Number");
         isn = rand();
       }
-    InitLocalISN(isn);
+    InitLocalISN (isn);
 }
 
 void
@@ -2033,9 +1915,20 @@ uint32_t localToken;
            && m_nextTxSequence + SequenceNumber32 (1) == tcpHeader.GetAckNumber ())
     { // Handshake completed
 
-      // TODO separate between
-      if(ProcessTcpOptions(tcpHeader) == 1)
+
+      Ptr<const TcpOptionMpTcpCapable> mpc;
+      
+      // Process the MP_CAPABLE only if we are not a subflow already
+      // otherwise, we end up processing ad vitam aeternam
+      //.IsChildOf( MpTcpSubflow::GetTypeId())
+      NS_LOG_DEBUG ("Child of subflow ? instance typeid=" << GetInstanceTypeId()
+          << " to compare with " << MpTcpSubflow::GetTypeId() );
+        
+      if( !GetInstanceTypeId().IsChildOf(MpTcpSubflow::GetTypeId(), false) && GetTcpOption(tcpHeader, mpc))
+      
+//      if(ProcessTcpOptions(tcpHeader) == 1)
       {
+//        if (mpc->GetSubType() == )
         // SendRst?
         // TODO save endpoint
 //        if(m_endpoint != 0)
@@ -2043,7 +1936,7 @@ uint32_t localToken;
         Ptr<NetDevice> boundDev = m_boundnetdevice;
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
         // master = first subflow
-        Ptr<MpTcpSubflow> master = UpgradeToMeta (true);
+        Ptr<MpTcpSubflow> master = UpgradeToMeta (true, m_mptcpLocalKey, mpc->GetSenderKey() );
 
         // Hack to retrigger the tcpL4protocol::OnNewSocket callback
 //        m_tcp->AddSocket (this);
@@ -2059,13 +1952,13 @@ uint32_t localToken;
         NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
         NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
 
-        GenerateTokenForKey( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
-        SequenceNumber32 sidsn ( (uint32_t) idsn);
-
-        NS_LOG_DEBUG ("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
-
-        // Setting isn of meta
-        InitLocalISN (sidsn);
+//        GenerateTokenForKey ( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
+//        SequenceNumber32 sidsn ( (uint32_t) idsn);
+//
+//        NS_LOG_DEBUG ("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
+//
+//        // Setting isn of meta
+//        InitLocalISN (sidsn);
         // Peer ISN is set in MpTcpSubflow::ProcessSynSent scheduled a few lines below
 //              // HACK matt otherwise the new subflow sends the packet on the wroing interface
         master->m_boundnetdevice = boundDev;
@@ -2093,7 +1986,8 @@ uint32_t localToken;
 //        master->Bind();
 
         // Carrément le renvoyer à forwardUp pour forcer la relecture de la windowsize
-        Simulator::ScheduleNow( &MpTcpSubflow::ProcessSynSent, master, packet, tcpHeader);
+        
+        Simulator::ScheduleNow ( &MpTcpSubflow::ProcessSynSent, master, packet, tcpHeader);
         return;
       }
 
@@ -2803,6 +2697,8 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   m_state = SYN_RCVD;
   m_cnCount = m_cnRetries;
   SetupCallback ();
+  
+  // TODO move out
   // Set the sequence number and send SYN+ACK
   InitLocalISN ();
   InitPeerISN (h.GetSequenceNumber ());
@@ -3646,9 +3542,9 @@ TcpSocketBase::IsTcpOptionAllowed (uint8_t kind) const
 //}
 
 uint64_t
-TcpSocketBase::GenerateUniqueMpTcpKey ()
+TcpSocketBase::GenerateUniqueMpTcpKey () const
 {
-  NS_LOG_FUNCTION("Generating key");
+  NS_LOG_FUNCTION ("Generating key");
   NS_ASSERT(m_tcp);
   // TODO rather use NS3 random generator
 //  NS_ASSERT_MSG( m_mptcpLocalKey != 0, "Key already generated");
@@ -3660,12 +3556,12 @@ TcpSocketBase::GenerateUniqueMpTcpKey ()
   {
     //! arbitrary function, TODO replace with ns3 random gneerator
     localKey = (rand() % 1000 + 1);
-    GenerateTokenForKey ( HMAC_SHA1, localKey, localToken, idsn );
+    GenerateTokenForKey ( HMAC_SHA1, localKey, &localToken, &idsn );
   }
   while (m_tcp->LookupMpTcpToken (localToken));
 
-  m_mptcpLocalToken = localToken;
-  m_mptcpLocalKey = localKey;
+//  m_mptcpLocalToken = localToken;
+//  m_mptcpLocalKey = localKey;
 //  NS_LOG_DEBUG("Key/token set to " << localKey << "/" << localToken);
 //  NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
 //  uint64_t idsn = 0;
@@ -3698,8 +3594,8 @@ TcpSocketBase::AddMpTcpOptions (TcpHeader& header)
     {
         // Append the MPTCP capable option
         Ptr<TcpOptionMpTcpCapable> mpc = CreateObject<TcpOptionMpTcpCapable>();
-        mpc->SetSenderKey(m_mptcpLocalKey);
-        header.AppendOption(mpc);
+        mpc->SetSenderKey (m_mptcpLocalKey);
+        header.AppendOption (mpc);
     }
 }
 
@@ -3742,15 +3638,6 @@ TcpSocketBase::ProcessOptionMpTcp ( const Ptr<const TcpOption> option)
   }
   // else save peerKey ?
   return 1;
-
-//    NS_LOG_UNCOND("found MP_CAPABLE");
-//    return 1;
-//  }
-//  else
-//  {
-//    NS_LOG_UNCOND("MP_CAPABLE not found");
-//  }
-
 }
 
 void

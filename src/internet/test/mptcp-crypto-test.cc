@@ -67,8 +67,8 @@ public:
     uint32_t tokenClient = 0, tokenServer = 0;
     uint64_t idsnClient = 0, idsnServer = 0;
 
-    GenerateTokenForKey( algo, m_c.keyServer, tokenServer, idsnServer);
-    GenerateTokenForKey( algo, m_c.keyClient, tokenClient, idsnClient);
+    GenerateTokenForKey( algo, m_c.keyServer, &tokenServer, &idsnServer);
+    GenerateTokenForKey( algo, m_c.keyClient, &tokenClient, &idsnClient);
 //    NS_LOG_INFO( "Client: Generated token "<< tokenClient << ". Expected "<< m_c.expectedTokenClient);
 //    NS_LOG_INFO( "Client: Generated idsn "<< idsnClient << ". Expected "<< m_c.expectedIdsnClient);
 //

@@ -207,9 +207,7 @@ Only sha1 is defined and supported in the standard (same for ns3).
 +---------------------------------------------------------------+
 \endverbatim
  */
-class TcpOptionMpTcpCapable :
-//public TcpOptionMpTcp<TcpOptionMpTcp::MP_CAPABLE>
-public TcpOptionMpTcp
+class TcpOptionMpTcpCapable : public TcpOptionMpTcp
 {
 public:
   TcpOptionMpTcpCapable (void);

@@ -66,7 +66,7 @@ namespace ns3
    * \param idsn Resulting initial data sequence number generated from the key
    */
   void
-  GenerateTokenForKey( mptcp_crypto_alg_t alg, uint64_t key, uint32_t& token, uint64_t& idsn);
+  GenerateTokenForKey ( mptcp_crypto_alg_t alg, uint64_t key, uint32_t *token, uint64_t *idsn);
 }
 
 

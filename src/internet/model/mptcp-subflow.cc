@@ -586,7 +586,7 @@ MpTcpSubflow::SendPacket(TcpHeader header, Ptr<Packet> p)
 
 
   //! if we send data...
-  if(p->GetSize () && !IsInfiniteMappingEnabled())
+  if (p->GetSize () && !IsInfiniteMappingEnabled())
   {
     //... we must decide to send a mapping or not
     // For now we always append the mapping but we could have mappings spanning over several packets.
@@ -602,7 +602,7 @@ MpTcpSubflow::SendPacket(TcpHeader header, Ptr<Packet> p)
       if(!result)
       {
         m_TxMappings.Dump();
-        NS_FATAL_ERROR("Could not find mapping associated to ssn");
+        NS_FATAL_ERROR("Could not find mapping associated to ssn" << ssnHead);
       }
       NS_ASSERT_MSG(mapping.TailSSN() >= ssnHead +p->GetSize() -1, "mapping should cover the whole packet" );
 
@@ -1129,11 +1129,15 @@ MpTcpSubflow::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
 
 
+/**
+ Only checks should be done here since when this is called, the MPTCP connection
+ is already established, with metas already created
+*/
 int
 MpTcpSubflow::ProcessOptionMpTcpCapable (const Ptr<const TcpOptionMpTcp> option)
 {
-    NS_LOG_LOGIC(this << option);
-    NS_ASSERT_MSG(IsMaster(), "You can receive MP_CAPABLE only on the master subflow");
+    NS_LOG_LOGIC (this << option);
+    NS_ASSERT_MSG (IsMaster(), "You can receive MP_CAPABLE only on the master subflow");
 
     /**
     * Here is how the MPTCP 3WHS works:
@@ -1143,15 +1147,14 @@ MpTcpSubflow::ProcessOptionMpTcpCapable (const Ptr<const TcpOptionMpTcp> option)
     *
     */
     // Expect an MP_CAPABLE option
-    Ptr<const TcpOptionMpTcpCapable> mpcRcvd = DynamicCast<const TcpOptionMpTcpCapable>(option);
-    NS_ASSERT_MSG(mpcRcvd, "There must be a MP_CAPABLE option");
-//        if(mpcRcvd) {
-//            return 2;
-//        }
-//        NS_ASSERT_MSG( GetTcpOption(tcpHeader, mpcRcvd), "There must be an MP_CAPABLE option in the SYN Packet" );
+    Ptr<const TcpOptionMpTcpCapable> mpc = DynamicCast<const TcpOptionMpTcpCapable>(option);
+    NS_ASSERT_MSG ( mpc, "There must be a MP_CAPABLE option");
 
-    // TODO check it depending on the state
-    GetMeta()->SetPeerKey ( mpcRcvd->GetSenderKey () );
+    NS_ASSERT_MSG ( mpc->HasReceiverKey(), "Only client should receive it" );
+    NS_ASSERT_MSG ( mpc->GetPeerKey () == GetMeta ()->GetLocalKey(), "Peer should have echoed back our key (" << GetMeta ()->GetLocalKey() << " )" );
+
+    // Peer key should aready be set
+//    GetMeta()->SetPeerKey ( mpcRcvd->GetSenderKey () );
 
     // TODO add it to the manager too
     return 0;
@@ -1297,7 +1300,7 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
     switch(main->GetSubType())
     {
         case TcpOptionMpTcp::MP_CAPABLE:
-            return ProcessOptionMpTcpCapable(main);
+            return ProcessOptionMpTcpCapable (main);
 
         case TcpOptionMpTcp::MP_JOIN:
             return ProcessOptionMpTcpJoin(main);
@@ -1361,7 +1364,7 @@ MpTcpSubflow::AddOptionMpTcp3WHS (TcpHeader& hdr) const
 
     //! Use an MP_CAPABLE option
     Ptr<TcpOptionMpTcpCapable> mpc =  CreateObject<TcpOptionMpTcpCapable>();
-    switch(hdr.GetFlags())
+    switch (hdr.GetFlags())
     {
       case TcpHeader::SYN:
       case (TcpHeader::SYN | TcpHeader::ACK):

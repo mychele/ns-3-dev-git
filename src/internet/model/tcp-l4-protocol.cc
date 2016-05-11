@@ -923,6 +923,9 @@ TcpL4Protocol::NotifyNewSocket (Ptr<TcpSocket> socket)
   return true;
 }
 
+/**
+TODO we should check MPTCP token is not registered twice
+**/
 bool
 TcpL4Protocol::AddSocket (Ptr<TcpSocket> socket)
 {
