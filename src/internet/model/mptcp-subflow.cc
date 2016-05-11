@@ -265,8 +265,6 @@ MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
     m_dssFlags (0),
     m_masterSocket(true),
     m_localNonce(0)
-
-
 {
     NS_LOG_FUNCTION (this << &sock);
       NS_LOG_LOGIC ("Copying from TcpSocketBase. endPoint=" << sock.m_endPoint);

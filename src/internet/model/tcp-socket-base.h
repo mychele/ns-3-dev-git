@@ -842,7 +842,9 @@ protected:
    * Ideally MpTcoSocketBase would take less memory than TcpSocketBase, so one of the goal should be to let
    * MpTcpSocketBase inherit directly from TcpSocket rather than TcpSocketBase.
    *
-   * The function does not register the new subflow in m_tcp->AddSocket, this should be taken care
+   * The function does not register 
+   * the new subflow in m_tcp->AddSocket, or the meta
+   * this should be taken care
    * of afterwards.
    *
    * TODO might be best in TcpL4Protocol ?

@@ -1617,17 +1617,17 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       return;
     }
 
-   ///! we first forked here
-   //////////////////////////////////////
+   /**
+    we first forked here, socket is not registered into TCPL4Protocol yet
+   **/
    Ptr<TcpSocketBase> newSock = Fork();
 
    Ptr<const TcpOptionMpTcpCapable> mpc;
 
    if(GetTcpOption (tcpHeader, mpc))
-//    if(ProcessTcpOptions (tcpHeader) == 1)
     {
       NS_ASSERT_MSG (!mpc->HasReceiverKey(), "Should not be the case");
-      NS_LOG_LOGIC("Fork & Upgrade to meta " << this);
+      NS_LOG_LOGIC ("Fork & Upgrade to meta " << this);
       
       // TODO is it possible to move these to CompleteFork
       // would clutter less TcpSocketBase
@@ -1673,13 +1673,18 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 {
   NS_LOG_FUNCTION("Upgrading to meta " << this);
 
+  /**
+   TODO here we should find a way to call CompleteConstruct else some plots are wrong since
+   TcpXxBuffers were not setup correctly (rWnd for instance)
+  **/
   //*this
-  MpTcpSubflow *subflow = new MpTcpSubflow(*this);
+  MpTcpSubflow *subflow = new MpTcpSubflow (*this);
   // TODO could do sthg like CopyObject<MpTcpSubflow>(this) ?
   // Otherwise uncoimment CompleteConstruct
-//  CompleteConstruct(sf);
-  Ptr<MpTcpSubflow> master(subflow, true);
 
+  Ptr<MpTcpSubflow> master (subflow, true);
+//  CompleteConstruct (sf);
+//  subflow->Object::Construct (AttributeConstructionList ());
 //  master->SetupCallback();
 
 
@@ -1924,11 +1929,9 @@ uint32_t localToken;
 //      NS_LOG_DEBUG ("Child of subflow ? instance typeid=" << GetInstanceTypeId()
 //          << " to compare with " << MpTcpSubflow::GetTypeId() );
         
-      if( !GetInstanceTypeId().IsChildOf(MpTcpSubflow::GetTypeId(), false) && GetTcpOption(tcpHeader, mpc))
-
+      if( !GetInstanceTypeId().IsChildOf(MpTcpSubflow::GetTypeId(), false) 
+        && GetTcpOption(tcpHeader, mpc))
       {
-//        if (mpc->GetSubType() == )
-        // SendRst?
         // TODO save endpoint
 //        if(m_endpoint != 0)
         Ipv4EndPoint* endPoint = m_endPoint;
@@ -2678,7 +2681,7 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   bool result = m_tcp->AddSocket(this);
   if(!result)
   {
-    NS_LOG_DEBUG("Can't add socket: already registered ? Can be because of mptcp");
+    NS_LOG_WARN ("Can't add socket: already registered ? Can be because of mptcp");
   }
 
   // Change the cloned socket from LISTEN state to SYN_RCVD
