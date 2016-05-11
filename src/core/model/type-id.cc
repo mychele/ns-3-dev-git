@@ -762,7 +762,7 @@ TypeId::HasParent (void) const
   return parent != m_tid;
 }
 bool 
-TypeId::IsChildOf (TypeId other) const
+TypeId::IsChildOf (TypeId other, bool strict) const
 {
   NS_LOG_FUNCTION (this << other);
   TypeId tmp = *this;
@@ -770,7 +770,11 @@ TypeId::IsChildOf (TypeId other) const
     {
       tmp = tmp.GetParent ();
     }
-  return tmp == other && *this != other;
+  bool res = tmp == other;
+  if (strict) {
+    res &= *this != other;
+  }
+  return res;
 }
 std::string 
 TypeId::GetGroupName (void) const

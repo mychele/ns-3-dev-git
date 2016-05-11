@@ -169,7 +169,7 @@ public:
    * except that you do not need object instances: you can do the check
    * with TypeId instances instead.
    */
-  bool IsChildOf (TypeId other) const;
+  bool IsChildOf (TypeId other, bool strict = true) const;
 
   /**
    * \returns the name of the group associated to this TypeId.
