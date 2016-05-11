@@ -1678,22 +1678,22 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
   /**
    TODO here we should find a way to call CompleteConstruct else some plots are wrong since
    TcpXxBuffers were not setup correctly (rWnd for instance)
-  **/
-  //*this
+  
+   Also we don't necessarely want to create a MpTcpSubflow but maybe a subclass.
+   The default subflow typeid is an attribute of meta socket which is not practical since subflow is created
+   before meta. Hence move that type id to TcpL4Protocol
+   */
   MpTcpSubflow *subflow = new MpTcpSubflow (*this);
   // TODO could do sthg like CopyObject<MpTcpSubflow>(this) ?
   // Otherwise uncoimment CompleteConstruct
 
-  Ptr<MpTcpSubflow> master (subflow, true);
-//  CompleteConstruct (sf);
-//  subflow->Object::Construct (AttributeConstructionList ());
-//  master->SetupCallback();
+//  Ptr<MpTcpSubflow> master (subflow, true);
+  Ptr<MpTcpSubflow> master = DynamicCast <MpTcpSubflow>(CompleteConstruct ( (TcpSocketBase*)subflow) );
+
 
 
 
   Ipv4EndPoint *endPoint = m_endPoint;
-
-//  m_tcp->CreateSocket();
 
   // TODO cancel only for forks, not when client gets upgraded Otherwise timers
   this->CancelAllTimers();

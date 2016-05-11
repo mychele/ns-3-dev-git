@@ -248,7 +248,7 @@ MpTcpMultihomedTestCase::DoSetup (void)
   // These
 //  Config::SetDefault ("ns3::TcpL4Protocol::SocketType",  StringValue("ns3::TcpNewReno") );
   Config::SetDefault ("ns3::TcpSocketBase::EnableMpTcp", BooleanValue(true));
-  Config::SetDefault ("ns3::TcpSocketBase::NullISN",    BooleanValue(false));
+  Config::SetDefault ("ns3::TcpSocketBase::NullISN",    BooleanValue(true));
 //    Time::SetResolution (Time::MS);
     // Arguments to these test cases are 1) totalStreamSize,
 //  Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
