@@ -319,7 +319,8 @@ TcpSocketBase::TcpSocketBase (void)
   m_rxBuffer = CreateObject<TcpRxBuffer> ();
   m_txBuffer = CreateObject<TcpTxBuffer> ();
   m_tcb      = CreateObject<TcpSocketState> ();
-  // HACK MATT
+
+  // HACK MATT, no need anymore, remove
   m_tcb->m_socket = this;
   
   bool ok;
@@ -1920,13 +1921,11 @@ uint32_t localToken;
       
       // Process the MP_CAPABLE only if we are not a subflow already
       // otherwise, we end up processing ad vitam aeternam
-      //.IsChildOf( MpTcpSubflow::GetTypeId())
-      NS_LOG_DEBUG ("Child of subflow ? instance typeid=" << GetInstanceTypeId()
-          << " to compare with " << MpTcpSubflow::GetTypeId() );
+//      NS_LOG_DEBUG ("Child of subflow ? instance typeid=" << GetInstanceTypeId()
+//          << " to compare with " << MpTcpSubflow::GetTypeId() );
         
       if( !GetInstanceTypeId().IsChildOf(MpTcpSubflow::GetTypeId(), false) && GetTcpOption(tcpHeader, mpc))
-      
-//      if(ProcessTcpOptions(tcpHeader) == 1)
+
       {
 //        if (mpc->GetSubType() == )
         // SendRst?
@@ -1941,9 +1940,7 @@ uint32_t localToken;
         // Hack to retrigger the tcpL4protocol::OnNewSocket callback
 //        m_tcp->AddSocket (this);
         m_tcp->NotifyNewSocket (this);
-        
-//        m_tcp->NotifyNewSocket (this);
-        
+
         // Need to register an id
         InetSocketAddress addr (endPoint->GetLocalAddress(), endPoint->GetLocalPort());
         MpTcpSocketBase* meta = (MpTcpSocketBase*)this;
@@ -1952,15 +1949,7 @@ uint32_t localToken;
         NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
         NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
 
-//        GenerateTokenForKey ( HMAC_SHA1, m_mptcpLocalKey, localToken, idsn );
-//        SequenceNumber32 sidsn ( (uint32_t) idsn);
-//
-//        NS_LOG_DEBUG ("ZZ recomputed IDSN = " << idsn << " from key " << m_mptcpLocalKey);
-//
-//        // Setting isn of meta
-//        InitLocalISN (sidsn);
-        // Peer ISN is set in MpTcpSubflow::ProcessSynSent scheduled a few lines below
-//              // HACK matt otherwise the new subflow sends the packet on the wroing interface
+        // HACK matt otherwise the new subflow sends the packet on the wroing interface
         master->m_boundnetdevice = boundDev;
         master->m_endPoint = endPoint;
 

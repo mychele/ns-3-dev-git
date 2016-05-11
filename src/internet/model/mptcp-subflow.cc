@@ -1117,17 +1117,6 @@ MpTcpSubflow::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 }
 
 
-//void
-//MpTcpSubflow::SendEmptyPacket(TcpHeader& header)
-//{
-//  // Automatically append DSS
-//  if(header.GetFlags() & TcpHeader::ACK)
-//  {
-//
-//  }
-//}
-
-
 
 /**
  Only checks should be done here since when this is called, the MPTCP connection
