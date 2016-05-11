@@ -242,7 +242,7 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
 
       // now we should call the destructor ourself
       TcpSocketBase *temp = new (addr) TcpSocketBase();
-      socket = CompleteConstruct(temp);
+      socket = CompleteConstruct (temp);
       socket.Acquire();
   }
   else
@@ -252,6 +252,7 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
   socket->SetNode (m_node);
   socket->SetTcp (this);
   socket->SetRtt (rtt);
+  socket->InitLocalISN ();
 
   // TODO solve
   NS_LOG_DEBUG ("Setting CC with " << algo->GetName());

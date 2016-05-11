@@ -172,15 +172,22 @@ TcpTraceHelper::SetupSocketTracing (Ptr<TcpSocketBase> sock, const std::string p
   Ptr<OutputStreamWrapper> fd = asciiTraceHelper.CreateFileStream (prefix+ "_data.csv", mode);
 
   Time now = Simulator::Now();
-  // TODO use GetInitialCwnd, GetValue  etc...
+  
+  
+  /* TODO use GetInitialCwnd, GetValue  etc...
+   Here we disabled some entries else the initial value wrongly set or just normal 
+   messed up the graph scale
+  */
   *fd->GetStream() 
     << "Time,txNext,highestSeq,unackSeq,rxNext,rxAvailable,rxTotal,cwnd,rWnd,ssThresh,state" << std::endl
     << now << "," << sock->m_nextTxSequence
           << "," << sock->m_highTxMark 
           << "," << sock->FirstUnackedSeq() 
-          << "," << sock->m_rxBuffer->NextRxSequence()
+          << "," 
+          /// << sock->m_rxBuffer->NextRxSequence()
           << "," << sock->GetRxAvailable ()
-          << "," << sock->GetRcvBufSize()
+          << "," 
+        //      <<  sock->GetRcvBufSize()
           << "," << sock->GetInitialCwnd()
           << "," << sock->Window()
           << "," << sock->GetInitialSSThresh()

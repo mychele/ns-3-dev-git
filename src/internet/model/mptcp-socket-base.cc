@@ -320,15 +320,15 @@ MpTcpSocketBase::ConnectNewSubflow (const Address &local, const Address &remote)
   // TODO pb c'est la, les 2 ss flots se partagent le mm congestion control !!
   m_subflowTypeId = MpTcpSubflow::GetTypeId();
 //  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl->Fork(), m_subflowTypeId);
-  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl->Fork(), m_subflowTypeId);
+  Ptr<Socket> socket = m_tcp->CreateSocket ( m_congestionControl->Fork(), m_subflowTypeId);
   NS_ASSERT(socket);
   Ptr<MpTcpSubflow> sf = DynamicCast<MpTcpSubflow>(socket);
-  NS_ASSERT(sf);
+  NS_ASSERT (sf);
   AddSubflow (sf);
 
   // TODO account for this error as well ?
   bool res = (sf->Bind(local) == 0);
-  NS_ASSERT(res);
+  NS_ASSERT (res);
   int ret = sf->Connect(remote);
 
   return ret;

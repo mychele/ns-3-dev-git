@@ -206,6 +206,8 @@ public:
    * \brief Make a socket fully operational
    *
    * Called after a socket has been bound, it is inserted in an internal vector.
+   * It should be called once all parameters are all set since socket
+   * parameters might be traced right after this function being called
    *
    * \param socket Socket to be added
    */

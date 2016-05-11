@@ -797,8 +797,8 @@ TcpSocketBase::Connect (const Address & address)
   m_rtt->Reset ();
   m_cnCount = m_cnRetries;
 
-  // TODO regenerate ISN
-   InitLocalISN();
+  // TODO remove regenerate ISN
+//   InitLocalISN();
 
   // DoConnect() will do state-checking and send a SYN packet
   return DoConnect ();
@@ -1634,7 +1634,8 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // would clutter less TcpSocketBase
       uint64_t localKey = this->GenerateUniqueMpTcpKey () ;
       Ptr<MpTcpSubflow> master = newSock->UpgradeToMeta (false, localKey, mpc->GetSenderKey());
-
+     
+      
       // TODO Move part of it to UpgradeToMeta 
       // HACK matt otherwise the new subflow sends the packet on the wroing interface
       master->m_boundnetdevice = this->m_boundnetdevice;
@@ -1689,29 +1690,11 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 //  master->SetupCallback();
 
 
-  // TODO set SetSendCallback but for meta
-  // TODO should inherit callbacks from constructor but ns3 should not reset them
-//  Callback<void, Ptr<Socket>, uint32_t >
-#if 0
-  Callback<void, Ptr<Socket>, uint32_t > cbSend = this->m_sendCb;
-  Callback<void, Ptr<Socket> >  cbRcv = this->m_receivedData;
-  Callback<void, Ptr<Socket>, uint32_t>  cbDataSent = this->m_dataSent;
-  Callback<void, Ptr<Socket> >  cbConnectFail = this->m_connectionFailed;
-  Callback<void, Ptr<Socket> >  cbConnectSuccess = this->m_connectionSucceeded;
-  Callback<bool, Ptr<Socket>, const Address &> connectionRequest = this->m_connectionRequest;
-  Callback<void, Ptr<Socket>, const Address&> newConnectionCreated = this->m_newConnectionCreated;
-  #endif
+
   Ipv4EndPoint *endPoint = m_endPoint;
-  ////////////////////////
-  //// !! CAREFUL !!
-  //// all callbacks are disabled
-//  SetConnectCallback (vPS, vPS);
-//  SetDataSentCallback (vPSUI);
-//  SetSendCallback (vPSUI);
-//  SetRecvCallback (vPS);
-//
+
 //  m_tcp->CreateSocket();
-  
+
   // TODO cancel only for forks, not when client gets upgraded Otherwise timers
   this->CancelAllTimers();
 
@@ -1766,15 +1749,6 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 //  bool result = m_tcp->AddSocket (master);
 //  NS_ASSERT_MSG (result, "Could not register master");
 
-  // TODO convert this into a Socket member function so that
-  // members can become private again
-  #if 0
-  meta->SetSendCallback(cbSend);
-  meta->SetConnectCallback (cbConnectSuccess, cbConnectFail);   // Ok
-  meta->SetDataSentCallback (cbDataSent);
-  meta->SetRecvCallback (cbRcv);
-  meta->SetAcceptCallback(connectionRequest, newConnectionCreated);
-  #endif
   return master;
 //    return 0;
 }
@@ -1832,24 +1806,22 @@ TcpSocketBase::ProcessTcpOptions (const TcpHeader& header)
 void
 TcpSocketBase::InitLocalISN ()
 {
-    SequenceNumber32 isn (0);
-     if(!m_nullIsn)
-      {
-        NS_LOG_INFO("Generating Initial Sequence Number");
-        isn = rand();
-      }
-    InitLocalISN (isn);
+  NS_LOG_FUNCTION (this);
+  SequenceNumber32 isn (0);
+  if(!m_nullIsn)
+  {
+    NS_LOG_INFO("Generating Initial Sequence Number");
+    isn = rand();
+  }
+  InitLocalISN (isn);
 }
 
 void
 TcpSocketBase::InitLocalISN (const SequenceNumber32& localIsn)
 {
+  NS_LOG_FUNCTION (this << localIsn);
 
-//    SequenceNumber32 localIsn;
-// TODO replace m_nullIsn by a attribute
-//  	RandomVariable
-
-    NS_LOG_INFO ("Setting local ISN to " << localIsn);
+    NS_LOG_INFO ("Setting local ISN to " );
     // TODO check it was not initialized already ?
 //    m_rxBuffer->SetNextRxSequence (peerIsn + SequenceNumber32 (1));
     m_nextTxSequence = localIsn;
@@ -3556,20 +3528,6 @@ TcpSocketBase::GenerateUniqueMpTcpKey () const
     GenerateTokenForKey ( HMAC_SHA1, localKey, &localToken, &idsn );
   }
   while (m_tcp->LookupMpTcpToken (localToken));
-
-//  m_mptcpLocalToken = localToken;
-//  m_mptcpLocalKey = localKey;
-//  NS_LOG_DEBUG("Key/token set to " << localKey << "/" << localToken);
-//  NS_LOG_DEBUG("Key/token set to " << m_mptcpLocalKey << "/" << m_mptcpLocalToken);
-//  uint64_t idsn = 0;
-//  /**
-//  /!\ seq nb must be 64 bits for mptcp but that would mean rewriting lots of code so
-//  TODO add a SetInitialSeqNb member into TcpSocketBase
-//  **/
-
-////  SetTxHead(m_nextTxSequence);
-//  m_txBuffer->SetHeadSequence(m_nextTxSequence);
-//  InitLocalISN(m_nextTxSequence);
 
   return localKey;
 }
