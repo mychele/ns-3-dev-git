@@ -1277,7 +1277,8 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
    m_receivedHeader = tcpHeader;
    // We should call a function that does validity cheking here and that could be 
    // overriden by MPTCP meta
-   m_rWnd = 
+   // Might cause pb when meta is not set
+
 //  NS_LOG_UNCOND("TOTO=" << packet->GetSize ());
     // TODO bad idea to put it here.
     // should first check that packet is in range

@@ -1602,7 +1602,9 @@ MpTcpSubflow::UpdateWindowSize (const TcpHeader& header)
 //    {
 //        GetMeta()->UpdateWindowSize(header);
 //    }
-    return true;
+  
+  m_rWnd = GetMeta()->m_rWnd;
+  return true;
 }
 
 uint32_t
@@ -2289,6 +2291,7 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished (
     {
       NS_LOG_ERROR ("YOU SHOULD DROP THE PACKET");
     }
+    m_rWnd = GetMeta()->m_rWnd;
     
     GetMeta()->ReceivedAck ( dack, this, false);
 //    SequenceNumber32 dack = SequenceNumber32(dss->GetDataAck());
