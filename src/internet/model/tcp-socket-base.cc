@@ -828,7 +828,7 @@ TcpSocketBase::Listen (void)
 int
 TcpSocketBase::Close (void)
 {
-  NS_LOG_FUNCTION (this);
+  NS_LOG_FUNCTION (this << TcpStateName[m_state]);
   /// \internal
   /// First we check to see if there is any unread rx data.
   /// \bugid{426} claims we should send reset in this case.
@@ -839,12 +839,17 @@ TcpSocketBase::Close (void)
       return 0;
     }
 
-  if (m_txBuffer->SizeFromSequence (m_nextTxSequence) > 0)
-    { // App close with pending data must wait until all data transmitted
+  uint32_t unackedTx = m_txBuffer->SizeFromSequence (m_nextTxSequence);
+  
+  NS_LOG_DEBUG (unackedTx << " more bytes to send");
+  if (unackedTx > 0)
+    { 
+//      NS_LOG_DEBUG ("");
+      // App close with pending data must wait until all data transmitted
       if (m_closeOnEmpty == false)
         {
           m_closeOnEmpty = true;
-          NS_LOG_INFO ("Socket " << this << " deferring close, state " << TcpStateName[m_state]);
+          NS_LOG_INFO ("Socket " << this << " deferring close to send " << unackedTx << " more bytes, state " << TcpStateName[m_state]);
         }
       return 0;
     }
@@ -1267,7 +1272,12 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       NS_LOG_ERROR ("Bytes removed: " << bytesRemoved << " invalid");
       return; // Discard invalid packet
     }
+    
 
+   m_receivedHeader = tcpHeader;
+   // We should call a function that does validity cheking here and that could be 
+   // overriden by MPTCP meta
+   m_rWnd = 
 //  NS_LOG_UNCOND("TOTO=" << packet->GetSize ());
     // TODO bad idea to put it here.
     // should first check that packet is in range
@@ -3711,13 +3721,32 @@ TcpSocketBase::AddOptionTimestamp (TcpHeader& header)
                option->GetTimestamp () << " echo=" << m_timestampToEcho);
 }
 
+
 bool
-TcpSocketBase::UpdateWindowSize (const TcpHeader &header)
+TcpSocketBase::UpdateWindowSize (const TcpHeader &tcpHeader)
 {
-  NS_LOG_FUNCTION (this << header);
+  NS_LOG_FUNCTION (this << tcpHeader);
+  return UpdateWindowSize (
+    tcpHeader.GetWindowSize (),
+    tcpHeader.GetSequenceNumber (),
+    tcpHeader.GetAckNumber ()
+  );
+}
+
+/**
+ * TODO should split those in various functions, really not practical, what if no 
+ */
+bool
+TcpSocketBase::UpdateWindowSize (
+  uint32_t receivedUnscaledWindow,
+  SequenceNumber32 sequenceNumber,
+  SequenceNumber32 ackNumber
+)
+{
+  NS_LOG_FUNCTION (this << receivedUnscaledWindow << sequenceNumber << ackNumber);
   //  If the connection is not established, the window size is always
   //  updated
-  uint32_t receivedWindow = header.GetWindowSize ();
+  uint32_t receivedWindow = receivedUnscaledWindow;
   receivedWindow <<= m_rcvScaleFactor;
   NS_LOG_DEBUG ("Received (scaled) window is " << receivedWindow << " bytes");
   if (m_state < ESTABLISHED)
@@ -3734,19 +3763,21 @@ TcpSocketBase::UpdateWindowSize (const TcpHeader &header)
   // (highest sequence number acked advances), or
   // 3) the advertised window is larger than the current send window
   bool update = false;
-  if (header.GetAckNumber () == m_highRxAckMark && receivedWindow > m_rWnd)
+  if (ackNumber == m_highRxAckMark && receivedWindow > m_rWnd)
     {
       // right edge of the send window is increased (window update)
       update = true;
     }
-  if (header.GetAckNumber () > m_highRxAckMark)
+  if (ackNumber > m_highRxAckMark)
     {
-      m_highRxAckMark = header.GetAckNumber ();
+      m_highRxAckMark = ackNumber;
       update = true;
     }
-  if (header.GetSequenceNumber () > m_highRxMark)
+  
+  // TODO check it's within bounds or is it done elsewhere ? where ?
+  if (sequenceNumber > m_highRxMark)
     {
-      m_highRxMark = header.GetSequenceNumber ();
+      m_highRxMark = sequenceNumber;
       update = true;
     }
   if (update == true)

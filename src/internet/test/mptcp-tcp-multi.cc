@@ -194,7 +194,7 @@ static std::string Name (std::string str, uint32_t totalStreamSize,
   oss << str << " total=" << totalStreamSize << " sourceWrite=" << sourceWriteSize
       << " sourceRead=" << sourceReadSize << " serverRead=" << serverReadSize
       << " serverWrite=" << serverWriteSize << " useIpv6=" << useIpv6
-      << "nbOfDevices=" << static_cast<long int>(nb_of_devices) 
+      << " nbOfDevices=" << static_cast<long int>(nb_of_devices) 
       << " nb_of_subflows_per_device=" << static_cast<long int>(nb_of_subflows_per_device)
       << " => expects " << nb_of_subflows_per_device * nb_of_devices << " subflows "
       ;

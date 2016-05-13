@@ -1279,6 +1279,7 @@ MpTcpSubflow::ProcessOptionMpTcpOwdTimeStamp (const Ptr<const TcpOptionMpTcpOwdT
 }
 
 
+// TODO passer le header
 int
 MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
 {
@@ -1297,7 +1298,7 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
         case TcpOptionMpTcp::MP_DSS:
             {
                 Ptr<const TcpOptionMpTcpDSS> dss = DynamicCast<const TcpOptionMpTcpDSS>(option);
-                NS_ASSERT(dss);
+                NS_ASSERT (dss);
                 // Update later on
                 ProcessOptionMpTcpDSSEstablished (dss);
             }
@@ -1591,16 +1592,17 @@ MpTcpSubflow::DiscardAtMostOneTxMapping(SequenceNumber64 const& firstUnackedMeta
   return false;
 }
 
-
+// STUB
 bool
-MpTcpSubflow::UpdateWindowSize(const TcpHeader& header)
+MpTcpSubflow::UpdateWindowSize (const TcpHeader& header)
 {
-    bool updated = TcpSocketBase::UpdateWindowSize(header);
-    if(updated)
-    {
-        GetMeta()->UpdateWindowSize(header);
-    }
-    return updated;
+  // TODO do nothing, 
+//    bool updated = TcpSocketBase::UpdateWindowSize(header);
+//    if (updated)
+//    {
+//        GetMeta()->UpdateWindowSize(header);
+//    }
+    return true;
 }
 
 uint32_t
@@ -2227,11 +2229,14 @@ Quote from rfc 6824:
 
 
 int
-MpTcpSubflow::ProcessOptionMpTcpDSSEstablished (const Ptr<const TcpOptionMpTcpDSS> dss)
+MpTcpSubflow::ProcessOptionMpTcpDSSEstablished (
+//  const TcpHeader& header, 
+  const Ptr<const TcpOptionMpTcpDSS> dss
+)
 {
   NS_LOG_FUNCTION (this << dss << " from subflow ");
 
-  if(!GetMeta()->FullyEstablished() )
+  if (!GetMeta()->FullyEstablished() )
   {
     NS_LOG_LOGIC ("First DSS received !");
 
@@ -2245,24 +2250,48 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished (const Ptr<const TcpOptionMpTcpDS
 
   }
 
+  SequenceNumber32 headDSN = GetMeta ()->GetRxBuffer()->NextRxSequence();
+  SequenceNumber32 dack;
+
   //! datafin case handled at the start of the function
   if( (dss->GetFlags() & TcpOptionMpTcpDSS::DSNMappingPresent) && !dss->DataFinMappingOnly() )
   {
       MpTcpMapping m;
       // TODO Get mapping n'est utilisé qu'une fois, copier le code ici
       //+ SequenceNumber(1)
-      m = GetMapping(dss);
+      m = GetMapping (dss);
+      headDSN = m.HeadDSN();
       m.MapToSSN ( m.HeadSSN() + GetPeerIsn() );
 //      AddPeerMapping(m);
       // Add peer mapping
-      bool ok = m_RxMappings.AddMapping( m );
+      bool ok = m_RxMappings.AddMapping (m);
       if (!ok)
       {
-        NS_LOG_WARN("Could not insert mapping: already received ?");
-        NS_LOG_UNCOND("Dumping Rx mappings...");
-        m_RxMappings.Dump();
+        NS_LOG_WARN ("Could not insert mapping: already received ?");
+        NS_LOG_UNCOND ("Dumping Rx mappings...");
+        m_RxMappings.Dump ();
 //        NS_FATAL_ERROR("Insert failed");
       }
+  }
+
+
+  /* TODO that should have been called earlier, we put it just after the mapping diessction
+   just to retrieve the seq Number
+  */
+  if( dss->GetFlags() & TcpOptionMpTcpDSS::DataAckPresent)
+  {
+    dack = dss->GetDataAck ();
+    //    NS_LOG_DEBUG("DataAck detected");
+    /*  TODO we need access to the windowSize:
+     either we pass the TcpHeader or we use this quick ack:
+     */
+    if (!GetMeta()->UpdateWindowSize (m_receivedHeader.GetWindowSize (), headDSN, dack))
+    {
+      NS_LOG_ERROR ("YOU SHOULD DROP THE PACKET");
+    }
+    
+    GetMeta()->ReceivedAck ( dack, this, false);
+//    SequenceNumber32 dack = SequenceNumber32(dss->GetDataAck());
   }
 
 //  #if 0
@@ -2274,17 +2303,6 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished (const Ptr<const TcpOptionMpTcpDS
     NS_LOG_LOGIC("DFIN detected " << dss->GetDataFinDSN ());
     GetMeta()->PeerClose ( SequenceNumber32 (dss->GetDataFinDSN()), this);
   }
-
-
-  // TOdO replace that
-  if( dss->GetFlags() & TcpOptionMpTcpDSS::DataAckPresent)
-  {
-//    NS_LOG_DEBUG("DataAck detected");
-    GetMeta()->ReceivedAck( SequenceNumber32(dss->GetDataAck()), this, false);
-//    SequenceNumber32 dack = SequenceNumber32(dss->GetDataAck());
-  }
-
-
 
   return 0;
 }

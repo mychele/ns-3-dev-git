@@ -727,7 +727,11 @@ protected:
    * \return true if receiver window got updated
    */
   virtual bool UpdateWindowSize (const TcpHeader& header);
-
+  virtual bool UpdateWindowSize (
+    uint32_t receivedUnscaledWindow, 
+    SequenceNumber32 sequenceNumber, 
+    SequenceNumber32 ackNumber
+  );
 
   // Manage data tx/rx
 
@@ -1104,6 +1108,11 @@ public:
   Ptr<TcpSocketState> m_tcb;                  //!< Transmission Control Block
 
 protected:
+  
+  /* MATT kind of hack to access window size from DSS processing without changing protoype,
+    might be a good idea overall though
+  */
+  TcpHeader m_receivedHeader;
   Ptr<TcpCongestionOps>  m_congestionControl; //!< Congestion control
 };
 

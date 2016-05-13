@@ -533,15 +533,15 @@ MpTcpSocketBase::ReceivedData(Ptr<Packet> p, const TcpHeader& mptcpHeader)
   NS_FATAL_ERROR("Disabled");
 }
 
-bool
-MpTcpSocketBase::UpdateWindowSize(const TcpHeader& header)
-{
-  //!
-  NS_LOG_FUNCTION(this);
-  m_rWnd = header.GetWindowSize();
-  NS_LOG_DEBUG("Meta Receiver window=" << m_rWnd);
-  return true;
-}
+//bool
+//MpTcpSocketBase::UpdateWindowSize (const TcpHeader& header)
+//{
+//  //!
+//  NS_LOG_FUNCTION(this);
+//  m_rWnd = header.GetWindowSize();
+//  NS_LOG_DEBUG("Meta Receiver window=" << m_rWnd);
+//  return true;
+//}
 
 
 /*
@@ -1344,8 +1344,8 @@ MpTcpSocketBase::PeerClose ( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
 //  dsn 2922409388 out of expected range [ 2922409389 - 2922409388
   if( dsn < m_rxBuffer->NextRxSequence() || m_rxBuffer->MaxRxSequence() < dsn)
   {
-    m_rxBuffer->Dump();
-    NS_LOG_INFO("dsn " << dsn << " out of expected range [ " << m_rxBuffer->NextRxSequence()  << " - " << m_rxBuffer->MaxRxSequence() << " ]" );
+//    m_rxBuffer->Dump();
+//    NS_LOG_INFO("dsn " << dsn << " out of expected range [ " << m_rxBuffer->NextRxSequence()  << " - " << m_rxBuffer->MaxRxSequence() << " ]" );
     return ;
   }
 
@@ -1355,12 +1355,12 @@ MpTcpSocketBase::PeerClose ( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
   // TODO rename mapping into GetDataMapping
 //  NS_LOG_LOGIC("Setting FIN sequence to " << dss->GetMapping().TailDSN());
   m_rxBuffer->SetFinSequence (dsn);
-  NS_LOG_LOGIC ("Accepted MPTCP FIN at seq " << dsn);
+  NS_LOG_LOGIC ("Accepted MPTCP DFIN=" << dsn);
 
   // Return if FIN is out of sequence, otherwise move to CLOSE_WAIT state by DoPeerClose
   if (!m_rxBuffer->Finished())
   {
-    NS_LOG_WARN("Not finished yet, NextRxSequence=" << m_rxBuffer->NextRxSequence());
+    NS_LOG_WARN ("Not finished yet, NextRxSequence=" << m_rxBuffer->NextRxSequence());
     m_rxBuffer->Dump();
     return;
   }
@@ -1372,12 +1372,12 @@ MpTcpSocketBase::PeerClose ( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
   switch(m_state)
   {
     case FIN_WAIT_1:
-      m_state = CLOSING;
+      m_state = CLOSING; 
       break;
 
     case FIN_WAIT_2:
       // will go into timewait later
-      TimeWait();
+      TimeWait ();
       break;
 
     case ESTABLISHED:
@@ -1385,7 +1385,7 @@ MpTcpSocketBase::PeerClose ( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
       break;
 
     default:
-      NS_FATAL_ERROR("Should not be here");
+      NS_FATAL_ERROR("Should not reach this");
       break;
   };
 
@@ -1399,7 +1399,7 @@ MpTcpSocketBase::PeerClose ( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
 
       // TODO should send dataACK
       TcpHeader header;
-      sf->GenerateEmptyPacketHeader(header,TcpHeader::ACK);
+      sf->GenerateEmptyPacketHeader (header,TcpHeader::ACK);
       sf->AppendDSSAck();
       sf->SendEmptyPacket(header);
 //      return;
@@ -2695,7 +2695,7 @@ MpTcpSocketBase::ClosingOnEmpty(TcpHeader& header)
 
 /** Inherit from Socket class: Kill this socket and signal the peer (if any) */
 int
-MpTcpSocketBase::Close(void)
+MpTcpSocketBase::Close (void)
 {
   NS_LOG_FUNCTION (this);
   return TcpSocketBase::Close();
@@ -2855,9 +2855,9 @@ MpTcpSocketBase::TimeWait()
               << "with duration of " << timewait_duration
               << "; m_msl=" << m_msl);
 //  TcpSocketBase::TimeWait();
-  CloseAllSubflows();
+  CloseAllSubflows ();
   m_state = TIME_WAIT;
-  CancelAllTimers();
+  CancelAllTimers ();
 //  // Move from TIME_WAIT to CLOSED after 2*MSL. Max segment lifetime is 2 min
 //  // according to RFC793, p.28
   m_timewaitEvent = Simulator::Schedule(timewait_duration, &MpTcpSocketBase::OnTimeWaitTimeOut, this);
@@ -2867,8 +2867,8 @@ void
 MpTcpSocketBase::OnTimeWaitTimeOut(void)
 {
   // Would normally call CloseAndNotify
-  NS_LOG_LOGIC("Timewait timeout expired");
-  NS_LOG_UNCOND("after timewait timeout, there are still " << m_subflows[Closing].size() << " subflows pending");
+  NS_LOG_LOGIC ("Timewait timeout expired");
+  NS_LOG_UNCOND ("after timewait timeout, there are still " << m_subflows[Closing].size() << " subflows pending");
 
   CloseAndNotify();
 }
@@ -2902,7 +2902,7 @@ It means there won't be any mapping above that dataseq
 void
 MpTcpSocketBase::PeerClose(Ptr<Packet> p, const TcpHeader& tcpHeader)
 {
-  NS_LOG_FUNCTION(this << " PEEER CLOSE CALLED !" << tcpHeader);
+  NS_LOG_FUNCTION(this << " PEER CLOSE CALLED !" << tcpHeader);
 
   NS_FATAL_ERROR("TO REMOVE. Function overriden by PeerClose(subflow)");
 
@@ -2922,8 +2922,9 @@ MpTcpSocketBase::PeerClose(Ptr<Packet> p, const TcpHeader& tcpHeader)
 
 /** Received a in-sequence FIN. Close down this socket. */
 // FIN is in sequence, notify app and respond with a FIN
+// TODO remove DoPeerClose ?
 void
-MpTcpSocketBase::DoPeerClose(void)
+MpTcpSocketBase::DoPeerClose (void)
 {
   NS_FATAL_ERROR("To remove");
 //  NS_ASSERT(m_state == ESTABLISHED || m_state == SYN_RCVD);
@@ -2941,7 +2942,7 @@ MpTcpSocketBase::DoPeerClose(void)
       // until all its existing data are pushed into the TCP socket, then call Close()
       // explicitly.
       NS_LOG_LOGIC ("TCP " << this << " calling NotifyNormalClose");
-      NotifyNormalClose();
+      NotifyNormalClose ();
       m_closeNotified = true;
     }
   if (m_shutdownSend)

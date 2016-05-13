@@ -336,7 +336,10 @@ TODO move this up to TcpSocketBase
 
    */
 //  virtual int ProcessOptionMpTcpEstablished(const Ptr<const TcpOption> option);
-  virtual int ProcessOptionMpTcpDSSEstablished(const Ptr<const TcpOptionMpTcpDSS> option);
+  virtual int ProcessOptionMpTcpDSSEstablished (
+//    const TcpHeader& header, 
+    const Ptr<const TcpOptionMpTcpDSS> option
+  );
   virtual int ProcessOptionMpTcpJoin(const Ptr<const TcpOptionMpTcp> option);
   virtual int ProcessOptionMpTcpCapable(const Ptr<const TcpOptionMpTcp> option);
 //  virtual int ProcessTcpOptionMpTcpDSS(Ptr<const TcpOptionMpTcpDSS> dss);
@@ -585,10 +588,11 @@ protected:
 protected:
   Ptr<MpTcpSocketBase> m_metaSocket;    //!< Meta
   virtual void SendPacket(TcpHeader header, Ptr<Packet> p);
+  
 
-//private:
 
 private:
+
   // Delayed values to
   uint8_t m_dssFlags;           //!< used to know if AddMpTcpOptions should send a flag
   MpTcpMapping m_dssMapping;    //!< Pending ds configuration to be sent in next packet

@@ -126,7 +126,7 @@ public:
   /**
    * Should be called only by subflows when they update their receiver window
    */
-  virtual bool UpdateWindowSize(const TcpHeader& header);
+//  virtual bool UpdateWindowSize(const TcpHeader& header);
 
 protected:
    ////////////////////////////////////////////

@@ -75,14 +75,21 @@ TcpRxBuffer::HeadSequence(void) const
 void
 TcpRxBuffer::Dump() const
 {
-  NS_LOG_DEBUG("=== Dumping content of RxBuffer");
-  NS_LOG_DEBUG("> nextRxSeq=" << m_nextRxSeq << " Occupancy=" << m_size);
+  std::ostringstream oss;
+  NS_LOG_DEBUG("=== Dumping content of RxBuffer " << this);
+  oss  << "> nextRxSeq=" << m_nextRxSeq << " Occupancy=" << m_size;
+  if (m_gotFin) {
+    oss << " Got Fin [" << m_finSeq << "]; still waiting for [" << m_finSeq - NextRxSequence()<< "] bytes";
+  }
+
+//  NS_LOG_DEBUG("> nextRxSeq=" << m_nextRxSeq << " Occupancy=" << m_size);
+  NS_LOG_DEBUG ( oss.str() );
   std::map<SequenceNumber32, Ptr<Packet> >::const_iterator i = m_data.begin ();
   for( ; i != m_data.end (); ++i)
     {
       NS_LOG_DEBUG( "head:" << i->first << " of size:" << i->second->GetSize());
     }
-  NS_LOG_DEBUG("=== End of dump");
+//  NS_LOG_DEBUG("=== End of dump");
 }
 
 SequenceNumber32
