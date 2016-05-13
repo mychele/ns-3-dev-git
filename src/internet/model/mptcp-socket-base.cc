@@ -714,7 +714,7 @@ MpTcpSocketBase::OnSubflowRecv(Ptr<MpTcpSubflow> sf)
   SequenceNumber32 expectedDSN = m_rxBuffer->NextRxSequence();
 
   /* Extract one by one mappings from subflow */
-  while(true)
+  while (true)
   {
 
     Ptr<Packet> p;
@@ -734,7 +734,7 @@ MpTcpSocketBase::OnSubflowRecv(Ptr<MpTcpSubflow> sf)
 
     if (p->GetSize() == 0)
     {
-      NS_LOG_DEBUG("packet extracted empty.");
+      NS_LOG_DEBUG ("packet extracted empty.");
       break;
     }
 
@@ -1286,15 +1286,6 @@ MpTcpSocketBase::IsConnected() const
 
 
 
-//int
-//MpTcpSocketBase::Connect(const Address &address)
-//{
-//  NS_LOG_FUNCTION ( this << address );
-//  // this should call our own DoConnect
-//  return TcpSocketBase::Connect(address);
-//}
-
-
 /** Inherited from Socket class: Bind socket to an end-point in MpTcpL4Protocol
 TODO convert to noop/remove
 */
@@ -1335,15 +1326,6 @@ MpTcpSocketBase::Bind(const Address &address)
 }
 
 
-
-// CAREFUL, note that here it's SequenceNumber64
-//void
-//MpTcpSocketBase::NewAck(SequenceNumber64 const& dataLevelSeq)
-//{
-//  //!
-//
-//}
-
 /*
 Notably, it is only DATA_ACKed once all
 data has been successfully received at the connection level.  Note,
@@ -1352,16 +1334,17 @@ only permissible to combine these signals on one subflow if there is
 no data outstanding on other subflows.
 */
 void
-MpTcpSocketBase::PeerClose( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
+MpTcpSocketBase::PeerClose ( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
 {
-  NS_LOG_LOGIC("Datafin with seq=" << dsn);
+  NS_LOG_LOGIC ("Datafin with seq=" << dsn);
 
 
 //  SequenceNumber32 dsn = SequenceNumber32 (dss->GetDataFinDSN() );
   // TODO the range check should be generalized somewhere else
+//  dsn 2922409388 out of expected range [ 2922409389 - 2922409388
   if( dsn < m_rxBuffer->NextRxSequence() || m_rxBuffer->MaxRxSequence() < dsn)
   {
-
+    m_rxBuffer->Dump();
     NS_LOG_INFO("dsn " << dsn << " out of expected range [ " << m_rxBuffer->NextRxSequence()  << " - " << m_rxBuffer->MaxRxSequence() << " ]" );
     return ;
   }
@@ -1371,7 +1354,7 @@ MpTcpSocketBase::PeerClose( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
   //! +1 because the datafin doesn't count as payload
   // TODO rename mapping into GetDataMapping
 //  NS_LOG_LOGIC("Setting FIN sequence to " << dss->GetMapping().TailDSN());
-  m_rxBuffer->SetFinSequence(dsn);
+  m_rxBuffer->SetFinSequence (dsn);
   NS_LOG_LOGIC ("Accepted MPTCP FIN at seq " << dsn);
 
   // Return if FIN is out of sequence, otherwise move to CLOSE_WAIT state by DoPeerClose
@@ -1406,7 +1389,7 @@ MpTcpSocketBase::PeerClose( SequenceNumber32 dsn, Ptr<MpTcpSubflow> sf)
       break;
   };
 
-  NS_LOG_INFO(TcpStateName[old_state] << " -> " << TcpStateName[m_state]);
+  NS_LOG_INFO (TcpStateName[old_state] << " -> " << TcpStateName[m_state]);
 
 
 //  if (m_state == FIN_WAIT_1 || m_state == FIN_WAIT_2 || m_state == ESTABLISHED)
@@ -1689,7 +1672,7 @@ MpTcpSocketBase::PersistTimeout()
 
 
 void
-MpTcpSocketBase::BecomeFullyEstablished()
+MpTcpSocketBase::BecomeFullyEstablished ()
 {
     NS_LOG_FUNCTION (this);
     m_receivedDSS = true;
@@ -2141,7 +2124,8 @@ MpTcpSocketBase::Retransmit()
 //  NS_LOG_ERROR("TODO")
   std::ostringstream oss;
   Dump (oss);
-  NS_LOG_ERROR (oss.str());
+  NS_LOG_ERROR ( "Sthg fishy might have happened, it should not happen in our usual tests");
+  NS_LOG_DEBUG (oss.str());
 
   m_nextTxSequence = FirstUnackedSeq(); // Start from highest Ack
 //  m_rtt->IncreaseMultiplier(); // Double the timeout value for next retx timer
@@ -2933,62 +2917,7 @@ MpTcpSocketBase::PeerClose(Ptr<Packet> p, const TcpHeader& tcpHeader)
 //    NS_LOG_INFO("dsn " << dsn << " out of expected range [ " << m_rxBuffer->NextRxSequence()  << " - " << m_rxBuffer->MaxRxSequence() << " ]" );
 //    return ;
 //  }
-//  /*
-// Notably, it is only DATA_ACKed once all
-//   data has been successfully received at the connection level.  Note,
-//   therefore, that a DATA_FIN is decoupled from a subflow FIN.  It is
-//   only permissible to combine these signals on one subflow if there is
-//   no data outstanding on other subflows. */
-//
-//  // Copier/coller de
-//
-//  // Ignore all out of range packets
-////  if (tcpHeader.GetSequenceNumber() < m_rxBuffer->NextRxSequence() || tcpHeader.GetSequenceNumber() > m_rxBuffer->MaxRxSequence())
-////    {
-////      return;
-////    }
-//
-//  // For any case, remember the FIN position in rx buffer first
-//  //! +1 because the datafin doesn't count as payload
-//  // TODO rename mapping into GetDataMapping
-//  NS_LOG_LOGIC("Setting FIN sequence to " << dss->GetMapping().TailDSN());
-//  m_rxBuffer->SetFinSequence(
-//                            dss->GetMapping().TailDSN()
-//                            );
-//
-//  // Return if FIN is out of sequence, otherwise move to CLOSE_WAIT state by DoPeerClose
-//  if (!m_rxBuffer->Finished())
-//  {
-//    NS_LOG_WARN("Out of range");
-//    return;
-//  }
-//
-//  // For any case, remember the FIN position in rx buffer first
-////  #error TODO
-//
-//
-//
-//
-//  NS_LOG_LOGIC ("Accepted DATA FIN at seq " << tcpHeader.GetSequenceNumber () + SequenceNumber32 (p->GetSize ()));
-//
-////  NS_LOG_LOGIC ("State " << m_state );
-////  m_state == FIN_WAIT_1;
-//
-//  // Simultaneous close: Application invoked Close() when we are processing this FIN packet
-//  if (m_state == FIN_WAIT_1)
-//    {
-//      NS_LOG_INFO ("FIN_WAIT_1 -> CLOSING");
-//      m_state = CLOSING;
-//
-//      // TODO should send dataACK
-//      TcpHeader header;
-//      AppendDataAck(header);
-//      GenerateEmptyPacketHeader(header,TcpHeader::ACK);
-//      //!
-//      GetSubflow(0)->SendEmptyPacket(header);
-//      return;
-//    }
-//  DoPeerClose();
+
 }
 
 /** Received a in-sequence FIN. Close down this socket. */

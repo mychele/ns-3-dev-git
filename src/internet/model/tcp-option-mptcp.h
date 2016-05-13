@@ -532,6 +532,8 @@ private:
    such as firewalls that undertake ISN randomization.
  *
  * Data Sequence Signal (DSS) Option
+ *
+
 \verbatim
                       1                   2                   3
   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -594,7 +596,7 @@ public:
   /**
    *
    */
-  virtual void TruncateDSS(bool truncate);
+  virtual void TruncateDSS (bool truncate);
 
   /**
    * \brief This returns a copy
@@ -608,10 +610,27 @@ public:
 
   /**
    * \brief
+ * Related to DFIN
+   The DATA_FIN is signaled by setting the 'F' flag in the Data Sequence
+   Signal option (Figure 9) to 1.  A DATA_FIN occupies 1 octet (the
+   final octet) of the connection-level sequence space.  Note that the
+   DATA_FIN is included in the Data-Level Length, but not at the subflow
+   level: for example, a segment with DSN 80, and Data-Level Length 11,
+   with DATA_FIN set, would map 10 octets from the subflow into data
+   sequence space 80-89, the DATA_FIN is DSN 90; therefore, this segment
+   including DATA_FIN would be acknowledged with a DATA_ACK of 91.
+
+   Note that when the DATA_FIN is not attached to a TCP segment
+   containing data, the Data Sequence Signal MUST have a subflow
+   sequence number of 0, a Data-Level Length of 1, and the data sequence
+   number that corresponds with the DATA_FIN itself.  The checksum in
+   this case will only cover the pseudo-header.
+
+   * \param mappingLength You should not add the 
    * \param trunc_to_32bits Set to true to send a 32bit DSN
    * \warn Mapping can be set only once, otherwise it will crash ns3
    */
-  virtual void SetMapping (uint64_t headDsn, uint32_t headSsn, uint16_t length, bool enable_dfin);
+  virtual void SetMapping (uint64_t headDsn, uint32_t headSsn, uint16_t mappingLength, bool enable_dfin);
 
   /**
    * \brief A DSS length depends on what content it embeds. This is defined by the flags.
@@ -660,6 +679,7 @@ public:
   * \warning check the flags to know if it returns a 32 or 64 bits DSN
   */
   virtual uint64_t GetDataFinDSN () const;
+  virtual uint16_t GetDataLevelLength () const;
 
 
   virtual void Print (std::ostream &os) const;
@@ -685,10 +705,14 @@ protected:
   uint8_t m_flags;  //!< bitfield
 
   // In fact for now we use only 32 LSB
-  uint64_t m_dataAck;           /**< Can be On 32 bits dependings on the flags **/
-  uint64_t m_dsn;               /**< Data Sequence Number (Can be On 32 bits dependings on the flags) */
-  uint32_t m_ssn;               /**< Subflow Sequence Number, always 32bits */
-  uint16_t m_dataLevelLength;   /**< Length of the mapping and/or +1 if DFIN */
+  uint64_t m_dataAck;         /**< Can be On 32 bits dependings on the flags **/
+  uint64_t m_dsn;             /**< Data Sequence Number (Can be On 32 bits dependings on the flags) */
+  uint32_t m_ssn;             /**< Subflow Sequence Number, always 32bits */
+  
+  /**< Length of the mapping only, without consideration for DFIN => 
+    It is not the exact dataLevelLength
+  */
+  uint16_t m_mappingLength;
 
 private:
   //! Defined and unimplemented to avoid misuse
@@ -887,9 +911,7 @@ private:
 \endverbatim
  *
  */
-class TcpOptionMpTcpChangePriority :
-//public TcpOptionMpTcp<TcpOptionMpTcp::MP_PRIO>
-public TcpOptionMpTcp
+class TcpOptionMpTcpChangePriority : public TcpOptionMpTcp
 {
 
 public:

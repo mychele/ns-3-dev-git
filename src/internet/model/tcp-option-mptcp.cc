@@ -657,7 +657,7 @@ TcpOptionMpTcpDSS::TcpOptionMpTcpDSS ()
     m_dataAck (0),
     m_dsn (0),
     m_ssn (0),
-    m_dataLevelLength (0)
+    m_mappingLength (0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -688,13 +688,13 @@ TcpOptionMpTcpDSS::GetInstanceTypeId (void) const
 
 
 void
-TcpOptionMpTcpDSS::TruncateDSS(bool truncate)
+TcpOptionMpTcpDSS::TruncateDSS (bool truncate)
 {
     NS_ASSERT_MSG(m_flags & DSNMappingPresent, "Call it only after setting the mapping");
 
-    if(truncate) {
+    if(truncate) 
+    {
         m_flags &=  ~(0xff & DSNOfEightBytes);
-
     }
     else {
         m_flags |= DSNOfEightBytes;
@@ -733,18 +733,21 @@ TcpOptionMpTcpDSS::TruncateDSS(bool truncate)
 void
 TcpOptionMpTcpDSS::SetMapping (uint64_t headDsn, uint32_t headSsn, uint16_t length, bool enable_dfin)
 {
-  NS_ASSERT_MSG ( !(m_flags & DataFin), "For now you can't set mapping after enabling datafin");
+//  NS_ASSERT_MSG ( !(m_flags & DataFin), "For now you can't set mapping after enabling datafin");
 //  NS_ASSERT_MSG ( !(m_flags & DSNMappingPresent), "You already set a mapping");
 
   m_dsn = headDsn;
   m_ssn = headSsn;
   // += in case there is a datafin
-  m_dataLevelLength = length;
+  m_mappingLength = length;
   m_flags |= DSNMappingPresent;
 
-  if(enable_dfin)
+  if (enable_dfin)
   {
     m_flags |= DataFin;
+
+    NS_ASSERT_MSG ( length > 0 || (headSsn == 0), 
+      "When there is no segment with the datafin, SSN must be set to 0");
   }
 }
 
@@ -755,11 +758,11 @@ TcpOptionMpTcpDSS::GetMapping (uint64_t& dsn, uint32_t& ssn, uint16_t& length) c
   NS_ASSERT ( (m_flags & DSNMappingPresent) && !IsInfiniteMapping () );
   ssn = m_ssn;
   dsn = m_dsn;
-  length = m_dataLevelLength;
-  if (GetFlags () & DataFin)
-    {
-      length--;
-    }
+  length = m_mappingLength;
+//  if (GetFlags () & DataFin)
+//    {
+//      length--;
+//    }
 }
 
 uint32_t
@@ -817,7 +820,7 @@ TcpOptionMpTcpDSS::Print (std::ostream& os) const
           os << "Has datafin for seq [" << GetDataFinDSN () << "]";
         }
 
-      os << " DSN:" << m_dsn << " length=" << m_dataLevelLength << " ssn=" << m_ssn;
+      os << " DSN:" << m_dsn << " length=" << GetDataLevelLength() << " ssn=" << m_ssn;
       if (GetFlags () & DSNOfEightBytes)
         {
           os << "(8bytes mapping)";
@@ -858,14 +861,27 @@ TcpOptionMpTcpDSS::Serialize (Buffer::Iterator i) const
         }
 
       // Write relative SSN
+
       i.WriteHtonU32 ( m_ssn );
-      i.WriteHtonU16 ( m_dataLevelLength );
+      i.WriteHtonU16 ( GetDataLevelLength() );
     }
 
   if (m_hasChecksum)
     {
       i.WriteHtonU16 ( m_checksum );
     }
+}
+
+uint16_t
+TcpOptionMpTcpDSS::GetDataLevelLength () const
+{
+  uint16_t dataLevelLength = m_mappingLength;
+  if (m_flags & DataFin) 
+  {
+    NS_ASSERT_MSG (dataLevelLength < 0xff, "Can't set datafin else will wrap");
+    dataLevelLength += 1;
+  }
+  return dataLevelLength;
 }
 
 uint32_t
@@ -942,15 +958,15 @@ TcpOptionMpTcpDSS::Deserialize (Buffer::Iterator i)
         }
 
       m_ssn = i.ReadNtohU32 ();
-      m_dataLevelLength = i.ReadNtohU16 ();
+      uint16_t dataLevelLength = i.ReadNtohU16 ();
 
+      m_mappingLength = dataLevelLength;
       // TODO
-//    if( (m_flags & DataFin) )
-//    {
-//        --dataLevelLength;
-//    }
-//
-//    m_mapping.Configure( SequenceNumber32(dataSeqNb ), dataLevelLength);
+      if(m_flags & DataFin)
+      {
+        NS_ASSERT_MSG (dataLevelLength != 0, "Should not be possible");
+        m_mappingLength = dataLevelLength - 1;
+      }
     }
 
 
@@ -977,14 +993,14 @@ number that corresponds with the DATA_FIN itself
 bool
 TcpOptionMpTcpDSS::DataFinMappingOnly () const
 {
-  return (m_flags & DataFin) && (m_dataLevelLength == 1) && (m_ssn == 0);
+  return (m_flags & DataFin) && (m_mappingLength == 0) && (m_ssn == 0);
 }
 
 bool
 TcpOptionMpTcpDSS::IsInfiniteMapping () const
 {
   //  The checksum, in such a case, will also be set to zero
-  return (GetFlags () & DSNMappingPresent) && (m_dataLevelLength == 0);
+  return (GetFlags () & DSNMappingPresent) && (GetDataLevelLength() == 0);
 }
 
 uint64_t
@@ -998,7 +1014,7 @@ TcpOptionMpTcpDSS::GetDataFinDSN () const
     }
   else
     {
-      return m_dsn + m_dataLevelLength;
+      return m_dsn + m_mappingLength;
     }
 }
 
@@ -1032,6 +1048,7 @@ TcpOptionMpTcpDSS::operator== (const TcpOptionMpTcpDSS& opt) const
   ret &= opt.m_dsn == m_dsn;
   ret &= opt.m_ssn == m_ssn;
   ret &= opt.m_dataAck == m_dataAck;
+  ret &= opt.m_mappingLength == m_mappingLength;
   return ( ret );
 }
 

@@ -914,7 +914,7 @@ public:
 //            );
 
 //            AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
-            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
+            AddTestCase (new MpTcpMultihomedTestCase (1000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
 
     #ifdef LOOP
         }

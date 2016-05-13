@@ -504,12 +504,16 @@ protected:
   /**
    * Corresponds to mptcp_write_dss_mapping and mptcp_write_dss_ack
    */
-  virtual void AddMpTcpOptionDSS(TcpHeader& header);
+  virtual void AddMpTcpOptionDSS (TcpHeader& header);
 
   /**
    * rename to addDSSFin
    */
-  virtual void AppendDSSFin();
+  virtual void AppendDSSFin ();
+  
+  /**
+   * Might be done differently ? called in 2 places
+   */
   virtual void AppendDSSMapping(const MpTcpMapping& mapping);
 
   virtual void ReceivedAck(Ptr<Packet>, const TcpHeader&); // Received an ACK packet

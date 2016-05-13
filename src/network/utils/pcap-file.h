@@ -296,8 +296,8 @@ private:
   typedef struct {
     uint32_t m_tsSec;         /**< seconds part of timestamp */
     uint32_t m_tsUsec;        /**< microseconds part of timestamp (nsecs for PCAP_NSEC_MAGIC) */
-    uint32_t m_inclLen;       /**< number of octets of packet saved in file */
-    uint32_t m_origLen;       /**< actual length of original packet */
+    uint32_t m_inclLen;       /**< number of octets from the packet saved in this record */
+    uint32_t m_origLen;       /**< original number of octets in the packet */
   } PcapRecordHeader;
 
   /**

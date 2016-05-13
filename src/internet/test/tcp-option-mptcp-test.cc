@@ -32,15 +32,6 @@ NS_LOG_COMPONENT_DEFINE ("MpTcpOptionsTestSuite");
 
 using namespace ns3;
 
-//template<class T>
-//CreateAndCheckMpTcpOption(TcpOptionMpTcp::SubType type)
-//{
-//    Ptr<T> opt = DynamicCast<T>(TcpOptionMpTcp::CreateMpTcpOption( m_type));
-//    NS_ASSERT_MSG( opt, "Could not create the mptcp option");
-//    NS_ASSERT_MSG( T::GetSubType() == opt->GetSubType(), "Mismatch between mptcp option types");
-//}
-
-
 
 template<class T>
 class TcpOptionMpTcpTestCase : public TestCase
@@ -49,7 +40,7 @@ public:
   TcpOptionMpTcpTestCase (Ptr<T> configuredOption, TcpOptionMpTcp::SubType type, std::string desc) :
       TestCase (desc),
       m_option(configuredOption),
-      m_type(type)
+      m_type (type)
   {
     NS_LOG_FUNCTION (this);
 
@@ -65,8 +56,6 @@ public:
     NS_LOG_INFO ( "option.GetSerializedSize ():" << m_option->GetSerializedSize () );
     m_buffer.AddAtStart ( m_option->GetSerializedSize ());
     m_option->Serialize ( m_buffer.Begin () );
-
-
   }
 
   virtual void TestDeserialize (void)
@@ -99,9 +88,53 @@ public:
   }
 
 protected:
-  Ptr<T> m_option;
+  const Ptr<T> m_option;
   Buffer m_buffer;
-  TcpOptionMpTcp::SubType m_type;  //!< To check if the subtype returned by the class is the correct one
+  const TcpOptionMpTcp::SubType m_type;  //!< To check if the subtype returned by the class is the correct one
+};
+
+
+/** test inspired by rfc
+
+   The DATA_FIN is signaled by setting the 'F' flag in the Data Sequence
+   Signal option (Figure 9) to 1.  A DATA_FIN occupies 1 octet (the
+   final octet) of the connection-level sequence space.  Note that the
+   DATA_FIN is included in the Data-Level Length, but not at the subflow
+   level: for example, a segment with DSN 80, and Data-Level Length 11,
+   with DATA_FIN set, would map 10 octets from the subflow into data
+   sequence space 80-89, the DATA_FIN is DSN 90; therefore, this segment
+   including DATA_FIN would be acknowledged with a DATA_ACK of 91.
+*/
+class DssTest : public TestCase
+{
+public:
+  //: TcpOptionMpTcpTestCase (configuredOption, TcpOptionMpTcp::MP_DSS, "DSS Test");
+  DssTest() : TestCase ("Testing DSS option specifics")
+  {
+    NS_LOG_FUNCTION (this);
+  }
+
+  
+  virtual void DoRun (void)
+  {
+    
+    Ptr<TcpOptionMpTcpDSS> dss = CreateObject<TcpOptionMpTcpDSS> ();
+    dss->SetMapping (80, 80, 10, true);
+    
+    // WARNING SetMapping might be called only once !
+    // test DataFinMappingOnly
+    NS_TEST_EXPECT_MSG_EQ ( dss->DataFinMappingOnly (), false, "must be no");
+    NS_TEST_EXPECT_MSG_EQ ( dss->GetDataLevelLength() , 11, "must be no");
+    NS_TEST_EXPECT_MSG_EQ ( dss->GetDataFinDSN (), 90, "must be no");
+    
+    
+    dss->SetMapping(80, 0, 0, true);
+    NS_TEST_EXPECT_MSG_EQ ( dss->DataFinMappingOnly (), true, "must be no");
+    NS_TEST_EXPECT_MSG_EQ ( dss->GetDataLevelLength() , 1, "must be no");
+    NS_TEST_EXPECT_MSG_EQ ( dss->GetDataFinDSN (), 80, "must be no");
+//    NS_TEST_EXPECT_MSG_EQ ( dss->DataFinMappingOnly (), true, "mapping length null => datafin only");
+  }
+
 };
 
 
@@ -186,7 +219,11 @@ public:
     //// MP_DSS
     ////
     uint16_t checksum = 32321;
+    
 
+    
+    AddTestCase ( new DssTest (), QUICK);
+    
     for (int i = 0; i < 2; ++i)
       {
 
@@ -243,11 +280,18 @@ public:
 //          );
 
         dss4->SetDataAck (45000);
+        dss4->SetMapping (80, 80, 10, true);
         AddTestCase (
           new TcpOptionMpTcpTestCase<TcpOptionMpTcpDSS> (dss4, TcpOptionMpTcp::MP_DSS, "DataAck + DSN mapping + Datafin"),
           QUICK
           );
 
+//        dss4->SetDataAck (45000);
+        dss4->SetMapping (80, 0, 0, true);
+        AddTestCase (
+          new TcpOptionMpTcpTestCase<TcpOptionMpTcpDSS> (dss4, TcpOptionMpTcp::MP_DSS, "DataAck + DSN mapping + Datafin"),
+          QUICK
+          );
       }
     ////////////////////////////////////////////////
     //// MP_JOIN Initial syn
