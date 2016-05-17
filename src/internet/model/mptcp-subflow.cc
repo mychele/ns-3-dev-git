@@ -258,28 +258,28 @@ MpTcpSubflow::Close(void)
  * We assign by default a bad subflowId to make sure it is updated somewhere in the
  * code.
  */
-MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
-    : TcpSocketBase(sock),
-    m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
-    m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
-    m_dssFlags (0),
-    m_masterSocket(true),
-    m_localNonce(0)
-{
-    NS_LOG_FUNCTION (this << &sock);
-      NS_LOG_LOGIC ("Copying from TcpSocketBase. endPoint=" << sock.m_endPoint);
-    // We need to update the endpoint callbnacks so that packets come to this socket
-    // instead of the abstract meta
-    // this is necessary for the client socket
-    NS_LOG_UNCOND("Cb=" << m_sendCb.IsNull () << " endPoint=" << m_endPoint);
-
-    m_owd[0] = CreateObject<RttMeanDeviation> ();
-    m_owd[1] = CreateObject<RttMeanDeviation> ();
-
-    m_endPoint = (sock.m_endPoint);
-    m_endPoint6 = (sock.m_endPoint6);
-    SetupCallback();
-}
+//MpTcpSubflow::MpTcpSubflow (const TcpSocketBase& sock)
+//    : TcpSocketBase(sock),
+//    m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
+//    m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
+//    m_dssFlags (0),
+//    m_masterSocket(true),
+//    m_localNonce(0)
+//{
+//    NS_LOG_FUNCTION (this << &sock);
+//      NS_LOG_LOGIC ("Copying from TcpSocketBase. endPoint=" << sock.m_endPoint);
+//    // We need to update the endpoint callbnacks so that packets come to this socket
+//    // instead of the abstract meta
+//    // this is necessary for the client socket
+//    NS_LOG_UNCOND("Cb=" << m_sendCb.IsNull () << " endPoint=" << m_endPoint);
+//
+//    m_owd[0] = CreateObject<RttMeanDeviation> ();
+//    m_owd[1] = CreateObject<RttMeanDeviation> ();
+//
+//    m_endPoint = (sock.m_endPoint);
+//    m_endPoint6 = (sock.m_endPoint6);
+//    SetupCallback();
+//}
 
 
 // Does this constructor even make sense ? no ? to remove ?
@@ -288,13 +288,15 @@ MpTcpSubflow::MpTcpSubflow (const MpTcpSubflow& sock)
   m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
   m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
   m_dssFlags(0),
-  m_masterSocket(sock.m_masterSocket),  //!false
+  m_masterSocket(false),  //!false
   m_backupSubflow(sock.m_backupSubflow),
   m_localNonce(sock.m_localNonce),
   m_prefixCounter(0)
 {
   NS_LOG_FUNCTION (this << &sock);
   NS_LOG_LOGIC ("Invoked the copy constructor");
+  
+  // TODO should never be called, put it protected ?
 //  if (sock.m_owd) {
 //    m_owd = sock.m_owd->Copy ();
 //  }
@@ -325,6 +327,15 @@ MpTcpSubflow::~MpTcpSubflow()
   NS_LOG_FUNCTION(this);
 }
 
+
+MpTcpSubflow& 
+MpTcpSubflow::operator =(const TcpSocketBase& s)
+{
+  TcpSocketBase::operator=(s);
+  m_masterSocket = true;
+  ResetUserCallbacks();
+  return *this;
+}
 
 /**
 TODO maybe override that not to have the callbacks
@@ -928,7 +939,7 @@ MpTcpSubflow::AddMpTcpOptions (TcpHeader& header)
     if((header.GetFlags () & TcpHeader::SYN))
     {
 
-        AddOptionMpTcp3WHS(header);
+        AddOptionMpTcp3WHS (header);
     }
     // as long as we've not received an ack from the peer we
     // send an MP_CAPABLE with both keys
@@ -966,6 +977,9 @@ MpTcpSubflow::AddMpTcpOptions (TcpHeader& header)
 
     }
     #endif
+    
+    #if 0
+    // disabled cause might create a problem with tcp header size
     if (m_probeState == TcpOptionMpTcpOwdTimeStamp::PendingSend && m_state == ESTABLISHED)
     {
         // We should have one configured
@@ -993,9 +1007,9 @@ MpTcpSubflow::AddMpTcpOptions (TcpHeader& header)
         NS_LOG_LOGIC ("Crafting answer to MP_OWDTS");
         m_owdProbeAnswer.first = false;
 
-
         header.AppendOption( m_owdProbeAnswer.second);
     }
+    #endif
 }
 
 
@@ -1062,7 +1076,7 @@ MpTcpSubflow::CompleteFork(
                     << " (old endpoint=" << GetMeta()->m_endPoint << " )"
                     << " bound to interface " << m_endPoint->GetBoundNetDevice()
                     );
-       GetMeta()->m_endPoint = m_endPoint;
+//       GetMeta()->m_endPoint = m_endPoint;
 
 
        /** allows to set*/
@@ -1304,6 +1318,9 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
             }
             break;
 
+          #if 0
+          // TODO this option might be the cause of 
+          // mergecap: The capture file iperf-mptcp-0-1.pcap appears to have been cut short in the middle of a packet.
         case TcpOptionMpTcp::MP_DELTAOWD:
             {
                 Ptr<const TcpOptionMpTcpDeltaOWD> delta = DynamicCast<const TcpOptionMpTcpDeltaOWD>(option);
@@ -1314,12 +1331,13 @@ MpTcpSubflow::ProcessOptionMpTcp (const Ptr<const TcpOption> option)
 
         case TcpOptionMpTcp::MP_OWDTS:
             {
-                Ptr<const TcpOptionMpTcpOwdTimeStamp> owdts= DynamicCast<const TcpOptionMpTcpOwdTimeStamp>(option);
-                NS_ASSERT (owdts);
-                ProcessOptionMpTcpOwdTimeStamp (owdts);
+            
+//                Ptr<const TcpOptionMpTcpOwdTimeStamp> owdts= DynamicCast<const TcpOptionMpTcpOwdTimeStamp>(option);
+//                NS_ASSERT (owdts);
+//                ProcessOptionMpTcpOwdTimeStamp (owdts);
             }
             break;
-
+      #endif
 
         case TcpOptionMpTcp::MP_ADD_ADDR:
         case TcpOptionMpTcp::MP_REMOVE_ADDR:
@@ -1592,7 +1610,9 @@ MpTcpSubflow::DiscardAtMostOneTxMapping(SequenceNumber64 const& firstUnackedMeta
   return false;
 }
 
-// STUB
+/* 
+STUB; hack to trick the TcpSocketBase that relies so much on m_rWnd
+*/
 bool
 MpTcpSubflow::UpdateWindowSize (const TcpHeader& header)
 {
@@ -1602,8 +1622,13 @@ MpTcpSubflow::UpdateWindowSize (const TcpHeader& header)
 //    {
 //        GetMeta()->UpdateWindowSize(header);
 //    }
+//  if(!GetMeta()->FullyEstablished()) {
+    // Hackish
+  m_rWnd =     GetMeta()->m_rWnd;
+//  m_rWnd = header.GetWindowSize();
+//  }
   
-  m_rWnd = GetMeta()->m_rWnd;
+//   = GetMeta()->m_rWnd;
   return true;
 }
 

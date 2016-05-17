@@ -110,7 +110,7 @@ MpTcpSocketBase::GetTypeId (void)
       // To some extent, would ideally derive directly from TcpSocket ?
       .SetParent<TcpSocketBase>()
       .AddConstructor<MpTcpSocketBase>()
-      .AddAttribute ("SocketType",
+      .AddAttribute ("SubflowType",
                "MPTCP subflow type.",
                TypeIdValue (MpTcpSubflow::GetTypeId ()),
                MakeTypeIdAccessor (&MpTcpSocketBase::m_subflowTypeId),
@@ -155,35 +155,43 @@ static const std::string containerNames[MpTcpSocketBase::Maximum] = {
 When doing this 
 CompleteConstruct
 */
-MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
-  TcpSocketBase(sock),
-  m_server (true), // TODO remove or use it
-  m_peerKey (0),
-  m_peerToken (0),
-  m_doChecksum(false),
-  m_receivedDSS(false),
-  // TODO here would be best to retrieve default from static GetTypeId 
-  m_subflowTypeId (MpTcpSubflow::GetTypeId ()),
-  m_schedulerTypeId (MpTcpSchedulerRoundRobin::GetTypeId () )
-//  , m_localSubflowUid (0)
-//    MpTcpSocketBase()   //! delegatin constructors only available in C++11
+//MpTcpSocketBase::MpTcpSocketBase(const TcpSocketBase& sock) :
+//  TcpSocketBase(sock),
+//  m_server (true), // TODO remove or use it
+//  m_peerKey (0),
+//  m_peerToken (0),
+//  m_doChecksum(false),
+//  m_receivedDSS(false),
+//  // TODO here would be best to retrieve default from static GetTypeId 
+//  m_subflowTypeId (MpTcpSubflow::GetTypeId ()),
+//  m_schedulerTypeId (MpTcpSchedulerRoundRobin::GetTypeId () )
+////  , m_localSubflowUid (0)
+////    MpTcpSocketBase()   //! delegatin constructors only available in C++11
+//{
+//    //
+//    NS_LOG_FUNCTION(this);
+//    NS_LOG_LOGIC("Copying from TcpSocketBase");
+//
+//    // TODO make it configurable
+//    m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
+//    m_localIdManager = Create<MpTcpPathIdManagerImpl>();
+//
+//    m_tcb->m_socket = this;
+//    CreateScheduler (m_schedulerTypeId);
+//}
+
+
+
+MpTcpSocketBase& 
+MpTcpSocketBase::operator =(const TcpSocketBase& s)
 {
-    //
-    NS_LOG_FUNCTION(this);
-    NS_LOG_LOGIC("Copying from TcpSocketBase");
-
-    // TODO make it configurable
-    m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
-    m_localIdManager = Create<MpTcpPathIdManagerImpl>();
-
-    m_tcb->m_socket = this;
-    CreateScheduler (m_schedulerTypeId);
+  TcpSocketBase::operator=(s);
+  return *this;
 }
-
 
 /* Never occurs right ? should prevent it ? */
 MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
-  TcpSocketBase(sock),
+  TcpSocketBase (sock),
   m_server(sock.m_server), //! true, if I am forked
   m_peerKey(sock.m_peerKey),
   m_peerToken(sock.m_peerToken),
@@ -194,8 +202,8 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_receivedDSS(sock.m_receivedDSS),
   m_subflowCreated(sock.m_subflowCreated),
 //  m_localSubflowUid (sock.m_localSubflowUid),
-  m_subflowTypeId(sock.m_subflowTypeId),
-  m_schedulerTypeId(sock.m_schedulerTypeId)
+  m_subflowTypeId (sock.m_subflowTypeId),
+  m_schedulerTypeId (sock.m_schedulerTypeId)
 
 {
   NS_LOG_FUNCTION(this);
@@ -204,26 +212,29 @@ MpTcpSocketBase::MpTcpSocketBase(const MpTcpSocketBase& sock) :
   m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
   m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
+  // TODO remove
   m_tcb->m_socket = this;
 
   // TODO
-  CreateScheduler (m_schedulerTypeId);
+  CreateScheduler ();
+//  CreateScheduler (m_schedulerTypeId);
 
   //! TODO here I should generate a new Key
 }
 
 
 // TODO implement a copy constructor
-MpTcpSocketBase::MpTcpSocketBase() :
+MpTcpSocketBase::MpTcpSocketBase () :
   TcpSocketBase(),
-//  m_tracePrefix("default"),
-//  m_prefixCounter(1),
   m_server(true),
   m_peerKey(0),
   m_peerToken(0),
   m_doChecksum(false),
-  m_receivedDSS(false),
-  m_subflowTypeId(MpTcpSubflow::GetTypeId ())
+  m_receivedDSS(false)
+
+  // TODO careful not to use these typeids in the constructor
+  // as they are not setup yet, it should take into account the attributes
+//  m_subflowTypeId(MpTcpSubflow::GetTypeId ()),
 //  m_schedulerTypeId(MpTcpSchedulerRoundRobin::GetTypeId())
 {
   NS_LOG_FUNCTION(this);
@@ -232,8 +243,9 @@ MpTcpSocketBase::MpTcpSocketBase() :
   m_remoteIdManager = Create<MpTcpPathIdManagerImpl>();
   m_localIdManager = Create<MpTcpPathIdManagerImpl>();
 
-  m_tcb->m_socket = this;
-  CreateScheduler (m_schedulerTypeId);
+  // Should be safe to remove
+//  m_tcb->m_socket = this;
+  
 
 
 
@@ -290,8 +302,11 @@ MpTcpSocketBase::AddRemoteId (uint8_t addrId, const Address& address)
 
 
 void
-MpTcpSocketBase::CreateScheduler (TypeId schedulerTypeId)
+MpTcpSocketBase::CreateScheduler (
+//TypeId schedulerTypeId
+)
 {
+  TypeId schedulerTypeId = m_schedulerTypeId;
   NS_LOG_FUNCTION(this << schedulerTypeId);
   NS_LOG_WARN("Overriding scheduler choice to RoundRobin");
   ObjectFactory schedulerFactory;
@@ -318,7 +333,7 @@ MpTcpSocketBase::ConnectNewSubflow (const Address &local, const Address &remote)
   // not constructed properly since MpTcpSocketBase creation is hackish
   // and does not call CompleteConstruct
   // TODO pb c'est la, les 2 ss flots se partagent le mm congestion control !!
-  m_subflowTypeId = MpTcpSubflow::GetTypeId();
+//  m_subflowTypeId = MpTcpSubflow::GetTypeId();
 //  Ptr<Socket> socket = m_tcp->CreateSocket( m_congestionControl->Fork(), m_subflowTypeId);
   Ptr<Socket> socket = m_tcp->CreateSocket ( m_congestionControl->Fork(), m_subflowTypeId);
   NS_ASSERT(socket);
@@ -519,7 +534,7 @@ MpTcpSocketBase::Send(Ptr<Packet> p, uint32_t flags)
   NS_LOG_FUNCTION(this);
 
   //! This will check for established state
-  return TcpSocketBase::Send(p,flags);
+  return TcpSocketBase::Send (p,flags);
 }
 
 
@@ -820,7 +835,9 @@ onSubflowNewState(
   TcpSocket::TcpStates_t newState
   )
 {
-  NS_LOG_UNCOND("onSubflowNewState wrapper");
+  NS_LOG_UNCOND ("onSubflowNewState wrapper");
+  NS_LOG_UNCOND (" meta " << meta);
+  
     meta->OnSubflowNewState(
       "context", sf, oldState, newState);
 }
@@ -839,7 +856,7 @@ MpTcpSocketBase::OnSubflowNewState(std::string context,
   NS_LOG_LOGIC("subflow " << sf << " state changed from " << TcpStateName[oldState] << " to " << TcpStateName[newState]);
   NS_LOG_LOGIC("Current rWnd=" << m_rWnd);
 
-  ComputeTotalCWND();
+  ComputeTotalCWND ();
 
   if(sf->IsMaster() && newState == SYN_RCVD)
   {
@@ -890,16 +907,27 @@ C'est là qu'il faut activer le socket tracing
 ================================
 TODO REMOVE utilisé nul part
 ===============================
+Rename into CreateSubflowMaster .?
 */
 Ptr<MpTcpSubflow>
 MpTcpSocketBase::CreateSubflow(
                                bool masterSocket
                                )
 {
-  NS_LOG_FUNCTION(this);
-//  NS_ASSERT_MSG(
-//  InetSocketAddress::IsMatchingType(_srcAddr),
-//  InetSocketAddress srcAddr = InetSocketAddress::ConvertFrom(_srcAddr);
+  NS_LOG_FUNCTION (this << m_subflowTypeId.GetName());
+  
+  Ptr<Socket> socket = m_tcp->CreateSocket( this->m_congestionControl, m_subflowTypeId);
+  
+  NS_LOG_FUNCTION (this);
+  //ns3::MpTcpSubflow::GetTypeId()
+  Ptr<MpTcpSubflow> master = DynamicCast<MpTcpSubflow>(
+    socket
+  );
+
+  return master;
+// Ptr<MpTcpSubflow> master = DynamicCast <MpTcpSubflow>(CompleteConstruct ( (TcpSocketBase*)subflow) );
+// TODO reestablish 
+  #if 0
 
   // TODO could replaced that by the number of established subflows
   // rename getSubflow by
@@ -957,7 +985,9 @@ MpTcpSocketBase::CreateSubflow(
   NS_ASSERT_MSG ( sFlow, "Contact ns3 team");
   m_subflows[Others].push_back( sFlow );
   NS_LOG_INFO ( "subflow " << sFlow << " associated with node " << sFlow->m_node);
+
   return sFlow;
+    #endif
 }
 
 
@@ -2256,7 +2286,7 @@ void
 MpTcpSocketBase::AddCoupling (uint8_t localId0)
 {
   NS_LOG_LOGIC ("Add coupling(s) for localId=" << localId0);
-
+#if 0
   /* generate */
   for ( auto it = m_subflows[Established].begin(); it != m_subflows[Established].end(); ++it)
   {
@@ -2276,12 +2306,14 @@ MpTcpSocketBase::AddCoupling (uint8_t localId0)
     auto res = m_couplings.insert( std::make_pair(key, couple));
     NS_ASSERT (res.second == false);
   }
+  #endif
 }
 
 void
 MpTcpSocketBase::RemoveCoupling ( uint8_t localId)
 {
   NS_LOG_LOGIC ("Remove coupling for localId " << (int)localId);
+  #if 0
   for ( auto it = m_couplings.cbegin(); it != m_couplings.cend(); )
   {
     //! if either of the id in the key belongs to this subflow, then kill it !
@@ -2296,6 +2328,7 @@ MpTcpSocketBase::RemoveCoupling ( uint8_t localId)
     }
 
   }
+  #endif
 }
 
 void
@@ -2953,7 +2986,7 @@ MpTcpSocketBase::DoPeerClose (void)
     { // Need to ack, the application will close later
 //    #error TODO send Dataack
       TcpHeader header;
-
+      NS_LOG_WARN ("Likely to crash ?");
       GenerateEmptyPacketHeader(header, TcpHeader::ACK);
       //!
       Ptr<MpTcpSubflow> sf = GetSubflow(0);
@@ -3154,7 +3187,7 @@ MpTcpSocketBase::Destroy(void)
   NS_LOG_FUNCTION(this);
   NS_LOG_INFO("Enter Destroy(" << this << ") m_sockets: )");
 
-  NS_LOG_ERROR("Before unsetting endpoint, check it's not used by subflow ?");
+  NS_LOG_ERROR ("Before unsetting endpoint, check it's not used by subflow ?");
   m_endPoint = 0;
   // TODO loop through subflows and Destroy them too ?
 //  if (m_tcp != 0)

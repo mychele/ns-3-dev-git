@@ -70,9 +70,6 @@
 /**
 
 
-
-
-
 Connects directly one client to its server with as many links as devices 
 (different configuration for each test)
 
@@ -84,7 +81,12 @@ Connects directly one client to its server with as many links as devices
 
 192.168.<Device>.1 <------------> 192.168.<Device>.2
 
+Scenario is:
+Source starts sending data that the receiver echoes back to the source.
+Once the server received everything, it closes the socket (which is likely to be 
+deferred until all the data has been acknowledged by the source).
 
+Once the source received everything, it closes the connection as well.
 
 
 
@@ -255,6 +257,8 @@ MpTcpMultihomedTestCase::DoSetup (void)
 
   Config::SetDefault ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
 //  CallbackValue cbValue = MakeCallback (&OnNewSocket);
+
+// Disabled cause source of a crash ?
   CallbackValue cbValue = MakeCallback (&TcpTraceHelper::OnNewSocket);
   Config::SetDefault ("ns3::TcpL4Protocol::OnNewSocket", cbValue);
   
@@ -327,7 +331,7 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
 {
 
   Ptr<MpTcpSocketBase> meta =  DynamicCast<MpTcpSocketBase>(sock);
-  NS_ASSERT_MSG(meta, "WTF ?!!");
+  NS_ASSERT_MSG(meta, "WTF ?!! expecting a meta but [" << sock << "]  is not a meta:" << sock->GetInstanceTypeId().GetName());
 
   NS_LOG_LOGIC("connection successful. Meta state=" << TcpSocket::TcpStateName[meta->GetState() ]
 //              << " received a DSS: " << meta->m_receivedDSS
@@ -367,7 +371,7 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
   Ptr<Ipv4> ipv4Local = m_sourceNode->GetObject<Ipv4> ();
   NS_ABORT_MSG_UNLESS (ipv4Local, "GetObject for <Ipv4> interface failed");
 
-  NS_LOG_DEBUG ( "NbIpInterfaces" << ipv4Local->GetNInterfaces ());
+  NS_LOG_DEBUG ( "NbIpInterfaces=" << ipv4Local->GetNInterfaces () << " (with localhost)");
   
 //  #if 0 
 //      bool isForwarding = false;
@@ -521,6 +525,7 @@ MpTcpMultihomedTestCase::SourceHandleSend (Ptr<Socket> sock, uint32_t available)
 {
   NS_LOG_DEBUG("SourceHandleSend with available = " << available
                   << " m_currentSourceTxBytes=" << m_currentSourceTxBytes << " (already sent) "
+                  << " m_currentSourceRxBytes=" << m_currentSourceRxBytes << " "
                   << " m_totalBytes=" << m_totalBytes
                   );
   while (sock->GetTxAvailable () > 0 && m_currentSourceTxBytes < m_totalBytes)
@@ -753,6 +758,7 @@ MpTcpMultihomedTestCase::SetupDefaultSim (void)
   // a wrapper that calls m_tcp->CreateSocket ();
   Ptr<Socket> server = sockFactory0->CreateSocket ();
   Ptr<Socket> source = sockFactory1->CreateSocket ();
+//  source->Ref();
 
 
   /* We want to control over which socket the meta binds first
@@ -885,7 +891,7 @@ public:
 //  Config::Set ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
 
     // with units of bytes
-    static const uint8_t MaxNbOfDevices = 2;
+    static const uint8_t MaxNbOfDevices = 1;
     static const uint8_t SubflowPerDevice = 1;
     
 
@@ -899,22 +905,22 @@ public:
 
         for (subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
     #endif
-//            AddTestCase (
-//                new MpTcpMultihomedTestCase (
-//                    13,     // 1) totalStreamSize (everything in bytes)
-//                    200,    // 2) source write size,
-//                    200,    // 3) source read size
-//                    200,    // 4) server write size
-//                    200,    // 5) server read size
-//                    nb_of_devices,
-//                    subflow_per_device,
-//                    false       // 6/ use ipv6
-//                    ),
-//                TestCase::QUICK
-//            );
+            AddTestCase (
+                new MpTcpMultihomedTestCase (
+                    13,     // 1) totalStreamSize (everything in bytes)
+                    200,    // 2) source write size,
+                    200,    // 3) source read size
+                    200,    // 4) server write size
+                    200,    // 5) server read size
+                    nb_of_devices,
+                    subflow_per_device,
+                    false       // 6/ use ipv6
+                    ),
+                TestCase::QUICK
+            );
 
 //            AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
-            AddTestCase (new MpTcpMultihomedTestCase (1000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
+//            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
 
     #ifdef LOOP
         }

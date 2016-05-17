@@ -1004,6 +1004,7 @@ protected:
 public:
   
   virtual void Dump (std::ostream &os) const;
+  TcpSocketBase& operator =(const TcpSocketBase& s);
 protected:
 //  
 //  //SetupTracingIfEnabled

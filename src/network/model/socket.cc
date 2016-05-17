@@ -43,7 +43,34 @@ Socket::GetTypeId (void)
 }
 
 
-
+Socket&
+Socket::operator =(const Socket& sock)
+{
+  m_boundnetdevice = 0;
+  m_recvPktInfo = sock.m_recvPktInfo;
+  m_connectionSucceeded = sock.m_connectionSucceeded;
+  m_connectionFailed = sock.m_connectionFailed;
+  m_normalClose = sock.m_normalClose;
+  m_errorClose = sock.m_errorClose;
+  m_connectionRequest = sock.m_connectionRequest;
+  m_newConnectionCreated = sock.m_newConnectionCreated;
+  m_dataSent = sock.m_dataSent;
+  m_sendCb = sock.m_sendCb;
+  m_receivedData = sock.m_receivedData;
+  m_manualIpTos  = sock.m_manualIpTos;
+  m_manualIpTtl  = sock.m_manualIpTtl;
+  m_ipRecvTos  = sock.m_ipRecvTos;
+  m_ipRecvTtl  = sock.m_ipRecvTtl;
+  m_ipTos = sock.m_ipTos;
+  m_ipTtl = sock.m_ipTtl;
+  m_manualIpv6Tclass  = sock.m_manualIpv6Tclass;
+  m_manualIpv6HopLimit  = sock.m_manualIpv6HopLimit;
+  m_ipv6RecvTclass  = sock.m_ipv6RecvTclass;
+  m_ipv6RecvHopLimit  = sock.m_ipv6RecvHopLimit;
+  m_ipv6Tclass = sock.m_ipv6Tclass;
+  m_ipv6HopLimit = sock.m_ipv6HopLimit;
+  return *this;
+}
 
 Socket::Socket (const Socket& sock)
   :

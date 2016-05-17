@@ -269,6 +269,115 @@ TcpSocketState::TcpAckStateName[TcpSocketState::LAST_ACKSTATE] =
   "OPEN", "DISORDER", "CWR", "RECOVERY", "LOSS"
 };
 
+
+TcpSocketBase& 
+TcpSocketBase::operator=(const TcpSocketBase& sock)
+{
+  Socket::operator=(sock);
+  m_delAckCount = 0;
+  m_endPoint = 0;
+  m_endPoint6 = 0;
+//  m_rtt = 0;
+
+  m_dupAckCount = sock.m_dupAckCount;
+  m_delAckMaxCount = sock.m_delAckMaxCount;
+  m_noDelay = sock.m_noDelay;
+  m_cnRetries = sock.m_cnRetries;
+  m_delAckTimeout = sock.m_delAckTimeout;
+  m_persistTimeout = sock.m_persistTimeout;
+  m_cnTimeout = sock.m_cnTimeout;
+
+  m_node = sock.m_node;
+  m_tcp = sock.m_tcp;
+
+  m_firstTxUnack= sock.m_firstTxUnack;
+  m_nextTxSequence = sock.m_nextTxSequence;
+  m_highTxMark = sock.m_highTxMark;
+  m_state = sock.m_state;
+  m_errno = sock.m_errno;
+  m_closeNotified = sock.m_closeNotified;
+  m_closeOnEmpty = sock.m_closeOnEmpty;
+  m_shutdownSend = sock.m_shutdownSend;
+  m_shutdownRecv = sock.m_shutdownRecv;
+  m_connected = sock.m_connected;
+  m_msl = sock.m_msl;
+  m_maxWinSize = sock.m_maxWinSize;
+  m_rWnd = sock.m_rWnd;
+  m_highRxMark = sock.m_highRxMark;
+  m_highRxAckMark = sock.m_highRxAckMark;
+  m_bytesAckedNotProcessed= 0;
+  m_nullIsn= sock.m_nullIsn;
+  m_localISN= sock.m_localISN;
+  m_peerISN= sock.m_peerISN;
+  m_mptcpEnabled = sock.m_mptcpEnabled;
+  m_mptcpLocalKey = sock.m_mptcpLocalKey;
+  m_mptcpLocalToken = sock.m_mptcpLocalToken;
+  m_winScalingEnabled = sock.m_winScalingEnabled;
+  m_sndScaleFactor = sock.m_sndScaleFactor;
+  m_rcvScaleFactor = sock.m_rcvScaleFactor;
+  m_timestampEnabled = sock.m_timestampEnabled;
+  m_timestampToEcho = sock.m_timestampToEcho;
+  m_retxThresh = sock.m_retxThresh;
+  m_limitedTx = sock.m_limitedTx;
+  m_lostOut = sock.m_lostOut;
+  m_retransOut =sock.m_retransOut;
+
+  m_txBuffer = CopyObject (sock.m_txBuffer);
+  m_rxBuffer = CopyObject (sock.m_rxBuffer);
+
+  if (sock.m_rtt)
+    {
+      m_rtt = sock.m_rtt->Copy ();
+    }
+    
+  // TODO  there should be a way to prevent this from happening when looking to upgrade
+  // TCP socket into an MPTCP one ?
+  // Reset all callbacks to null
+//  ResetUserCallbacks ();
+
+  m_txBuffer = CopyObject (sock.m_txBuffer);
+  m_rxBuffer = CopyObject (sock.m_rxBuffer);
+  
+  // MATT HACK to get around TcpSocketState limitations and let TcpCongestionOps 
+  // get access to MPTCP subflows
+  // 
+  m_tcb = CopyObject (sock.m_tcb);
+  
+  // TODO remove 
+  m_tcb->m_socket = this;
+  
+  if (sock.m_congestionControl)
+    {
+      m_congestionControl = sock.m_congestionControl->Fork ();
+    }
+
+  // MATT HACK to get around TcpSocketState limitations and let TcpCongestionOps 
+  // get access to MPTCP subflows
+  // 
+//  m_tcb = CopyObject (sock.m_tcb);
+//  m_tcb->m_socket = this;
+//  
+//  if (sock.m_congestionControl)
+//    {
+//      m_congestionControl = sock.m_congestionControl->Fork ();
+//    }
+//
+//  bool ok;
+//
+//  ok = m_tcb->TraceConnectWithoutContext ("CongestionWindow",
+//                                          MakeCallback (&TcpSocketBase::UpdateCwnd, this));
+//  NS_ASSERT (ok == true);
+//
+//  ok = m_tcb->TraceConnectWithoutContext ("SlowStartThreshold",
+//                                          MakeCallback (&TcpSocketBase::UpdateSsThresh, this));
+//  NS_ASSERT (ok == true);
+//
+//  ok = m_tcb->TraceConnectWithoutContext ("AckState",
+//                                          MakeCallback (&TcpSocketBase::UpdateAckState, this));
+//  NS_ASSERT (ok == true);
+  return *this;
+}
+
 TcpSocketBase::TcpSocketBase (void)
   :
     TcpSocket(),
@@ -406,6 +515,8 @@ TcpSocketBase::TcpSocketBase (const TcpSocketBase& sock)
   // get access to MPTCP subflows
   // 
   m_tcb = CopyObject (sock.m_tcb);
+  
+  // TODO remove 
   m_tcb->m_socket = this;
   
   if (sock.m_congestionControl)
@@ -1313,6 +1424,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
       NS_LOG_LOGIC (this << " Leaving zerowindow persist state");
       m_persistEvent.Cancel ();
     }
+
   if (tcpHeader.GetFlags () & TcpHeader::ACK)
     {
       UpdateWindowSize (tcpHeader);
@@ -1649,27 +1761,16 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       
       // TODO Move part of it to UpgradeToMeta 
       // HACK matt otherwise the new subflow sends the packet on the wroing interface
+      // Now useless remove ?
       master->m_boundnetdevice = this->m_boundnetdevice;
 
       Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
-//
-//      // generate a random key
-//      uint64_t localKey = meta->GenerateUniqueMpTcpKey ();
-//      uint32_t localToken;
-//      uint64_t idsn;
-//
-//      GenerateTokenForKey ( HMAC_SHA1, localKey, localToken, idsn );
-//      SequenceNumber32 sidsn ( (uint32_t) idsn);
-//
-//      NS_LOG_DEBUG ("Server meta ISN = " << idsn << " from key " << localKey);
-
-      // Setting isn of meta
-//      meta->InitLocalISN (sidsn);
 
       // We add the socket after initial parameters are correctly set so that
       // tracing doesn't contain strange values that mess up plotting
       bool result = m_tcp->AddSocket (meta);
       NS_ASSERT_MSG (result, "could not register meta");
+
       Simulator::ScheduleNow (&MpTcpSubflow::CompleteFork, master,
                           packet, tcpHeader, fromAddress, toAddress);
 
@@ -1680,6 +1781,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
   Simulator::ScheduleNow (&TcpSocketBase::CompleteFork, newSock,
                           packet, tcpHeader, fromAddress, toAddress);
 }
+
 
 Ptr<MpTcpSubflow>
 TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerKey)
@@ -1694,12 +1796,30 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
    The default subflow typeid is an attribute of meta socket which is not practical since subflow is created
    before meta. Hence move that type id to TcpL4Protocol
    */
-  MpTcpSubflow *subflow = new MpTcpSubflow (*this);
+//  MpTcpSubflow *subflow = new MpTcpSubflow (*this);
+  Ptr<TcpSocketBase> temp =  this->Fork(); // 
+//  Ptr<TcpSocketBase> temp =  CopyObject<TcpSocketBase>(this);
+
+
+//  Ptr<MpTcpSocketBase> meta2 = DynamicCast<MpTcpSocketBase>(
+//        m_tcp->CreateSocket(ns3::MpTcpSocketBase::GetTypeId())
+//  );
+
+//  *meta2 = *this;
+ 
+  // TODO retrieve
+//  Ptr<MpTcpSubflow> master = DynamicCast<MpTcpSubflow>(m_tcp->CreateSocket( ns3::MpTcpSubflow::GetTypeId() ) );
+ 
+ 
+//  std::swap (*meta2, *this);
+//  meta->CreateSubflow();
+  
   // TODO could do sthg like CopyObject<MpTcpSubflow>(this) ?
   // Otherwise uncoimment CompleteConstruct
-
+  // TODO first do completeConstruct, then call operator=(
 //  Ptr<MpTcpSubflow> master (subflow, true);
-  Ptr<MpTcpSubflow> master = DynamicCast <MpTcpSubflow>(CompleteConstruct ( (TcpSocketBase*)subflow) );
+  // CompletConstruct doit etre
+//  Ptr<MpTcpSubflow> master = DynamicCast <MpTcpSubflow>(CompleteConstruct ( (TcpSocketBase*)subflow) );
 
 
 
@@ -1707,7 +1827,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
   Ipv4EndPoint *endPoint = m_endPoint;
 
   // TODO cancel only for forks, not when client gets upgraded Otherwise timers
-  this->CancelAllTimers();
+//  this->CancelAllTimers();
 
 //  this->~TcpSocketBase();
   // MpTcpSocketBase(*this) ?
@@ -1715,13 +1835,30 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 //  std::memcpy (this, temp, sizeof(std::aligned_storage<sizeof(MpTcpSocketBase)>::type) ); // dest/src/size
 
   // I don't want the destructor to be called in that moment
-//  delete temp[];
-  MpTcpSocketBase* meta = new (this) MpTcpSocketBase(*master);
-  // update attributes with default
-//  CompleteConstruct(meta);
-  meta->SetTcp(master->m_tcp);
-  meta->SetNode(master->GetNode());
 
+  // TODO here we should be able to choose the typeid of the meta 
+  MpTcpSocketBase* meta = new (this) MpTcpSocketBase();
+  // update attributes with default
+  CompleteConstruct (meta);
+//  meta->SetCongestionControlAlgorithm( );
+  
+  meta->CreateScheduler (); // meta->m_schedulerTypeId
+  // Once typeids are ok, one can setup scheduler
+//  temp->m_tcp->DumpSockets();
+
+  meta->SetNode (temp->GetNode());
+  
+  
+  // This setups tx/rx buffers, congestion control, rtt, tcp, (node ?)
+  *meta = *temp;
+//  meta->SetTcp (temp->m_tcp);
+
+  meta->SetLocalKey (localKey);
+  meta->SetPeerKey (peerKey);
+  
+  Ptr<MpTcpSubflow> master = meta->CreateSubflow (true);
+//  master.Acquire();
+  *master = *temp;
   if(connecting)
   {
       //! then we update
@@ -1743,11 +1880,6 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 //      GetMeta ()->AddLocalId ();
   }
 
-
-  meta->SetLocalKey (localKey);
-
-    // will set peer isn
-  meta->SetPeerKey (peerKey);
 //InitLocalISN
   // we add it to tcp so that it can be freed and used for token lookup
 
@@ -1760,8 +1892,12 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 //  bool result = m_tcp->AddSocket (master);
 //  NS_ASSERT_MSG (result, "Could not register master");
 
+  // TODO destroy and rebind
+//  temp->Destroy();
+//  m_tcp->AddSocket (meta);
   return master;
-//    return 0;
+  
+//  return 0;
 }
 
 
@@ -1910,28 +2046,30 @@ uint32_t localToken;
 
       Ptr<const TcpOptionMpTcpCapable> mpc;
       
-      // Process the MP_CAPABLE only if we are not a subflow already
-      // otherwise, we end up processing ad vitam aeternam
+      // Process the MP_CAPABLE only once, i.e., if we are not a subflow already
+      // else, we end up processing ad vitam aeternam
 //      NS_LOG_DEBUG ("Child of subflow ? instance typeid=" << GetInstanceTypeId()
 //          << " to compare with " << MpTcpSubflow::GetTypeId() );
         
       if( !GetInstanceTypeId().IsChildOf(MpTcpSubflow::GetTypeId(), false) 
         && GetTcpOption(tcpHeader, mpc))
       {
-        // TODO save endpoint
-//        if(m_endpoint != 0)
+        // save endpoint because its value is destroyed while upgrading to meta
+        // these are backupo variables
         Ipv4EndPoint* endPoint = m_endPoint;
         Ptr<NetDevice> boundDev = m_boundnetdevice;
+        
+        
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
         // master = first subflow
         Ptr<MpTcpSubflow> master = UpgradeToMeta (true, m_mptcpLocalKey, mpc->GetSenderKey() );
         master->ResetUserCallbacks ();
 
-        bool result = m_tcp->AddSocket (master);
-        NS_ASSERT_MSG (result, "Could not register master");
+          // Subflow now created with m_tcp->CreateSocket=> already registered
+//        bool result = m_tcp->AddSocket (master);
+//        NS_ASSERT_MSG (result, "Could not register master");
 
         // Hack to retrigger the tcpL4protocol::OnNewSocket callback
-//        m_tcp->AddSocket (this);
         m_tcp->NotifyNewSocket (this);
 
         // Need to register an id
@@ -1942,29 +2080,17 @@ uint32_t localToken;
         NS_ASSERT_MSG (ok, "Master subflow has mptcp id " << (int) id);
         NS_LOG_DEBUG ("Master subflow has mptcp id " << (int) id);
 
-        // HACK matt otherwise the new subflow sends the packet on the wroing interface
+        // HACK matt otherwise the new subflow sends the packet to the wrong socket, i.e., its previous
+        // owner, which has now become the meta
         master->m_boundnetdevice = boundDev;
         master->m_endPoint = endPoint;
+        master->SetupCallback();
 
-        //
-//      if(sf->IsMaster())
-//      {
-//          //! then we update
-//          m_state = sf->GetState ();
-//          NS_LOG_DEBUG("Set master key/token to "<< m_mptcpLocalKey << "/" << m_mptcpLocalToken);
-//
-//          // Those may be overriden later
-//          m_endPoint = sf->m_endPoint;
-//          m_endPoint6 = sf->m_endPoint6;
-//
-//
-//    //      GetMeta ()->AddLocalId ();
-//      }
-        NS_LOG_DEBUG("MATT2 end of upgrade " << this << " "<< GetInstanceTypeId());
+//        NS_LOG_DEBUG("MATT2 end of upgrade " << this << " "<< GetInstanceTypeId());
         NS_LOG_DEBUG("Local/peer ISNs: " << this->GetLocalIsn() << "/"<< this->GetPeerIsn()
             << "(peer isn set later by processSynSent)");
-//        bool result = m_tcp->AddSocket(master);
-//        NS_ASSERT(result);
+        NS_LOG_DEBUG( "refcount=" << this->GetReferenceCount() );
+        this->Ref();
 //        master->Bind();
 
         // Carrément le renvoyer à forwardUp pour forcer la relecture de la windowsize
@@ -2865,7 +2991,13 @@ uint32_t
 TcpSocketBase::Window (void)
 {
   NS_LOG_FUNCTION (this);
-  return std::min (m_rWnd.Get (), m_tcb->m_cWnd.Get ());
+//  return std::min (m_rWnd.Get (), m_tcb->m_cWnd.Get ());
+
+  return std::min (
+    m_rWnd.Get (), 
+    m_tcb->m_cWnd.Get ()
+    
+  );
 }
 
 /*
@@ -3875,7 +4007,7 @@ TcpSocketBase::Fork (void)
 //  return CopyObject<TcpSocketBase> (this);
   char *addr = new char[sizeof(std::aligned_storage<sizeof(MpTcpSocketBase)>::type)];
   Ptr<TcpSocketBase> p = Ptr<TcpSocketBase> (new (addr) TcpSocketBase(*this), false);
-//  return CopyObject<TcpSocketBase> (this);
+//  p.Acquire();
   return p;
 }
 

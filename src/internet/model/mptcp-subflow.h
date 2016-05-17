@@ -89,8 +89,10 @@ public:
   **/
   MpTcpSubflow();
 
-  MpTcpSubflow(const TcpSocketBase& sock);
+//  MpTcpSubflow(const TcpSocketBase& sock);
+private:
   MpTcpSubflow(const MpTcpSubflow&);
+public:
   virtual ~MpTcpSubflow();
 
 //  TcpStates_t
@@ -458,6 +460,7 @@ public:
    */
   Ptr<MpTcpSocketBase> GetMeta() const;
 
+  MpTcpSubflow& operator =(const TcpSocketBase& s);
   /**
    * Not implemented
    * \return false

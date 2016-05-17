@@ -119,6 +119,9 @@ public:
    * \param tid The TypeId of a SocketFactory class to use
    */
   static Ptr<Socket> CreateSocket (Ptr<Node> node, TypeId tid);
+  
+  Socket& operator =(const Socket&);
+  
   /**
    * \brief Get last error number.
    *

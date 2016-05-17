@@ -29,6 +29,8 @@
 
 //#include "ns3/mp-tcp-cc.h"
 #include "ns3/inet-socket-address.h"
+#include "ns3/mptcp-id-manager.h"
+#include "ns3/mptcp-scheduler.h"
 //#include "ns3/mptcp-scheduler-round-robin.h"
 
 //using namespace std;
@@ -118,8 +120,11 @@ public:
   virtual TypeId GetInstanceTypeId (void) const;
 
   MpTcpSocketBase();
+private:
   MpTcpSocketBase(const MpTcpSocketBase&);
-  MpTcpSocketBase(const TcpSocketBase&);
+
+public:
+//  MpTcpSocketBase(const TcpSocketBase&);
 
   virtual ~MpTcpSocketBase();
 
@@ -487,7 +492,8 @@ public: // public variables
    */
 //  virtual uint32_t GetToken() const;
 
-
+  MpTcpSocketBase& operator =(const TcpSocketBase& s);
+  
   // TODO can be removed
   virtual void
   CompleteFork(Ptr<const Packet> p, const TcpHeader& h, const Address& fromAddress, const Address& toAddress);
@@ -825,9 +831,11 @@ public:
   std::string m_tracePrefix;      //!< help naming csv files, TODO should be removed
 //  int m_prefixCounter;      //!< TODO remove and put in a helper
  /****** END TRACING *****/
-
+  virtual void CreateScheduler (
+//  TypeId schedulerTypeId
+  );
 protected:
-  virtual void CreateScheduler (TypeId schedulerTypeId);
+
 
   // TODO rename to peerIdManager ?
   Ptr<MpTcpPathIdManager> m_remoteIdManager;  //!< Keep track of advertised ADDR id advertised by remote endhost
@@ -852,7 +860,7 @@ protected:
   /** for each key <localIdLow, localIdMax>, we maintain a SubflowPair that
   * records characteristics to 2 subflows.
   */
-  std::map<std::pair<uint8_t, uint8_t>, Ptr<SubflowPair> > m_couplings;
+//  std::map<std::pair<uint8_t, uint8_t>, Ptr<SubflowPair> > m_couplings;
 
   void AddProbingRequest (uint8_t cookie, Ptr<MpTcpSubflow> sf);
 

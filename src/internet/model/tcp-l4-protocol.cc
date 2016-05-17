@@ -243,7 +243,8 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
       // now we should call the destructor ourself
       TcpSocketBase *temp = new (addr) TcpSocketBase();
       socket = CompleteConstruct (temp);
-      socket.Acquire();
+      socket->Ref();
+//      socket->Ref();
   }
   else
   {
@@ -255,6 +256,7 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
   socket->InitLocalISN ();
 
   // TODO solve
+  NS_LOG_DEBUG ("Test"  << algo);
   NS_LOG_DEBUG ("Setting CC with " << algo->GetName());
   NS_LOG_DEBUG ("Default CC =" << m_congestionTypeId.GetName());
   socket->SetCongestionControlAlgorithm (algo);
@@ -685,7 +687,7 @@ TcpL4Protocol::Receive (Ptr<Packet> packet,
     }
 
   NS_ASSERT_MSG (endPoints.size () == 1, "Demux returned more than one endpoint");
-  NS_LOG_LOGIC ("TcpL4Protocol " << this << " forwarding up to endpoint/socket" << (*endPoints.begin ()));
+  NS_LOG_LOGIC ("TcpL4Protocol " << this << " forwarding up to endpoint/socket " << (*endPoints.begin ()));
 
   (*endPoints.begin ())->ForwardUp (packet, incomingIpHeader,
                                     incomingTcpHeader.GetSourcePort (),
