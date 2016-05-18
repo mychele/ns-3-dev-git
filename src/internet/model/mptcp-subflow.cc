@@ -132,7 +132,7 @@ MpTcpSubflow::DumpInfo () const
 {
       NS_LOG_LOGIC ("MpTcpSubflow " << this << " SendPendingData" <<
 //          " w " << w <<
-          " rxwin " << m_rWnd <<
+          " rxwin " << GetRwnd() <<
 //          " segsize " << GetSegSize() <<
           " nextTxSeq " << m_nextTxSequence <<
           " highestRxAck " << FirstUnackedSeq() <<
@@ -830,9 +830,9 @@ MpTcpSubflow::ProcessListen(Ptr<Packet> packet, const TcpHeader& tcpHeader, cons
 }
 
 Ptr<MpTcpSocketBase>
-MpTcpSubflow::GetMeta() const
+MpTcpSubflow::GetMeta () const
 {
-  NS_ASSERT(m_metaSocket);
+  NS_ASSERT (m_metaSocket);
   return m_metaSocket;
 }
 
@@ -852,26 +852,6 @@ MpTcpSubflow::TimeWait ()
   m_timewaitEvent = Simulator::Schedule(Seconds( m_msl), &MpTcpSubflow::CloseAndNotify, this);
 }
 
-//void
-//MpTcpSubflow::ProcessEstablished(Ptr<Packet> packet, const TcpHeader& header)
-//{
-//  NS_LOG_FUNCTION (this);
-//  TcpSocketBase::ProcessEstablished(packet,header);
-//}
-
-//int
-//MpTcpSubflow::ProcessTcpOptionsLastAck(const TcpHeader& header)
-//{
-//  NS_LOG_FUNCTION (this << header);
-//  TcpSocketBase::ProcessTcpOptionsLastAck(header);
-//}
-//
-//int
-//MpTcpSubflow::ProcessTcpOptionsClosing(const TcpHeader& header)
-//{
-//  NS_LOG_FUNCTION (this << header);
-//  TcpSocketBase::ProcessTcpOptionsClosing(tcpHeader);
-//}
 
 void
 MpTcpSubflow::AddMpTcpOptionDSS (TcpHeader& header)
@@ -1624,7 +1604,7 @@ MpTcpSubflow::UpdateWindowSize (const TcpHeader& header)
 //    }
 //  if(!GetMeta()->FullyEstablished()) {
     // Hackish
-  m_rWnd =     GetMeta()->m_rWnd;
+//  m_rWnd =     GetMeta()->m_rWnd;
 //  m_rWnd = header.GetWindowSize();
 //  }
   
@@ -1728,7 +1708,7 @@ MpTcpSubflow::NewAck(SequenceNumber32 const& ack)
 //      m_retxEvent = Simulator::Schedule(m_rto, &MpTcpSubflow::ReTxTimeout, this);
     }
 
-  if (m_rWnd.Get() == 0 && m_persistEvent.IsExpired())
+  if (GetRwnd() == 0 && m_persistEvent.IsExpired())
     { // Zero window: Enter persist state to send 1 byte to probe
       NS_LOG_LOGIC (this << "Enter zerowindow persist state");NS_LOG_LOGIC (this << "Cancelled ReTxTimeout event which was set to expire at " <<
           (Simulator::Now () + Simulator::GetDelayLeft (m_retxEvent)).GetSeconds ());
@@ -1984,6 +1964,12 @@ MpTcpSubflow::AppendDSSFin ()
     m_dssFlags |= TcpOptionMpTcpDSS::DataFin;
 }
 
+
+uint32_t
+MpTcpSubflow::GetRwnd() const
+{
+  return GetMeta()->m_rWnd;
+}
 
 Ptr<RttEstimator> 
 MpTcpSubflow::GetOwd (OwdEstimator estimator)

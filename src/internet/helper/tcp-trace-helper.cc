@@ -188,8 +188,10 @@ TcpTraceHelper::SetupSocketTracing (Ptr<TcpSocketBase> sock, const std::string p
           << "," << sock->GetRxAvailable ()
           << "," 
         //      <<  sock->GetRcvBufSize()
-          << "," << sock->GetInitialCwnd()
-          << "," << sock->Window()
+          << "," << sock->GetInitialCwnd ()
+          // TODO may crash for subflow as meta is not set yet for subflow
+          << "," 
+//          << sock->Window()
           << "," << sock->GetInitialSSThresh()
           << "," << TcpSocket::TcpStateName[sock->GetState()]
           << std::endl

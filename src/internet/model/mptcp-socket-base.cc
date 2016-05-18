@@ -871,6 +871,11 @@ MpTcpSocketBase::OnSubflowNewState(std::string context,
   if(newState == ESTABLISHED)
   {
     //!
+    if (sf->IsMaster())
+    {
+      m_rWnd = sf->m_rWnd;
+      NS_LOG_LOGIC("Updated rWnd=" << m_rWnd);
+    }
     MoveSubflow(sf, Others, Established);
 
     // subflow did SYN_RCVD -> ESTABLISHED
@@ -879,7 +884,7 @@ MpTcpSocketBase::OnSubflowNewState(std::string context,
       NS_LOG_LOGIC("Subflow created");
 //      Simulator::ScheduleNow(&MpTcpSocketBase::OnSubflowEstablished, this, sf);
       // TODO schedule it else it sends nothing ?
-      OnSubflowEstablished(sf);
+      OnSubflowEstablished (sf);
     }
     // subflow did SYN_SENT -> ESTABLISHED
     else if(oldState == SYN_SENT)

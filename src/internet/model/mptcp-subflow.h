@@ -460,6 +460,8 @@ public:
    */
   Ptr<MpTcpSocketBase> GetMeta() const;
 
+  virtual uint32_t GetRwnd() const;
+  
   MpTcpSubflow& operator =(const TcpSocketBase& s);
   /**
    * Not implemented

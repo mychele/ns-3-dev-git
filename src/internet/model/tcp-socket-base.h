@@ -302,9 +302,10 @@ public:
    */
   void SetCongestionControlAlgorithm (Ptr<TcpCongestionOps> algo);
 
-  // HACK MATT
+  // HACK MATT TODO remove, just have a headerMember
   virtual void GenerateEmptyPacketHeader (TcpHeader& header, uint8_t flags);
 
+  virtual uint32_t GetRwnd() const;
   // TODO pass on data
   /**
   SendPacket should be called straightaway

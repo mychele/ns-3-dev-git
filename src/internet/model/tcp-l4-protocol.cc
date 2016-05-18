@@ -243,7 +243,7 @@ TcpL4Protocol::CreateSocket (Ptr<TcpCongestionOps> algo, TypeId socketTypeId)
       // now we should call the destructor ourself
       TcpSocketBase *temp = new (addr) TcpSocketBase();
       socket = CompleteConstruct (temp);
-      socket->Ref();
+//      socket->Ref();
 //      socket->Ref();
   }
   else

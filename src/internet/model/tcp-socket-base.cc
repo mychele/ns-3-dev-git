@@ -1419,7 +1419,7 @@ TcpSocketBase::DoForwardUp (Ptr<Packet> packet, const Address &fromAddress,
     }
 
   // Update Rx window size, i.e. the flow control window
-  if (m_rWnd.Get () == 0 && tcpHeader.GetWindowSize () != 0 && m_persistEvent.IsRunning ())
+  if (GetRwnd () == 0 && tcpHeader.GetWindowSize () != 0 && m_persistEvent.IsRunning ())
     { // persist probes end
       NS_LOG_LOGIC (this << " Leaving zerowindow persist state");
       m_persistEvent.Cancel ();
@@ -1764,6 +1764,7 @@ TcpSocketBase::ProcessListen (Ptr<Packet> packet, const TcpHeader& tcpHeader,
       // Now useless remove ?
       master->m_boundnetdevice = this->m_boundnetdevice;
 
+      // Not even needed
       Ptr<MpTcpSocketBase> meta = DynamicCast<MpTcpSocketBase>(newSock);
 
       // We add the socket after initial parameters are correctly set so that
@@ -1824,7 +1825,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 
 
 
-  Ipv4EndPoint *endPoint = m_endPoint;
+//  Ipv4EndPoint *endPoint = m_endPoint;
 
   // TODO cancel only for forks, not when client gets upgraded Otherwise timers
 //  this->CancelAllTimers();
@@ -1859,6 +1860,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
   Ptr<MpTcpSubflow> master = meta->CreateSubflow (true);
 //  master.Acquire();
   *master = *temp;
+  NS_LOG_UNCOND (master->m_rWnd.Get () << " rwnd to compare with temp rwnd=" << temp->m_rWnd.Get ());
   if(connecting)
   {
       //! then we update
@@ -2061,6 +2063,8 @@ uint32_t localToken;
         
         
         NS_LOG_DEBUG("MATT " << this << " "<< GetInstanceTypeId());
+        NS_LOG_DEBUG( "refcount=" << this->GetReferenceCount() << " before upgrade" );
+       
         // master = first subflow
         Ptr<MpTcpSubflow> master = UpgradeToMeta (true, m_mptcpLocalKey, mpc->GetSenderKey() );
         master->ResetUserCallbacks ();
@@ -2089,7 +2093,7 @@ uint32_t localToken;
 //        NS_LOG_DEBUG("MATT2 end of upgrade " << this << " "<< GetInstanceTypeId());
         NS_LOG_DEBUG("Local/peer ISNs: " << this->GetLocalIsn() << "/"<< this->GetPeerIsn()
             << "(peer isn set later by processSynSent)");
-        NS_LOG_DEBUG( "refcount=" << this->GetReferenceCount() );
+        NS_LOG_DEBUG( "refcount=" << this->GetReferenceCount() << " after upgrade" );
         this->Ref();
 //        master->Bind();
 
@@ -2805,6 +2809,8 @@ TcpSocketBase::CompleteFork (Ptr<const Packet> p, const TcpHeader& h,
   // Set the sequence number and send SYN+ACK
   InitLocalISN ();
   InitPeerISN (h.GetSequenceNumber ());
+  // No need for UpdateWindowSize here ?!
+  m_rWnd = h.GetWindowSize();
   
   // Call addsocket after setting up initial parameters to get nice plots
   bool result = m_tcp->AddSocket(this);
@@ -2957,7 +2963,7 @@ TcpSocketBase::SendPendingData (bool withAck)
         }
       NS_LOG_LOGIC ("TcpSocketBase " << this << " SendPendingData" <<
                     " w " << w <<
-                    " rxwin " << m_rWnd <<
+                    " rxwin " << GetRwnd () <<
                     " segsize " << m_tcb->m_segmentSize <<
 //                    " nextTxSeq " <<  <<
                     " highestRxAck " << FirstUnackedSeq() <<
@@ -2987,14 +2993,21 @@ TcpSocketBase::BytesInFlight ()
   return m_highTxMark.Get () - FirstUnackedSeq();
 }
 
+
 uint32_t
-TcpSocketBase::Window (void)
+TcpSocketBase::GetRwnd() const
+{
+  return m_rWnd.Get();
+}
+
+uint32_t
+TcpSocketBase::Window (void) 
 {
   NS_LOG_FUNCTION (this);
 //  return std::min (m_rWnd.Get (), m_tcb->m_cWnd.Get ());
 
   return std::min (
-    m_rWnd.Get (), 
+    GetRwnd(), 
     m_tcb->m_cWnd.Get ()
     
   );
@@ -3216,7 +3229,7 @@ TcpSocketBase::NewAck (SequenceNumber32 const& ack)
                     (Simulator::Now () + m_rto.Get ()).GetSeconds ());
       m_retxEvent = Simulator::Schedule (m_rto, &TcpSocketBase::ReTxTimeout, this);
     }
-  if (m_rWnd.Get () == 0 && m_persistEvent.IsExpired ())
+  if (GetRwnd () == 0 && m_persistEvent.IsExpired ())
     { // Zero window: Enter persist state to send 1 byte to probe
       NS_LOG_LOGIC (this << "Enter zerowindow persist state");
       NS_LOG_LOGIC (this << "Cancelled ReTxTimeout event which was set to expire at " <<
@@ -3970,8 +3983,10 @@ TcpSocketBase::Dump (std::ostream &os) const
 {
 
   //! TODO assuming it's ipv4
-  os << m_endPoint->GetLocalAddress () << ":" << m_endPoint->GetLocalPort () << std::endl;
-  os << m_endPoint->GetPeerAddress () << ":" << m_endPoint->GetPeerPort () << std::endl;
+  if (m_endPoint) {
+    os << m_endPoint->GetLocalAddress () << ":" << m_endPoint->GetLocalPort () << std::endl;
+    os << m_endPoint->GetPeerAddress () << ":" << m_endPoint->GetPeerPort () << std::endl;
+  }
   os << " TCB:" << std::endl;
   DumpSocketState (os, m_tcb);
   os << std::endl;
