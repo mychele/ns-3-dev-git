@@ -176,9 +176,10 @@ MpTcpSubflow::CancelAllTimers()
 {
   NS_LOG_FUNCTION(this);
   //(int) sFlowIdx
-  m_retxEvent.Cancel();
-  m_lastAckEvent.Cancel();
-  m_timewaitEvent.Cancel();
+//  m_retxEvent.Cancel();
+//  m_lastAckEvent.Cancel();
+//  m_timewaitEvent.Cancel();
+  TcpSocketBase::CancelAllTimers ();
   NS_LOG_LOGIC( "CancelAllTimers");
 }
 
@@ -889,7 +890,7 @@ MpTcpSubflow::AddMpTcpOptionDSS (TcpHeader& header)
 //    + SequenceNumber32(1)
     // +1 ?
     m_dssMapping.MapToSSN (
-        SequenceNumber32(m_dssMapping.HeadSSN().GetValue() - GetLocalIsn().GetValue()
+        SequenceNumber32 (m_dssMapping.HeadSSN().GetValue() - GetLocalIsn().GetValue()
                          )
                           );
     NS_LOG_DEBUG ("Converting to relative SSN " << m_dssMapping.HeadSSN());
@@ -907,7 +908,9 @@ MpTcpSubflow::AddMpTcpOptionDSS (TcpHeader& header)
 //                      std::min(m_dssMapping.GetLength(), header.Get),
                       sendDataFin);
    }
-  header.AppendOption(dss);
+
+  bool res = header.AppendOption (dss);
+  NS_ASSERT (res);
 }
 
 
@@ -998,7 +1001,7 @@ MpTcpSubflow::ProcessClosing (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
 
-  return TcpSocketBase::ProcessClosing(packet,tcpHeader);
+  return TcpSocketBase::ProcessClosing (packet,tcpHeader);
 }
 
 /** Received a packet upon CLOSE_WAIT, FIN_WAIT_1, or FIN_WAIT_2 states */
@@ -1367,7 +1370,8 @@ MpTcpSubflow::AddOptionMpTcp3WHS (TcpHeader& hdr) const
         break;
     };
     NS_LOG_INFO ("Appended option" << mpc);
-    hdr.AppendOption( mpc );
+    bool res = hdr.AppendOption( mpc );
+    NS_ASSERT (res);
   }
   else
   {
@@ -1420,7 +1424,8 @@ MpTcpSubflow::AddOptionMpTcp3WHS (TcpHeader& hdr) const
     }
 
     NS_LOG_INFO("Appended option" << join);
-    hdr.AppendOption( join );
+    bool res = hdr.AppendOption( join );
+    NS_ASSERT (res);
   }
 
   //!
@@ -2303,7 +2308,7 @@ MpTcpSubflow::ProcessOptionMpTcpDSSEstablished (
       NS_LOG_ERROR ("YOU SHOULD DROP THE PACKET");
     }
     m_rWnd = GetMeta()->m_rWnd;
-    
+
     GetMeta()->ReceivedAck ( dack, this, false);
 //    SequenceNumber32 dack = SequenceNumber32(dss->GetDataAck());
   }

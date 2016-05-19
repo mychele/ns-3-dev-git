@@ -381,6 +381,106 @@ TcpHeaderFlagsToString::DoRun (void)
   NS_TEST_ASSERT_MSG_EQ (str, target, "str " << str <<  " does not equal target " << target);
 }
 
+
+/**
+To check if one can serialize more than the 40 bytes.
+ */
+class TcpHeaderWithManyOptions : public TestCase
+{
+public:
+  TcpHeaderWithManyOptions (std::string name);
+
+private:
+  virtual void DoRun (void);
+//  virtual void DoTeardown (void);
+};
+
+
+TcpHeaderWithManyOptions::TcpHeaderWithManyOptions (std::string name) : TestCase (name)
+{
+}
+
+void 
+TcpHeaderWithManyOptions::DoRun (void)
+{
+  uint16_t sourcePort;        //!< Source port
+  uint16_t destinationPort;   //!< Destination port
+  SequenceNumber32 sequenceNumber;  //!< Sequence number
+  SequenceNumber32 ackNumber;       //!< ACK number
+  uint8_t flags;              //!< Flags (really a uint6_t)
+  uint16_t windowSize;        //!< Window size
+  uint16_t urgentPointer;     //!< Urgent pointer
+  TcpHeader header;
+  Buffer buffer;
+  #if 0
+  Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
+  for (uint32_t i = 0; i < 1000; ++i)
+    {
+      sourcePort = GET_RANDOM_UINT16 (x);
+      destinationPort = GET_RANDOM_UINT16 (x);
+      sequenceNumber = SequenceNumber32 (GET_RANDOM_UINT32 (x));
+      ackNumber = SequenceNumber32 (GET_RANDOM_UINT32 (x));
+      flags = GET_RANDOM_UINT6 (x);
+      windowSize = GET_RANDOM_UINT16 (x);
+      urgentPointer = GET_RANDOM_UINT16 (x);
+
+      header.SetSourcePort (sourcePort);
+      header.SetDestinationPort (destinationPort);
+      header.SetSequenceNumber (sequenceNumber);
+      header.SetAckNumber (ackNumber);
+      header.SetFlags (flags);
+      header.SetWindowSize (windowSize);
+      header.SetUrgentPointer (urgentPointer);
+
+      NS_TEST_ASSERT_MSG_EQ (header.GetLength (), 5, "TcpHeader without option is"
+                         " not 5 word");
+
+      buffer.AddAtStart (header.GetSerializedSize ());
+      header.Serialize (buffer.Begin ());
+
+      NS_TEST_ASSERT_MSG_EQ (sourcePort, header.GetSourcePort (),
+                         "Different source port found");
+      NS_TEST_ASSERT_MSG_EQ (destinationPort, header.GetDestinationPort (),
+                         "Different destination port found");
+      NS_TEST_ASSERT_MSG_EQ (sequenceNumber, header.GetSequenceNumber (),
+                         "Different sequence number found");
+      NS_TEST_ASSERT_MSG_EQ (ackNumber, header.GetAckNumber (),
+                         "Different ack number found");
+      NS_TEST_ASSERT_MSG_EQ (flags, header.GetFlags (),
+                         "Different flags found");
+      NS_TEST_ASSERT_MSG_EQ (windowSize, header.GetWindowSize (),
+                         "Different window size found");
+      NS_TEST_ASSERT_MSG_EQ (urgentPointer, header.GetUrgentPointer (),
+                         "Different urgent pointer found");
+
+      NS_TEST_ASSERT_MSG_EQ (header.GetLength (), 5, "TcpHeader without option is"
+                         " not 5 word");
+
+      TcpHeader copyHeader;
+
+      copyHeader.Deserialize (buffer.Begin ());
+    #endif 
+    
+    Ptr<TcpOptionMSS> oMSS = CreateObject<TcpOptionMSS>();
+    oMSS->SetMSS (50);
+//    TcpHeader header, dest;
+    
+    uint32_t addedBytes = 0;
+    NS_TEST_EXPECT_MSG_GT ( oMSS->GetSerializedSize (), 0 , "else infinite loop" );
+    do 
+    {
+      addedBytes += oMSS->GetSerializedSize ();
+      bool res = header.AppendOption( oMSS);
+    } 
+    while( addedBytes < TcpHeader::m_maxOptionsLen);
+    
+    bool res = header.AppendOption( oMSS);
+    NS_TEST_EXPECT_MSG_EQ(res, false, "Can't add more options");
+    NS_TEST_EXPECT_MSG_LT_OR_EQ( header.GetSerializedSize (), TcpHeader::m_maxOptionsLen , "Max size not respected" );
+
+//    Buffer buffer;
+};
+
 static class TcpHeaderTestSuite : public TestSuite
 {
 public:
@@ -390,6 +490,7 @@ public:
     AddTestCase (new TcpHeaderGetSetTestCase ("GetSet test cases"), TestCase::QUICK);
     AddTestCase (new TcpHeaderWithRFC793OptionTestCase ("Test for options in RFC 793"), TestCase::QUICK);
     AddTestCase (new TcpHeaderFlagsToString ("Test flags to string function"), TestCase::QUICK);
+    AddTestCase (new TcpHeaderWithManyOptions ("TcpHeaderWithManyOptions"), TestCase::QUICK);
   }
 
 } g_TcpHeaderTestSuite;

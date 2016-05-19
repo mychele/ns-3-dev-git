@@ -306,6 +306,8 @@ public:
    */
   friend bool operator== (const TcpHeader &lhs, const TcpHeader &rhs);
 
+  static const uint8_t m_maxOptionsLen = 40; //!< Maximum options length
+
 private:
   /**
    * \brief Calculate the header checksum
@@ -343,7 +345,7 @@ private:
 
   TcpOptionList m_options; //!< TcpOption present in the header
   uint8_t m_optionsLen; //!< Tcp options length.
-  static const uint8_t m_maxOptionsLen = 40; //!< Maximum options length
+
 };
 
 /**

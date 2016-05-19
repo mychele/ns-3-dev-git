@@ -891,7 +891,7 @@ public:
 //  Config::Set ("ns3::TcpL4Protocol::SocketType", StringValue("ns3::MpTcpCongestionLia") );
 
     // with units of bytes
-    static const uint8_t MaxNbOfDevices = 1;
+    static const uint8_t MaxNbOfDevices = 2;
     static const uint8_t SubflowPerDevice = 1;
     
 
@@ -905,22 +905,22 @@ public:
 
         for (subflow_per_device = 1; subflow_per_device <= SubflowPerDevice; subflow_per_device++) {
     #endif
-            AddTestCase (
-                new MpTcpMultihomedTestCase (
-                    13,     // 1) totalStreamSize (everything in bytes)
-                    200,    // 2) source write size,
-                    200,    // 3) source read size
-                    200,    // 4) server write size
-                    200,    // 5) server read size
-                    nb_of_devices,
-                    subflow_per_device,
-                    false       // 6/ use ipv6
-                    ),
-                TestCase::QUICK
-            );
+//            AddTestCase (
+//                new MpTcpMultihomedTestCase (
+//                    13,     // 1) totalStreamSize (everything in bytes)
+//                    200,    // 2) source write size,
+//                    200,    // 3) source read size
+//                    200,    // 4) server write size
+//                    200,    // 5) server read size
+//                    nb_of_devices,
+//                    subflow_per_device,
+//                    false       // 6/ use ipv6
+//                    ),
+//                TestCase::QUICK
+//            );
 
 //            AddTestCase (new MpTcpMultihomedTestCase (13, 1, 1, 1, 1, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
-//            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
+            AddTestCase (new MpTcpMultihomedTestCase (100000, 100, 50, 100, 20, nb_of_devices, subflow_per_device, false), TestCase::QUICK);
 
     #ifdef LOOP
         }

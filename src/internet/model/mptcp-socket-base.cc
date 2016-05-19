@@ -1460,8 +1460,10 @@ void
 MpTcpSocketBase::OnSubflowNewAck(Ptr<MpTcpSubflow> subflow)
 {
   NS_LOG_LOGIC("new subflow ack " );
+//  // Si le new ack 
+//  if (m_)
 //  SyncTxBuffers(subflow);
-  SyncTxBuffers();
+  SyncTxBuffers ();
 }
 
 
@@ -2824,7 +2826,16 @@ MpTcpSocketBase::ReceivedAck(
       NS_LOG_LOGIC ("Old ack Ignored " << dack  );
     }
   else if (dack  == FirstUnackedSeq())
-    { // Case 2: Potentially a duplicated ACK
+    { 
+      // If in closing state, should trigger timewait
+      if(m_state == CLOSING) 
+      {
+        NS_LOG_WARN ("MAYBE SHOULD ENTER TIMEWAIT here");
+        TimeWait();
+        return;
+      }
+      
+      // Case 2: Potentially a duplicated ACK
       if (dack  < m_nextTxSequence && count_dupacks)
         {
         /* TODO dupackcount shall only be increased if there is only a DSS option ! */
@@ -2888,6 +2899,7 @@ MpTcpSocketBase::ReceivedAck(
 void
 MpTcpSocketBase::TimeWait()
 {
+  NS_LOG_FUNCTION (this);
   Time timewait_duration = Seconds(2 * m_msl);
   NS_LOG_INFO (TcpStateName[m_state] << " -> TIME_WAIT "
               << "with duration of " << timewait_duration
@@ -2907,8 +2919,8 @@ MpTcpSocketBase::OnTimeWaitTimeOut(void)
   // Would normally call CloseAndNotify
   NS_LOG_LOGIC ("Timewait timeout expired");
   NS_LOG_UNCOND ("after timewait timeout, there are still " << m_subflows[Closing].size() << " subflows pending");
-
-  CloseAndNotify();
+  // TODO send RST and destory these subflows ?
+  CloseAndNotify ();
 }
 
 /** Peacefully close the socket by notifying the upper layer and deallocate end point */
@@ -3076,7 +3088,7 @@ MpTcpSocketBase::DoClose()
   case CLOSING:
 // Send RST if application closes in SYN_SENT and CLOSING
 // TODO deallocate all childrne
-      NS_LOG_WARN("trying to close while closing..");
+      NS_LOG_WARN ("trying to close while closing..");
 //      NS_LOG_INFO ("CLOSING -> LAST_ACK");
 //      m_state = TIME_WAIT;
 //        NotifyErrorClose();

@@ -1802,6 +1802,8 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 //  Ptr<TcpSocketBase> temp =  CopyObject<TcpSocketBase>(this);
 
 
+  // TODO cancel only for forks, not when client gets upgraded Otherwise timers
+  this->CancelAllTimers();
 //  Ptr<MpTcpSocketBase> meta2 = DynamicCast<MpTcpSocketBase>(
 //        m_tcp->CreateSocket(ns3::MpTcpSocketBase::GetTypeId())
 //  );
@@ -1827,8 +1829,6 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
 
 //  Ipv4EndPoint *endPoint = m_endPoint;
 
-  // TODO cancel only for forks, not when client gets upgraded Otherwise timers
-//  this->CancelAllTimers();
 
 //  this->~TcpSocketBase();
   // MpTcpSocketBase(*this) ?
@@ -3247,7 +3247,7 @@ TcpSocketBase::NewAck (SequenceNumber32 const& ack)
 
 //  m_firstTxUnack = std::min(ack, m_txBuffer->TailSequence());
   m_firstTxUnack = ack;
-  UpdateTxBuffer();
+  UpdateTxBuffer ();
 
   if (GetTxAvailable () > 0)
     {
@@ -3432,6 +3432,7 @@ TcpSocketBase::DoRetransmit ()
 void
 TcpSocketBase::CancelAllTimers ()
 {
+  NS_LOG_FUNCTION_NOARGS();
   m_retxEvent.Cancel ();
   m_persistEvent.Cancel ();
   m_delAckEvent.Cancel ();
@@ -3706,7 +3707,8 @@ TcpSocketBase::AddMpTcpOptions (TcpHeader& header)
         // Append the MPTCP capable option
         Ptr<TcpOptionMpTcpCapable> mpc = CreateObject<TcpOptionMpTcpCapable>();
         mpc->SetSenderKey (m_mptcpLocalKey);
-        header.AppendOption (mpc);
+        bool res = header.AppendOption (mpc);
+        NS_ASSERT (res);
     }
 }
 
@@ -3826,7 +3828,8 @@ TcpSocketBase::AddOptionWScale (TcpHeader &header)
   m_sndScaleFactor = CalculateWScale ();
   option->SetScale (m_sndScaleFactor);
 
-  header.AppendOption (option);
+  bool res = header.AppendOption (option);
+  NS_ASSERT (res);
 
   NS_LOG_INFO (m_node->GetId () << " Send a scaling factor of " <<
                  static_cast<int> (m_sndScaleFactor));
@@ -3862,7 +3865,8 @@ TcpSocketBase::AddOptionTimestamp (TcpHeader& header)
   option->SetTimestamp (TcpOptionTS::NowToTsValue ());
   option->SetEcho (m_timestampToEcho);
 
-  header.AppendOption (option);
+  bool res = header.AppendOption (option);
+  NS_ASSERT (res);
   NS_LOG_INFO (m_node->GetId () << " Add option TS, ts=" <<
                option->GetTimestamp () << " echo=" << m_timestampToEcho);
 }
@@ -4022,7 +4026,6 @@ TcpSocketBase::Fork (void)
 //  return CopyObject<TcpSocketBase> (this);
   char *addr = new char[sizeof(std::aligned_storage<sizeof(MpTcpSocketBase)>::type)];
   Ptr<TcpSocketBase> p = Ptr<TcpSocketBase> (new (addr) TcpSocketBase(*this), false);
-//  p.Acquire();
   return p;
 }
 
