@@ -405,7 +405,7 @@ PcapFile::WritePacketHeader (uint32_t tsSec, uint32_t tsUsec, uint32_t totalLen)
 void
 PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, uint8_t const * const data, uint32_t totalLen)
 {
-  NS_LOG_FUNCTION (this << tsSec << tsUsec << &data << totalLen);
+  NS_LOG_FUNCTION (this << tsSec << tsUsec << " with data " << &data << totalLen);
   uint32_t inclLen = WritePacketHeader (tsSec, tsUsec, totalLen);
   m_file.write ((const char *)data, inclLen);
   NS_BUILD_DEBUG(m_file.flush());
@@ -414,8 +414,9 @@ PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, uint8_t const * const data, ui
 void 
 PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Ptr<const Packet> p)
 {
-  NS_LOG_FUNCTION (this << tsSec << tsUsec << p);
+  NS_LOG_FUNCTION (this << tsSec << tsUsec << " packet:" << p);
   uint32_t inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
+//  uint32_t copied = 
   p->CopyData (&m_file, inclLen);
   NS_BUILD_DEBUG(m_file.flush());
 }
