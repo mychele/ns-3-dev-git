@@ -410,7 +410,7 @@ public:
    * \param size the maximum number of bytes we want to write
    *        in the output stream.
    */
-  void CopyData (std::ostream *os, uint32_t size) const;
+  uint32_t CopyData (std::ostream *os, uint32_t size) const;
 
   /**
    * \brief performs a COW copy of the packet.

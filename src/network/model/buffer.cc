@@ -711,10 +711,12 @@ Buffer::PeekData (void) const
   return m_data->m_data + m_start;
 }
 
-void
+uint32_t
 Buffer::CopyData (std::ostream *os, uint32_t size) const
 {
   NS_LOG_FUNCTION (this << &os << size);
+  uint32_t originalSize = size;
+#if 0
   if (size > 0)
     {
       uint32_t tmpsize = std::min (m_zeroAreaStart-m_start, size);
@@ -738,18 +740,31 @@ Buffer::CopyData (std::ostream *os, uint32_t size) const
             }
         }
     }
+  return left;
+#endif
+  uint8_t *temp = new uint8_t[size];
+  uint32_t written = CopyData (temp, size);
+  os->write ((const char*)(temp), written);
+  delete temp;
+  return written;
 }
 
 uint32_t 
 Buffer::CopyData (uint8_t *buffer, uint32_t size) const
 {
   NS_LOG_FUNCTION (this << &buffer << size);
+
   uint32_t originalSize = size;
   if (size > 0)
     {
       uint32_t tmpsize = std::min (m_zeroAreaStart-m_start, size);
+//      if(os) {
+//        os->write ((const char*)(m_data->m_data + m_start), tmpsize);
+//      }
+//      else {
       memcpy (buffer, (const char*)(m_data->m_data + m_start), tmpsize);
       buffer += tmpsize;
+//      }
       size -= tmpsize;
       if (size > 0) 
         { 
@@ -758,22 +773,89 @@ Buffer::CopyData (uint8_t *buffer, uint32_t size) const
           while (left > 0)
             {
               uint32_t toWrite = std::min (left, g_zeroes.size);
+//              if(os) {
+//                os->write (g_zeroes.buffer, toWrite);
+//              }
+//              else {
               memcpy (buffer, g_zeroes.buffer, toWrite);
               left -= toWrite;
+//              }
               buffer += toWrite;
             }
           size -= tmpsize;
           if (size > 0)
             {
               tmpsize = std::min (m_end - m_zeroAreaEnd, size);
-              memcpy (buffer, (const char*)(m_data->m_data + m_zeroAreaStart), tmpsize);
+//              if(os) {
+//                os->write ((const char*)(m_data->m_data + m_zeroAreaStart), tmpsize); 
+//              }
+//              else {
+                memcpy (buffer, (const char*)(m_data->m_data + m_zeroAreaStart), tmpsize);
+//              }
               size -= tmpsize;
             }
         }
     }
-  NS_ASSERT ( originalSize - size <= size );
   return originalSize - size;
 }
+
+#if 0
+uint32_t 
+Buffer::CopyData (uint8_t *buffer, std::ostream *os, uint32_t size) const
+{
+  NS_LOG_FUNCTION (this << &buffer << size);
+//  
+//  void (*output) (void* data, const char*, uint32_t) = 0;
+//  if(os){
+//    output = [] (void* data, const char*, uint32_t) {
+//      ((std::ostream *)data)->write ((const char*)(m_data->m_data + m_start), tmpsize);
+//    }
+//  }
+  uint32_t originalSize = size;
+  if (size > 0)
+    {
+      uint32_t tmpsize = std::min (m_zeroAreaStart-m_start, size);
+      if(os) {
+        os->write ((const char*)(m_data->m_data + m_start), tmpsize);
+      }
+      else {
+      memcpy (buffer, (const char*)(m_data->m_data + m_start), tmpsize);
+      buffer += tmpsize;
+      }
+      size -= tmpsize;
+      if (size > 0) 
+        { 
+          tmpsize = std::min (m_zeroAreaEnd - m_zeroAreaStart, size);
+          uint32_t left = tmpsize;
+          while (left > 0)
+            {
+              uint32_t toWrite = std::min (left, g_zeroes.size);
+              if(os) {
+                os->write (g_zeroes.buffer, toWrite);
+              }
+              else {
+              memcpy (buffer, g_zeroes.buffer, toWrite);
+              left -= toWrite;
+              }
+              buffer += toWrite;
+            }
+          size -= tmpsize;
+          if (size > 0)
+            {
+              tmpsize = std::min (m_end - m_zeroAreaEnd, size);
+              if(os) {
+                os->write ((const char*)(m_data->m_data + m_zeroAreaStart), tmpsize); 
+              }
+              else {
+                memcpy (buffer, (const char*)(m_data->m_data + m_zeroAreaStart), tmpsize);
+              }
+              size -= tmpsize;
+            }
+        }
+    }
+  return originalSize - size;
+}
+#endif
 
 /******************************************************
  *            The buffer iterator below.

@@ -594,7 +594,7 @@ private:
    * @param os the output stream
    * @param size the maximum amount of bytes to copy. If zero, nothing is copied.
    */
-  void CopyData (std::ostream *os, uint32_t size) const;
+  uint32_t CopyData (std::ostream *os, uint32_t size) const;
 
   /**
    * Copy the specified amount of data from the buffer to the given buffer.

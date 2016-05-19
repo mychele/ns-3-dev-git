@@ -416,8 +416,8 @@ PcapFile::Write (uint32_t tsSec, uint32_t tsUsec, Ptr<const Packet> p)
 {
   NS_LOG_FUNCTION (this << tsSec << tsUsec << " packet:" << p);
   uint32_t inclLen = WritePacketHeader (tsSec, tsUsec, p->GetSize ());
-//  uint32_t copied = 
-  p->CopyData (&m_file, inclLen);
+  uint32_t left = p->CopyData (&m_file, inclLen);
+  NS_ASSERT (left == inclLen);
   NS_BUILD_DEBUG(m_file.flush());
 }
 
