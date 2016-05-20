@@ -1788,7 +1788,8 @@ Ptr<MpTcpSubflow>
 TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerKey)
 {
   NS_LOG_FUNCTION("Upgrading to meta " << this);
-
+  uint32_t refCount = this->GetReferenceCount();
+//  NS_LOG_DEBUG( "refcount=" << this->GetReferenceCount() << " before upgrade" );
   /**
    TODO here we should find a way to call CompleteConstruct else some plots are wrong since
    TcpXxBuffers were not setup correctly (rWnd for instance)
@@ -1798,7 +1799,7 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
    before meta. Hence move that type id to TcpL4Protocol
    */
 //  MpTcpSubflow *subflow = new MpTcpSubflow (*this);
-  Ptr<TcpSocketBase> temp =  this->Fork(); // 
+  Ptr<TcpSocketBase> temp =  this->Fork();
 //  Ptr<TcpSocketBase> temp =  CopyObject<TcpSocketBase>(this);
 
 
@@ -1842,7 +1843,11 @@ TcpSocketBase::UpgradeToMeta (bool connecting, uint64_t localKey, uint64_t peerK
   // update attributes with default
   CompleteConstruct (meta);
 //  meta->SetCongestionControlAlgorithm( );
-  
+
+  while (this->GetReferenceCount() < refCount) 
+  {
+    this->Ref();
+  }
   meta->CreateScheduler (); // meta->m_schedulerTypeId
   // Once typeids are ok, one can setup scheduler
 //  temp->m_tcp->DumpSockets();
@@ -2094,7 +2099,7 @@ uint32_t localToken;
         NS_LOG_DEBUG("Local/peer ISNs: " << this->GetLocalIsn() << "/"<< this->GetPeerIsn()
             << "(peer isn set later by processSynSent)");
         NS_LOG_DEBUG( "refcount=" << this->GetReferenceCount() << " after upgrade" );
-        this->Ref();
+//        this->Ref();
 //        master->Bind();
 
         // Carrément le renvoyer à forwardUp pour forcer la relecture de la windowsize
