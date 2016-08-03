@@ -2019,8 +2019,11 @@ void
 TcpSocketBase::ProcessSynSent (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
-uint64_t idsn;
-uint32_t localToken;
+  
+  // michele@polese.io : unused variables
+  //uint64_t idsn;
+  //uint32_t localToken;
+
   // Extract the flags. PSH and URG are not honoured.
   uint8_t tcpflags = tcpHeader.GetFlags () & ~(TcpHeader::PSH | TcpHeader::URG);
 
