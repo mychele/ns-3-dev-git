@@ -715,8 +715,9 @@ uint32_t
 Buffer::CopyData (std::ostream *os, uint32_t size) const
 {
   NS_LOG_FUNCTION (this << &os << size);
-  uint32_t originalSize = size;
+  
 #if 0
+  //uint32_t originalSize = size;
   if (size > 0)
     {
       uint32_t tmpsize = std::min (m_zeroAreaStart-m_start, size);

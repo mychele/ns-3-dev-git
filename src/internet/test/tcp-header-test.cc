@@ -403,16 +403,17 @@ TcpHeaderWithManyOptions::TcpHeaderWithManyOptions (std::string name) : TestCase
 void 
 TcpHeaderWithManyOptions::DoRun (void)
 {
-  uint16_t sourcePort;        //!< Source port
-  uint16_t destinationPort;   //!< Destination port
+  
   SequenceNumber32 sequenceNumber;  //!< Sequence number
   SequenceNumber32 ackNumber;       //!< ACK number
-  uint8_t flags;              //!< Flags (really a uint6_t)
-  uint16_t windowSize;        //!< Window size
-  uint16_t urgentPointer;     //!< Urgent pointer
   TcpHeader header;
   Buffer buffer;
   #if 0
+  uint16_t sourcePort;        //!< Source port
+  uint16_t destinationPort;   //!< Destination port
+  uint8_t flags;              //!< Flags (really a uint6_t)
+  uint16_t windowSize;        //!< Window size
+  uint16_t urgentPointer;     //!< Urgent pointer
   Ptr<UniformRandomVariable> x = CreateObject<UniformRandomVariable> ();
   for (uint32_t i = 0; i < 1000; ++i)
     {
@@ -470,7 +471,7 @@ TcpHeaderWithManyOptions::DoRun (void)
     do 
     {
       addedBytes += oMSS->GetSerializedSize ();
-      bool res = header.AppendOption( oMSS);
+      //bool res = header.AppendOption( oMSS);
     } 
     while( addedBytes < TcpHeader::m_maxOptionsLen);
     

@@ -39,8 +39,6 @@
 //#include "ns3/ipv4-address.h"
 #include "ns3/trace-helper.h"
 #include <algorithm>
-#include <openssl/sha.h>
-
 
 
 namespace ns3 {

@@ -234,12 +234,12 @@ MpTcpMultihomedTestCase::MpTcpMultihomedTestCase (uint32_t totalStreamSize,
     m_sourceReadSize (sourceReadSize),
     m_serverWriteSize (serverWriteSize),
     m_serverReadSize (serverReadSize),
-    m_number_of_devices (nb_of_devices),
-    m_number_of_subflow_per_device (nb_of_subflows_per_device),
     m_nb_of_successful_connections (0),
     m_nb_of_successful_subflow_creations (0),
     m_connect_cb_called(false),
-    m_useIpv6 (useIpv6)
+    m_useIpv6 (useIpv6),
+    m_number_of_devices (nb_of_devices),
+    m_number_of_subflow_per_device (nb_of_subflows_per_device)
 {
 
 }
@@ -391,7 +391,7 @@ MpTcpMultihomedTestCase::SourceConnectionSuccessful (Ptr<Socket> sock)
           int nb_of_subflows_to_create = m_number_of_subflow_per_device;
 
           // If it's the same interface as master subflow, then remove one
-          if (ipv4Local->GetInterfaceForPrefix ( "192.168.0.0", g_netmask) == interface)
+          if (ipv4Local->GetInterfaceForPrefix ( "192.168.0.0", g_netmask) == (int)interface)
           {
             NS_LOG_DEBUG ("same interface as master's");
             nb_of_subflows_to_create--;

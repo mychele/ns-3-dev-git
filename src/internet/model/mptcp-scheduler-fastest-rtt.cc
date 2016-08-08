@@ -115,8 +115,8 @@ MpTcpSchedulerFastestRTT::GenerateMapping(int& activeSubflowArrayId, SequenceNum
     NS_ASSERT(m_metaSock);
 
     //!
-    int nbOfSubflows = m_metaSock->GetNActiveSubflows();
-    int attempt = 0;
+    // unused int nbOfSubflows = m_metaSock->GetNActiveSubflows();
+    // int attempt = 0;
     uint32_t amountOfDataToSend = 0;
 
     //! Tx data not sent to subflows yet

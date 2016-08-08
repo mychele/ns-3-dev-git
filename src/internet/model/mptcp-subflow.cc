@@ -19,10 +19,10 @@
  * Author:  Matthieu Coudron <matthieu.coudron@lip6.fr>
  *          Morteza Kheirkhah <m.kheirkhah@sussex.ac.uk>
  */
-//#undef NS_LOG_APPEND_CONTEXT
-//#define NS_LOG_APPEND_CONTEXT \
+/*#undef NS_LOG_APPEND_CONTEXT
+//#define NS_LOG_APPEND_CONTEXT
 //  if (m_node) { std::clog << Simulator::Now ().GetSeconds () << " [node " << m_node->GetId () << ": sf " << "] "; }
-//<< TcpStateName[m_node->GetTcp()->GetState()] <<
+//<< TcpStateName[m_node->GetTcp()->GetState()] <<*/
 
 #include <iostream>
 #include <cmath>
@@ -44,8 +44,6 @@
 //#include "ns3/ipv4-address.h"
 #include "ns3/trace-helper.h"
 #include <algorithm>
-#include <openssl/sha.h>
-
 
 
 /*
@@ -289,8 +287,8 @@ MpTcpSubflow::MpTcpSubflow (const MpTcpSubflow& sock)
   m_probeState (TcpOptionMpTcpOwdTimeStamp::PendingSend),
   m_subflowId (TcpOptionMpTcpChangePriority::BAD_ADDRID),
   m_dssFlags(0),
-  m_masterSocket(false),  //!false
   m_backupSubflow(sock.m_backupSubflow),
+  m_masterSocket(false),  //!false
   m_localNonce(sock.m_localNonce),
   m_prefixCounter(0)
 {
@@ -1035,7 +1033,7 @@ MpTcpSubflow::CompleteFork(
 //  GetMeta()->GenerateUniqueMpTcpKey(true);
     // We need to assign an id before the answer is actually sent
 
-  InetSocketAddress addr = InetSocketAddress::ConvertFrom(fromAddress);
+  // unused InetSocketAddress addr = InetSocketAddress::ConvertFrom(fromAddress);
 
 //  InetSocketAddress addr (fromAddress);
 // TODO cela devrait dependre du endpoint
